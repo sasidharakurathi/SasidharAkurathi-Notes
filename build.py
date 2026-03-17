@@ -31,7 +31,7 @@ def build_handbook():
         <html lang="en">
             <head>
                 <meta charset="UTF-8">
-                <meta name="viewport" content="width=850">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>FastAPI Complete Handbook</title>
                 <style>
                     {css}

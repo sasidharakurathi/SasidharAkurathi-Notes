@@ -6,12 +6,10 @@
 
     html {
       height: 100%;
-      overflow: hidden;
     }
 
     body {
-      height: 100%;
-      overflow-y: auto;
+      min-height: 100%;
       overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
       box-sizing: border-box;
@@ -29,6 +27,7 @@
     .page {
       background: white;
       width: 210mm;
+      max-width: 100%;
       min-height: 297mm;
       margin-bottom: 30px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -224,12 +223,6 @@
       }
     }
 
-    @media screen and (max-width: 850px) {
-      html {
-        zoom: calc(100vw / 850);
-      }
-    }
-
     /* Custom Scrollbar */
     ::-webkit-scrollbar {
       width: 10px;
@@ -250,15 +243,35 @@
     }
 
     @media screen and (max-width: 850px) {
+      body {
+        padding: 10px;
+      }
+
+      .page {
+        width: 100%;
+        min-height: auto;
+        padding: 50px 20px;
+      }
+
+      .header {
+        left: 20px;
+        right: 20px;
+        top: 10px;
+      }
+
+      .footer {
+        left: 20px;
+        right: 20px;
+        bottom: 10px;
+      }
+
       ::-webkit-scrollbar {
-        width: 18px;
-        height: 18px;
+        width: 6px;
+        height: 6px;
       }
 
       ::-webkit-scrollbar-thumb {
-        background: #009688;
-        border: 4px solid #e9ecef;
-        background-clip: padding-box;
+        background: rgba(0, 150, 136, 0.6);
         border-radius: 10px;
       }
     }
