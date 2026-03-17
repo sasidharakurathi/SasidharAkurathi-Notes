@@ -1,0 +1,145 @@
+<!-- Chapter 2 Page 1 -->
+<div class="page" id="chapter-2">
+    <div class="header">CHAPTER 2 - Setting Up Our First FastAPI App</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 2 - Setting Up Our First FastAPI App</h2>
+
+    <h3>Installing FastAPI</h3>
+    <p>Before we can cook, we need to buy the ingredients. Installing FastAPI is incredibly simple. All we need to do is
+        open our terminal and run this command:</p>
+
+    <pre>pip install "fastapi[standard]"</pre>
+
+    <p>We might be wondering: what exactly does <code>[standard]</code> do? This command doesn't just download FastAPI
+        itself. It brings along a few helpful "standard" tools that we almost certainly need, like a web server (to
+        actually host the app) and some tools for testing. Without these, FastAPI would just be a blueprint without a
+        construction crew.</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> The <code>pip install "fastapi[standard]"</code> command downloads the
+        FastAPI framework along with a live development server and standard testing tools.
+    </div>
+
+    <h3>Writing Our Very First App</h3>
+    <p>Let's build the absolute simplest application possible - the famous "Hello World". Create a new file named
+        <code>main.py</code> and add this code:
+    </p>
+
+    <pre>
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/")
+def read_root():
+    return {"message": "Hello World"}
+  </pre>
+
+    <p>Let's look at what is happening here:</p>
+    <p><strong>Line 1:</strong> We import the FastAPI factory class.</p>
+    <p><strong>Line 3:</strong> We create our actual app. This <code>app</code> variable is the core of our whole
+        project.</p>
+    <p><strong>Line 5:</strong> This is called a "decorator". It tells our app: "When someone visits the root URL
+        (<code>/</code>) using a GET request, run the function directly below this."</p>
+    <p><strong>Line 6:</strong> We define a standard Python function named <code>read_root</code>.</p>
+    <p><strong>Line 7:</strong> We return a Python dictionary. FastAPI automatically changes this dictionary into
+        standard JSON before sending it back to the browser.</p>
+
+    <h3>Turning On The Server</h3>
+    <p>We wrote the recipe, but now we need to turn on the oven. We have two main ways to run our app. In our terminal,
+        we can run:</p>
+
+    <pre>fastapi dev main.py</pre>
+
+    <p>This is the modern, easy way. It uses the new FastAPI CLI. By using <code>dev</code>, it automatically reloads
+        the server every time we save a file, so we don't have to constantly stop and start it ourselves while coding.
+    </p>
+
+    <p>Alternatively, we might see tutorials using the older, classic method:</p>
+
+    <pre>uvicorn main:app --reload</pre>
+
+    <p>This does the exact same thing. It tells the Uvicorn web server to look inside the <code>main.py</code> file,
+        grab the variable named <code>app</code>, and run it with automatic reloading turned on. The new
+        <code>fastapi dev</code> command actually just runs Uvicorn securely under the hood.
+    </p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 5</span>
+    </div>
+</div>
+
+<!-- Chapter 2 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 2 - Setting Up Our First FastAPI App</div>
+
+    <h3>Checking In On Our Application</h3>
+    <p>Once our server is running, open our web browser and navigate to:</p>
+
+    <pre>http://127.0.0.1:8000</pre>
+
+    <p>We will see our friendly JSON response sitting on the screen: <code>{"message": "Hello World"}</code>. The IP
+        address <code>127.0.0.1</code> simply means "this exact computer" (usually called localhost), and
+        <code>8000</code> is the port, or the specific "door", the server is listening to.
+    </p>
+
+    <h3>The Real Magic: Interactive Docs</h3>
+    <p>Now, let's look at why developers love FastAPI so much. Leave our server running, and go to this URL instead:</p>
+
+    <pre>http://127.0.0.1:8000/docs</pre>
+
+    <p>We will see a beautiful, interactive web page documenting our API. This is powered by a tool called
+        <strong>Swagger UI</strong>. We did not write a single line of code to create this page - FastAPI built it
+        automatically by reading our <code>main.py</code> file!
+    </p>
+
+    <p>Even better, this page is fully interactive. We can click the "Try it out" button, hit "Execute", and directly
+        test our API right from the browser. It is the ultimate tool for quickly debugging our work.</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> The <code>/docs</code> URL provides a free, automatic, and fully interactive
+        testing webpage for our API.
+    </div>
+
+    <h3>Alternative Docs: ReDoc</h3>
+    <p>Swagger UI is great for testing, but sometimes we just want a clean document to read or share with other teams.
+        Try visiting this URL instead:</p>
+
+    <pre>http://127.0.0.1:8000/redoc</pre>
+
+    <p>This page is generated by a tool called <strong>ReDoc</strong>. It contains the exact same information about our
+        API, but it is formatted as a beautiful, static reading manual. It is not interactive like Swagger, but it is
+        much easier to read when we start building massive APIs.</p>
+
+    <div class="usage-box">
+        <strong>Use Swagger UI (/docs) when:</strong> We are actively coding and want to test our API buttons
+        quickly.<br><br>
+        <strong>Use ReDoc (/redoc) when:</strong> We want a clean, professional reading layout to share with other
+        developers.
+    </div>
+
+    <h3>The Blueprint: OpenAPI JSON</h3>
+    <p>How did FastAPI build those beautifully styled web pages? It built them using a hidden blueprint.</p>
+
+    <p>Behind the scenes, FastAPI looks at our Python code and generates a massive, standardized JSON file describing
+        every single piece of our app. This standard format is called the <a
+            href="https://github.com/OAI/OpenAPI-Specification">OpenAPI</a> schema. We can actually view the raw
+        blueprint by visiting:</p>
+
+    <pre>http://127.0.0.1:8000/openapi.json</pre>
+
+    <p>This JSON file is the foundation. Swagger UI and ReDoc are simply programs that read this exact JSON file and
+        turn the text into nice-looking buttons and layouts.</p>
+
+    <div class="mistake-box">
+        <strong>⚠️ Common Mistake:</strong> Trying to edit the interactive docs manually. We cannot change the
+        documentation pages manually. If we want to change what is displayed on Swagger UI, we must change our Python
+        code, and the automatic OpenAPI generation will handle the rest.
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 6</span>
+    </div>
+</div>

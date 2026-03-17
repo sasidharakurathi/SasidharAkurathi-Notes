@@ -1,0 +1,193 @@
+<!-- Chapter 4 Page 1 -->
+<div class="page" id="chapter-4">
+    <div class="header">CHAPTER 4 - Path Parameters</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 4 - Path Parameters</h2>
+
+    <h3>What is a Path Parameter?</h3>
+    <p>Imagine reading a classic "fill-in-the-blank" sentence: <em>"My favorite color is _______."</em> The sentence
+        structure never changes, but the meaning completely changes based on the word we put in the blank.</p>
+
+    <p>A Path Parameter is exactly the same concept, but for URLs. It allows us to create one single route that can
+        handle thousands of different requests, just by filling in the blank.</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> A path parameter is a dynamic placeholder inside our URL. It lets us capture
+        specific information directly from the web address.
+    </div>
+
+    <h3>Basic Path Parameters and Types</h3>
+    <p>To create a path parameter in FastAPI, we just wrap the dynamic part of the URL in curly braces <code>{}</code>.
+    </p>
+
+    <pre>
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/users/{user_id}")
+def get_user(user_id: int):
+    return {"user": user_id}
+  </pre>
+
+    <p>Let's break down exactly what happens here:</p>
+    <p><strong>Line 5:</strong> We define our route as <code>/users/</code> followed by a blank space we name
+        <code>{user_id}</code>.
+    </p>
+    <p><strong>Line 6:</strong> We tell the Python function to expect a variable named exactly <code>user_id</code>.
+        Crucially, we add <code>: int</code> to tell FastAPI that this variable MUST be a whole number.</p>
+    <p><strong>Line 7:</strong> We return the ID.</p>
+
+    <h3>Why Do Types Matter So Much?</h3>
+    <p>In older frameworks, everything pulled from a URL is passed to us as a simple text string (like
+        <code>"123"</code>). If someone visited <code>/users/apple</code>, our code would try to process "apple" as a
+        number and instantly crash our app.
+    </p>
+
+    <p>FastAPI acts as a bouncer. By adding <code>: int</code>, FastAPI automatically checks the URL BEFORE running our
+        code. </p>
+    <ul>
+        <li>If they visit <code>/users/3</code>, it converts "3" into a real Python integer.</li>
+        <li>If they visit <code>/users/apple</code>, FastAPI automatically stops them and returns a clean, detailed
+            error message saying: <em>"Input should be a valid integer."</em></li>
+    </ul>
+
+    <div class="mistake-box">
+        <strong>⚠️ Common Mistake:</strong> Forgetting to add Python type hints. If we just write
+        <code>def get_user(user_id):</code> without the <code>: int</code>, FastAPI will just pass it as a raw string,
+        and we won't get any automatic data validation!
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 10</span>
+    </div>
+</div>
+
+<!-- Chapter 4 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 4 - Path Parameters</div>
+
+    <h3>Predefined Values (The Multiple Choice Test)</h3>
+    <p>Sometimes, a fill-in-the-blank is too broad. We want to offer a multiple-choice question instead. Let's say we
+        have an AI model API, and we only support three specific models. We don't want users typing in just anything.
+    </p>
+
+    <p>We can enforce this using standard Python <code>Enum</code> classes.</p>
+
+    <pre>
+from enum import Enum
+from fastapi import FastAPI
+
+class ModelName(str, Enum):
+    alexnet = "alexnet"
+    resnet = "resnet"
+    lenet = "lenet"
+
+app = FastAPI()
+
+@app.get("/models/{model_name}")
+def get_model(model_name: ModelName):
+    if model_name is ModelName.alexnet:
+        return {"message": "You picked AlexNet"}
+    return {"model": model_name}
+  </pre>
+
+    <p>Here is what makes this so powerful:</p>
+    <p><strong>Line 1:</strong> We import the built-in <code>Enum</code> tool from Python.</p>
+    <p><strong>Line 4-7:</strong> We create a class that lists the <em>only</em> three acceptable options.</p>
+    <p><strong>Line 11-12:</strong> We set up the path parameter, but notice how we type hint it differently! We write
+        <code>(model_name: ModelName)</code>. We are telling FastAPI: "This blank can only be filled by one of the
+        options in our Enum class."
+    </p>
+
+    <p>If the user asks for <code>/models/resnet</code>, it works. If they ask for <code>/models/terminator</code>,
+        FastAPI automatically rejects it with an error saying that is not a valid choice. Even better, this dropdown
+        menu automatically shows up in our Swagger UI (<code>/docs</code>) page!</p>
+
+    <div class="usage-box">
+        <strong>Use this when:</strong> We have a strict, unchanging list of valid options that the user is allowed to
+        request (like "small", "medium", "large").
+    </div>
+
+    <h3>File Path Parameters</h3>
+    <p>There is a unique challenge when dealing with paths. What if the value we want to capture contains slashes inside
+        it? For example, what if we want a user to ask for a file located at
+        <code>/files/documents/2026/report.pdf</code>?
+    </p>
+
+    <p>If we just use a standard path parameter, FastAPI will get confused by all the slashes. We have to tell it
+        explicitly that this parameter is a "file path".</p>
+
+    <pre>
+@app.get("/files/{file_path:path}")
+def read_file(file_path: str):
+    return {"file_path": file_path}
+  </pre>
+
+    <p><strong>Line 1:</strong> Notice the special syntax <code>:path</code> inside the curly braces. This specific
+        instruction tells FastAPI to ignore the forward slashes and capture the entire rest of the URL as a single
+        string.</p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 11</span>
+    </div>
+</div>
+
+<!-- Chapter 4 Page 3 -->
+<div class="page">
+    <div class="header">CHAPTER 4 - Path Parameters</div>
+
+    <h3>Advanced Numeric Validation (Greater Than, Less Than)</h3>
+    <p>We already know how to make sure a path parameter is an integer. But what if we need to be stricter? What if the
+        integer MUST be greater than zero, or less than 100?</p>
+
+    <p>To do this, we import a new tool directly from FastAPI called <code>Path</code>.</p>
+
+    <pre>
+from fastapi import FastAPI, Path
+
+app = FastAPI()
+
+@app.get("/items/{item_id}")
+def read_item(
+    item_id: int = Path(title="The ID", ge=1, le=1000)
+):
+    return {"item_id": item_id}
+  </pre>
+
+    <p>This looks a little intimidating, so let's carefully break it down:</p>
+    <p><strong>Line 1:</strong> We import the <code>Path</code> class directly from the main <code>fastapi</code>
+        package.</p>
+    <p><strong>Line 6:</strong> Notice that after the standard <code>item_id: int</code>, we add an equals sign,
+        followed by <code>Path()</code>. This allows us to inject extra rules.</p>
+    <p><strong>Line 7:</strong> Inside <code>Path()</code>, we pass our specific rules:</p>
+    <ul>
+        <li><code>title</code>: Adds a nice title in the Swagger UI documentation.</li>
+        <li><code>ge=1</code>: This stands for <strong>Greater than or Equal</strong> to 1. The ID cannot be 0 or
+            negative!</li>
+        <li><code>le=1000</code>: This stands for <strong>Less than or Equal</strong> to 1000.</li>
+    </ul>
+
+    <p>If a user visits <code>/items/0</code>, FastAPI instantly rejects them automatically before the Python function
+        even runs.</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> The <code>Path()</code> tool lets us add strict mathematical rules (like
+        minimums and maximums) to our path parameters.
+    </div>
+
+    <p>Here is a quick cheat sheet for the weird abbreviations:</p>
+    <ul>
+        <li><strong>gt:</strong> greater than (>)</li>
+        <li><strong>ge:</strong> greater than or equal (>=)</li>
+        <li><strong>lt:</strong> less than (&lt;)</li>
+        <li><strong>le:</strong> less than or equal (&lt;=)</li>
+    </ul>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 12</span>
+    </div>
+</div>

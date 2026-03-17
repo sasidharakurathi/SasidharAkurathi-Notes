@@ -1,0 +1,136 @@
+<!-- Chapter 32 Page 1 -->
+<div class="page" id="chapter-32">
+    <div class="header">CHAPTER 32 - Concepts Before Deploying</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 32 - Concepts Before Deploying</h2>
+
+    <h3>HTTPS: The Non-Negotiable Requirement</h3>
+    <p>Until now, throughout our entire development process on our laptops, we have been using HTTP. If we launch our
+        real API to the public internet using basic HTTP, we have essentially built a transparent glass pipe.</p>
+
+    <p>Every single time a user types in their password, or we send back a secret JWT token, anyone sitting at a coffee
+        shop on the same Wi-Fi can copy that data directly out of the air. This is catastrophic.</p>
+
+    <p><strong>HTTPS</strong> is HTTP inside an encrypted, opaque steel tunnel. It is completely non-negotiable in
+        production.</p>
+
+    <p>To get HTTPS, our server needs an SSL/TLS Certificate. Setting this up by hand used to cost hundreds of dollars
+        and involved weeks of manual email verification. Today, the legendary non-profit organization <strong>Let's
+            Encrypt</strong> provides these certificates automatically and completely for free.</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> We do not usually configure HTTPS directly inside FastAPI. We run an external
+        gateway program (like Nginx, Traefik, or Caddy) in front of FastAPI. That gateway securely handles the Let's
+        Encrypt HTTPS certificates for us, and then internally passes the safe data to FastAPI.
+    </div>
+
+    <h3>Uvicorn vs. Gunicorn vs. Workers</h3>
+    <p>Throughout this handbook, we have started our server by running <code>uvicorn main:app</code>. Uvicorn is a
+        blazing fast <strong>ASGI Server</strong>. Its only job is to translate raw internet traffic into the Python
+        format FastAPI understands.</p>
+
+    <p>However, Uvicorn by default is a <strong>single process</strong>. It runs on exactly one CPU core. If our company
+        buys a massive, expensive AWS server with 32 CPU cores, a basic Uvicorn command will only use 1 of those cores,
+        totally wasting the other 31.</p>
+
+    <p>To fix this, we need <strong>Replication</strong>. We need to launch 32 separate copies (workers) of our FastAPI
+        application so they can answer 32 times as many users simultaneously.</p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 86</span>
+    </div>
+</div>
+
+<!-- Chapter 32 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 32 - Concepts Before Deploying</div>
+
+    <h3>How to Launch Multiple Workers</h3>
+    <p>There are two primary ways to spin up multiple workers in production:</p>
+
+    <h4>1. Uvicorn with the --workers flag</h4>
+    <p>The simplest way is to simply tell Uvicorn to multiply itself.</p>
+    <pre>
+# Launch 4 exact clones of our FastAPI app
+uvicorn main:app --host 0.0.0.0 --port 80 --workers 4
+  </pre>
+
+    <h4>2. Gunicorn managing Uvicorn</h4>
+    <p>Uvicorn is an amazing translator, but it is not a great manager. <strong>Gunicorn</strong> is an older,
+        incredibly battle-tested Manager program designed to keep Python processes alive. If a worker crashes, Gunicorn
+        instantly detects it and spawns a new one.</p>
+
+    <p>We can tell the manager (Gunicorn) to launch 4 workers, but we instruct it to use the blazing fast translator
+        (Uvicorn) inside each worker using the <code>-k uvicorn.workers.UvicornWorker</code> flag.</p>
+
+    <pre>
+# Gunicorn is the manager, Uvicorn is the worker class inside it
+gunicorn main:app --workers 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:80
+  </pre>
+
+    <h3>How Many Workers Should We Run?</h3>
+    <p>If we buy a server with 8 CPU cores, we should not run 100 workers! They will constantly fight each other for the
+        CPU's attention, slowing everything down.</p>
+
+    <p>The golden, industry-standard math formula is:</p>
+    <center>
+        <p><strong>Workers = (CPU Cores x 2) + 1</strong></p>
+    </center>
+
+    <p>So, on an 8-core server, we should run exactly 17 workers. One worker is always awake reading requests from the
+        internet, while the other 16 are constantly tag-teaming the database.</p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 87</span>
+    </div>
+</div>
+
+<!-- Chapter 32 Page 3 -->
+<div class="page">
+    <div class="header">CHAPTER 32 - Concepts Before Deploying</div>
+
+    <h3>Memory and State Across Workers</h3>
+    <p>When we launch 4 workers, we are literally running 4 completely separate, isolated Python programs
+        simultaneously. They <strong>do not share memory</strong>.</p>
+
+    <p>In Chapter 28, we built our incredible <code>ConnectionManager</code> for WebSockets that stored every open phone
+        line in a Python <code>list</code>:</p>
+
+    <pre>
+# Global memory storage
+manager = ConnectionManager()
+  </pre>
+
+    <p>If Alice connects to our server, the Load Balancer might randomly pass her phone call to <strong>Worker
+            #1</strong>. Her <code>WebSocket</code> object is saved in Worker #1's memory list.</p>
+
+    <p>If Bob connects, the Load Balancer might pass him to <strong>Worker #2</strong>. He is placed in Worker #2's
+        memory list.</p>
+
+    <div class="mistake-box">
+        <strong>⚠️ The Deadly Disconnect:</strong><br>
+        If Alice types a message and we trigger <code>manager.broadcast("Hello!")</code>, her message only gets
+        broadcasted to the users inside Worker #1's memory list. Bob will never receive the message! Worker #1
+        fundamentally has no idea that Bob even exists inside Worker #2.
+    </div>
+
+    <p>This is why we cannot rely on global Python variables (like dictionaries or lists) to store critical, persistent
+        application state in production.</p>
+
+    <p>If we need multiple workers to talk to each other, they need an external, shared brain. We use a real Database to
+        permanently store data, and we use a blazing fast memory-store like <strong>Redis</strong> so the 4 workers can
+        instantly coordinate and shout chat messages back and forth to each other.</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> Never store permanent, critical data in a standard Python variable. Always
+        assume your FastAPI application will eventually run on 10 different workers who cannot see each other's local
+        memory.
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 88</span>
+    </div>
+</div>

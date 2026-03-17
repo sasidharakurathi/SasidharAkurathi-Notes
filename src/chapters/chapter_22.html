@@ -1,0 +1,161 @@
+<!-- Chapter 22 Page 1 -->
+<div class="page" id="chapter-22">
+    <div class="header">CHAPTER 22 - APIRouter (Splitting Your App)</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 22 - APIRouter (Splitting Your App)</h2>
+
+    <h3>Why We Need Routers</h3>
+    <p>So far, we have built every single route directly on our main <code>app</code> object using things like
+        <code>@app.get()</code>. This works brilliantly for small projects. But what happens when our startup grows?
+    </p>
+
+    <p>Imagine we have 20 endpoints for managing users, 30 for handling products, and 15 for processing payments. If we
+        write 65 endpoints in a single <code>main.py</code> file, it becomes a massive, unreadable nightmare of
+        thousands of lines of code.</p>
+
+    <p>Think of our API like a massive company. The CEO (our <code>main.py</code> file) cannot personally handle every
+        single task in the entire company. Instead, the CEO delegates work to different departments: HR, Sales, and
+        Accounting. Each department manages its own specialized tasks.</p>
+
+    <p>In FastAPI, these "departments" are called <strong>APIRouters</strong>.</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> APIRouter is a "mini FastAPI application." It allows us to split our codebase
+        into multiple files, build routes separately, and plug them all into our main app at the very end.
+    </div>
+
+    <h3>Creating Our First APIRouter</h3>
+    <p>Let's create a brand new file called <code>users.py</code> to handle all of our user logic. Instead of importing
+        <code>FastAPI</code>, we import <code>APIRouter</code>.
+    </p>
+
+    <pre>
+# users.py
+from fastapi import APIRouter
+
+# This is our mini-app for the "Users" department
+router = APIRouter()
+
+@router.get("/users/")
+async def read_users():
+    return [{"username": "johndoe"}, {"username": "alice"}]
+
+@router.get("/users/{username}")
+async def read_user(username: str):
+    return {"username": username}
+  </pre>
+
+    <p><strong>Line 5:</strong> We instantiate the <code>APIRouter()</code>. From this point on, we use
+        <code>@router</code> instead of <code>@app</code> to build our paths.
+    </p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 57</span>
+    </div>
+</div>
+
+<!-- Chapter 22 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 22 - APIRouter (Splitting Your App)</div>
+
+    <h3>Prefix, Tags, and Responses</h3>
+    <p>If we look closely at our <code>users.py</code> file, we notice something repetitive. Every single route starts
+        with <code>/users/</code>. Furthermore, if we want these routes to be grouped beautifully under a "Users"
+        heading in our Swagger documentation, we would have to add <code>tags=["Users"]</code> to every single
+        <code>@router.get()</code> definition.
+    </p>
+
+    <p>APIRouter lets us define these common elements one single time when we create the router!</p>
+
+    <pre>
+# users.py
+from fastapi import APIRouter, HTTPException
+
+router = APIRouter(
+    prefix="/users",
+    tags=["Users"],
+    dependencies=[Depends(verify_token)],
+    responses={404: {"description": "User not found"}},
+)
+
+@router.get("/")
+async def read_users():
+    return [{"username": "johndoe"}]
+
+@router.get("/{username}")
+async def read_user(username: str):
+    return {"username": username}
+  </pre>
+
+    <p><strong>Lines 4-9:</strong> We configured the entire department at once!</p>
+    <ul>
+        <li>The <code>prefix="/users"</code> means our route on Line 11 (<code>@router.get("/")</code>) magically
+            becomes <code>/users/</code>. The route on Line 15 becomes <code>/users/{username}</code>. (Note: The prefix
+            cannot end in a slash).</li>
+        <li>The <code>tags=["Users"]</code> cleanly groups all of these routes in our Swagger docs.</li>
+        <li>The <code>responses</code> dictionary ensures every route automatically inherits that 404 documentation.
+        </li>
+    </ul>
+
+    <h3>Router-Level vs Route-Level Dependencies</h3>
+    <p>The most powerful feature of the APIRouter is the <code>dependencies</code> list on Line 7. Imagine we want every
+        single route in the Users department to require a valid security token.</p>
+
+    <p>Instead of manually typing <code>Depends(verify_token)</code> on 20 different endpoints (route-level
+        dependencies), we inject it once into the <code>APIRouter</code> itself (router-level dependency). FastAPI will
+        aggressively enforce that dependency on every single path inside that router!</p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 58</span>
+    </div>
+</div>
+
+<!-- Chapter 22 Page 3 -->
+<div class="page">
+    <div class="header">CHAPTER 22 - APIRouter (Splitting Your App)</div>
+
+    <h3>Including a Router in the Main App</h3>
+    <p>Right now, our <code>users.py</code> router is completely disconnected. We have built the HR department, but the
+        CEO doesn't know it exists. We must plug the router into our <code>main.py</code> application.</p>
+
+    <pre>
+# main.py
+from fastapi import FastAPI
+import users
+import products # Imagine we also built a products.py!
+
+app = FastAPI()
+
+# Plug the "departments" into the main company
+app.include_router(users.router)
+app.include_router(products.router)
+
+@app.get("/")
+async def root():
+    return {"message": "Welcome to our massive API!"}
+  </pre>
+
+    <p><strong>Lines 9-10:</strong> The <code>app.include_router()</code> method is the glue. It sweeps through the
+        imported <code>users.py</code> file, gathers up all the routes attached to <code>users.router</code>, prepends
+        any prefixes, and bolts them permanently onto our main FastAPI application.</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> We use <code>main.py</code> exclusively to configure the master
+        <code>app</code> and plug in all our <code>include_router</code> statements. We write the actual logic in
+        separate files using <code>APIRouter()</code>.
+    </div>
+
+    <h3>Nesting Routers</h3>
+    <p>In massive, enterprise-grade applications, we can even plug routers into other routers! We could have an
+        <code>admin_router</code>, and we could <code>include_router(users.router)</code> directly into the
+        <code>admin_router</code> (which might add another prefix like <code>/admin/users</code>). This allows for
+        incredibly modular, highly organized codebases.
+    </p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 59</span>
+    </div>
+</div>

@@ -1,0 +1,232 @@
+<!-- Chapter 6 Page 1 -->
+<div class="page" id="chapter-6">
+    <div class="header">CHAPTER 6 - Request Bodies</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 6 - Request Bodies</h2>
+
+    <h3>What is a Request Body?</h3>
+    <p>Until now, we have only sent tiny pieces of data to our API through the URL (like an ID or a search keyword). But
+        what happens when we need to send a massive amount of data? Imagine filling out a long registration form with
+        our name, password, address, and a profile picture.</p>
+
+    <p>We cannot fit all of that into a URL. Instead, we bundle all that data into a secure package and send it behind
+        the scenes. This hidden package of data is called the <strong>Request Body</strong>.</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> A Request Body is a block of data sent from the browser to the API. We use it
+        when we have too much data to fit in a URL, or when the data is sensitive (like passwords).
+    </div>
+
+    <div class="usage-box">
+        <strong>Use this when:</strong> We are creating new database records (POST) or updating existing ones
+        (PUT/PATCH).<br><br>
+        <strong>Don't use this when:</strong> We are just making a simple GET request to fetch data. GET requests should
+        almost never have a body!
+    </div>
+
+    <h3>Our First Pydantic Model</h3>
+    <p>To accept a request body in FastAPI, we need to tell it exactly what data to expect. We do this by creating a
+        blueprint using a tool called Pydantic.</p>
+
+    <p>Think of a Pydantic model like a strict digital form. It lists all the required fields, and the type of data
+        (text, numbers) each field accepts.</p>
+
+    <pre>
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+class Item(BaseModel):
+    name: str
+    description: str = None
+    price: float
+    tax: float = None
+
+app = FastAPI()
+  </pre>
+
+    <p>Let's break this down:</p>
+    <p><strong>Line 2:</strong> We import <code>BaseModel</code> from Pydantic. This gives us the superpowers needed to
+        create our blueprint.</p>
+    <p><strong>Line 4:</strong> We create our blueprint by defining a Python class that inherits from
+        <code>BaseModel</code>.
+    </p>
+    <p><strong>Lines 5-8:</strong> We define our fields. Notice how <code>name</code> and <code>price</code> don't have
+        default values? That means they are strictly <strong>required</strong>. But <code>description</code> and
+        <code>tax</code> equal <code>None</code>, making them completely <strong>optional</strong>.
+    </p>
+
+    <h3>Using the Model as a Body Parameter</h3>
+    <p>Now that we have our strict blueprint, all we have to do is drop it into our path operation function.</p>
+
+    <pre>
+@app.post("/items/")
+def create_item(item: Item):
+    return item
+  </pre>
+
+    <p><strong>Line 1:</strong> We use <code>@app.post</code> because we are receiving data to create something new.</p>
+    <p><strong>Line 2:</strong> We add <code>item</code> to our function, and declare its type as <code>Item</code> (the
+        Pydantic class we just built). </p>
+    <p>Because <code>Item</code> is a Pydantic model, FastAPI instantly knows this data must come from the Request Body,
+        not the URL!</p>
+
+    <div class="mistake-box">
+        <strong>⚠️ Common Mistake:</strong> Forgetting to use <code>POST</code>. If we try to send a body using
+        <code>@app.get</code>, many browsers and servers will block the request entirely.
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 16</span>
+    </div>
+</div>
+
+<!-- Chapter 6 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 6 - Request Bodies</div>
+
+    <h3>Accessing Individual Fields</h3>
+    <p>When the request body arrives successfully, FastAPI hands us a fully-formed Python object. We don't have to parse
+        messy JSON or dictionaries manually. We can just use standard Python "dot" notation to access the inner fields.
+    </p>
+
+    <pre>
+@app.post("/items/")
+def create_item(item: Item):
+    item_dict = item.model_dump()
+    if item.tax:
+        price_with_tax = item.price + item.tax
+        item_dict.update({"price_with_tax": price_with_tax})
+    return item_dict
+  </pre>
+
+    <p><strong>Line 3:</strong> We use <code>item.model_dump()</code> (in older FastAPI versions this was
+        <code>.dict()</code>) to convert our strict object back into a standard Python dictionary.
+    </p>
+    <p><strong>Line 4 & 5:</strong> We easily access the inner fields just by typing <code>item.tax</code> and
+        <code>item.price</code>.
+    </p>
+
+    <h3>Path + Query + Body: The Ultimate Combo</h3>
+    <p>FastAPI is smart enough to handle all three types of inputs simultaneously. We just drop them all into our
+        function, and FastAPI automatically sorts them out based on our type hints.</p>
+
+    <pre>
+@app.put("/items/{item_id}")
+def update_item(item_id: int, item: Item, q: str = None):
+    result = {"item_id": item_id, **item.model_dump()}
+    if q:
+        result.update({"q": q})
+    return result
+  </pre>
+
+    <p>Look at how brilliantly FastAPI routes this:</p>
+    <ul>
+        <li><code>item_id</code> is an integer, and it matches the <code>{item_id}</code> in the path. FastAPI grabs it
+            from the URL path.</li>
+        <li><code>item</code> is a Pydantic model. FastApi grabs it from the secure Request Body.</li>
+        <li><code>q</code> is a string, and it is NOT in the path. FastAPI grabs it from the Query Parameters (the
+            <code>?q=</code> part of the URL).
+        </li>
+    </ul>
+
+    <h3>Extra Validation with Field()</h3>
+    <p>Just like we used <code>Path()</code> and <code>Query()</code> previously, we can use <code>Field()</code> to add
+        strict mathematical or length validation directly inside our Pydantic models.</p>
+
+    <pre>
+from pydantic import BaseModel, Field
+
+class Item(BaseModel):
+    name: str
+    description: str = Field(
+        default=None, title="The description", max_length=300
+    )
+    price: float = Field(gt=0, description="The price must be greater than zero")
+  </pre>
+
+    <p><strong>Lines 5-8:</strong> We import <code>Field</code> from Pydantic. We then use it to ensure the
+        <code>description</code> cannot exceed 300 characters, and the <code>price</code> is strictly greater than zero.
+    </p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 17</span>
+    </div>
+</div>
+
+<!-- Chapter 6 Page 3 -->
+<div class="page">
+    <div class="header">CHAPTER 6 - Request Bodies</div>
+
+    <h3>Body with Multiple Models</h3>
+    <p>What if a user is checking out of our shopping cart, and they need to send us their <code>Item</code> details AND
+        their <code>User</code> details at the exact same time?</p>
+
+    <p>We do not have to merge everything into one giant model. We can just add both models to our function.</p>
+
+    <pre>
+class User(BaseModel):
+    username: str
+    full_name: str = None
+
+@app.put("/items/{item_id}")
+def update_item(item_id: int, item: Item, user: User):
+    return {"item_id": item_id, "item": item, "user": user}
+  </pre>
+
+    <p><strong>Line 6:</strong> By adding both <code>item: Item</code> and <code>user: User</code>, FastAPI expects the
+        JSON request body to contain two distinct sections: one labeled "item" and one labeled "user". It manages this
+        complexity automatically.</p>
+
+    <h3>Singular Values in Body using Body()</h3>
+    <p>Sometimes, we want to receive a single, simple value in the request body (like an "importance" score), but it
+        feels silly to create an entire Pydantic <code>BaseModel</code> class just for one single integer.</p>
+
+    <p>If we just add <code>importance: int</code> to our function, FastAPI will think it is a Query Parameter. To force
+        FastAPI to look inside the body for this single value, we use the <code>Body()</code> tool.</p>
+
+    <pre>
+from fastapi import Body
+
+@app.put("/items/{item_id}")
+def update_item(
+    item_id: int, item: Item, user: User, importance: int = Body()
+):
+    return {"item_id": item_id, "item": item, "user": user, "importance": importance}
+  </pre>
+
+    <p><strong>Line 5:</strong> By setting <code>importance = Body()</code>, FastAPI knows to dig into the JSON request
+        body to find this integer, rather than looking at the URL.</p>
+
+    <h3>Embedding a Single Body Parameter</h3>
+    <p>When we only have one Pydantic model (like <code>Item</code>), FastAPI expects the JSON body to look like a flat
+        dictionary consisting of the item's details. It expects <code>{"name": "Foo", "price": 45.2}</code>.</p>
+
+    <p>But sometimes we want the JSON to explicitly name the model, like this:
+        <code>{"item": {"name": "Foo", "price": 45.2}}</code>.
+    </p>
+
+    <p>We can force FastAPI to wrap the data in this named outer shell by using <code>Body(embed=True)</code>.</p>
+
+    <pre>
+@app.put("/items/{item_id}")
+def update_item(item_id: int, item: Item = Body(embed=True)):
+    return {"item_id": item_id, "item": item}
+  </pre>
+
+    <p><strong>Line 2:</strong> By passing <code>embed=True</code>, FastAPI demands that the JSON body must have an
+        outer key named "item". This is extremely useful if we plan to add more models to this route in the future and
+        want to keep our JSON structure consistent.</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> The Request Body is where the heavy lifting happens. With Pydantic, we create
+        strict blueprints that automatically read, catch typing errors, and structure giant blocks of data inside our
+        Python functions securely.
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 18</span>
+    </div>
+</div>

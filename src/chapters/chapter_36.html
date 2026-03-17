@@ -1,0 +1,183 @@
+<!-- Chapter 36 Page 1 -->
+<div class="page" id="chapter-36">
+    <div class="header">CHAPTER 36 - HTTP Status Codes Reference</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 36 - HTTP Status Codes Reference</h2>
+
+    <h3>The Language of the Internet</h3>
+    <p>Whenever a client (a web browser, a mobile app, or another server) sends an HTTP Request to our API, we must
+        reply with an HTTP Response. The single most important part of that response is the <strong>Status
+            Code</strong>. This is a 3-digit number that instantly tells the client exactly how their request went.</p>
+
+    <p>In FastAPI, we should <strong>never</strong> hardcode raw numbers (like <code>200</code> or <code>404</code>)
+        into our code. Instead, we import the <code>status</code> module. It provides perfectly auto-completed,
+        human-readable constants that make our code infinitely more professional.</p>
+
+    <pre>
+from fastapi import FastAPI, status, HTTPException
+
+app = FastAPI()
+
+# Good: Clear, obvious, and auto-completed!
+@app.post("/items/", status_code=status.HTTP_201_CREATED)
+def create_item():
+    pass
+
+# Bad: What does 418 even mean?
+@app.get("/teapot")
+def make_tea():
+    raise HTTPException(status_code=418, detail="I'm a teapot")
+  </pre>
+
+    <h3>Status Code Categories</h3>
+    <p>Status codes are universally grouped into 5 specific categories based on their starting number. As reliable
+        senior developers, we absolutely must use the mathematically correct category every time.</p>
+
+    <ul>
+        <li><strong>1xx (Informational):</strong> "Hold on, I'm still thinking." We almost never use these directly in
+            building REST APIs.</li>
+        <li><strong>2xx (Success):</strong> "Everything went perfectly!" Our users love seeing these.</li>
+        <li><strong>3xx (Redirection):</strong> "Go look over there instead." Used to bounce traffic to new URLs.</li>
+        <li><strong>4xx (Client Error):</strong> "You messed up." The user forgot a password, typed a bad URL, or sent
+            invalid JSON. The fault is entirely on them.</li>
+        <li><strong>5xx (Server Error):</strong> "We messed up." Our database crashed, our Python code threw a raw
+            Exception, or our server caught on fire. It is our fault.</li>
+    </ul>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 97</span>
+    </div>
+</div>
+
+<!-- Chapter 36 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 36 - HTTP Status Codes Reference</div>
+
+    <h3>The Most Common 2xx Success Codes</h3>
+
+    <table style="width: 100%; text-align: left; border-collapse: collapse; margin-bottom: 20px;">
+        <tr style="border-bottom: 2px solid #009688;">
+            <th style="padding: 8px;">FastAPI Constant</th>
+            <th style="padding: 8px;">When to Use It</th>
+        </tr>
+        <tr style="border-bottom: 1px solid #ccc;">
+            <td style="padding: 8px;"><code>status.HTTP_200_OK</code></td>
+            <td style="padding: 8px;">The absolute standard. Use this for almost every single successful
+                <code>GET</code>, <code>PUT</code>, or <code>DELETE</code> request. It literally means "Yes, it worked."
+            </td>
+        </tr>
+        <tr style="border-bottom: 1px solid #ccc;">
+            <td style="padding: 8px;"><code>status.HTTP_201_CREATED</code></td>
+            <td style="padding: 8px;">Use this <em>exclusively</em> for <code>POST</code> requests when a brand new
+                resource (like a new User account) was successfully permanently saved in our database.</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #ccc;">
+            <td style="padding: 8px;"><code>status.HTTP_202_ACCEPTED</code></td>
+            <td style="padding: 8px;">A rare gem. Use this when a user uploads a massive 4GB video, and our API says:
+                "We received it and queued it up for background processing, but it's not actually done yet."</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px;"><code>status.HTTP_204_NO_CONTENT</code></td>
+            <td style="padding: 8px;">Use this often for <code>DELETE</code> or <code>PUT</code> requests when the
+                action succeeded, but we literally have zero JSON data to return in the body of the response.</td>
+        </tr>
+    </table>
+
+    <h3>The Most Common 3xx Redirection Codes</h3>
+
+    <table style="width: 100%; text-align: left; border-collapse: collapse; margin-bottom: 20px;">
+        <tr style="border-bottom: 2px solid #009688;">
+            <th style="padding: 8px;">FastAPI Constant</th>
+            <th style="padding: 8px;">When to Use It</th>
+        </tr>
+        <tr style="border-bottom: 1px solid #ccc;">
+            <td style="padding: 8px;"><code>status.HTTP_301_MOVED_PERMANENTLY</code></td>
+            <td style="padding: 8px;">Use this when an old route is dead forever. If a browser hits it, Google's SEO
+                bots update their massive web index to point to the new URL permanently.</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px;"><code>status.HTTP_307_TEMPORARY_REDIRECT</code></td>
+            <td style="padding: 8px;">The absolute safest, standard way to temporarily bounce a user to a dashboard
+                after logging in, without telling Google SEO bots to permanently rewrite their indexes.</td>
+        </tr>
+    </table>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 98</span>
+    </div>
+</div>
+
+<!-- Chapter 36 Page 3 -->
+<div class="page">
+    <div class="header">CHAPTER 36 - HTTP Status Codes Reference</div>
+
+    <h3>The Most Common 4xx Client Error Codes</h3>
+
+    <table style="width: 100%; text-align: left; border-collapse: collapse; margin-bottom: 20px;">
+        <tr style="border-bottom: 2px solid #009688;">
+            <th style="padding: 8px;">FastAPI Constant</th>
+            <th style="padding: 8px;">When to Use It</th>
+        </tr>
+        <tr style="border-bottom: 1px solid #ccc;">
+            <td style="padding: 8px;"><code>status.HTTP_400_BAD_REQUEST</code></td>
+            <td style="padding: 8px;">The standard "Catch-All" client error. Use this when the user's JSON was formatted
+                correctly, but their business logic was awful (e.g., trying to buy a product that is out of stock).</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #ccc;">
+            <td style="padding: 8px;"><code>status.HTTP_401_UNAUTHORIZED</code></td>
+            <td style="padding: 8px;">A terrible name for a vital code. This actually means
+                <strong>Unauthenticated</strong>. Use this exclusively when the user provides the wrong password, or
+                their JWT token is completely missing or expired.
+            </td>
+        </tr>
+        <tr style="border-bottom: 1px solid #ccc;">
+            <td style="padding: 8px;"><code>status.HTTP_403_FORBIDDEN</code></td>
+            <td style="padding: 8px;">Use this when the user is perfectly authenticated (we know exactly who they are),
+                but they are a basic user trying to access a restricted <strong>Admin-Only</strong> page. They lack
+                authorization.</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #ccc;">
+            <td style="padding: 8px;"><code>status.HTTP_404_NOT_FOUND</code></td>
+            <td style="padding: 8px;">Use this when they query <code>/users/999</code> but User #999 does not exist in
+                our Postgres database.</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #ccc;">
+            <td style="padding: 8px;"><code>status.HTTP_409_CONFLICT</code></td>
+            <td style="padding: 8px;">Use this when a user attempts an action that violates database state, like trying
+                to register a new account with an email address that is already globally taken.</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px;"><code>status.HTTP_422_UNPROCESSABLE_ENTITY</code></td>
+            <td style="padding: 8px;">FastAPI returns this completely automatically! If a user sends a string
+                <code>"apple"</code> into an integer field, Pydantic throws a 422 immediately. We rarely raise this
+                manually.
+            </td>
+        </tr>
+    </table>
+
+    <h3>The Most Common 5xx Server Error Codes</h3>
+    <table style="width: 100%; text-align: left; border-collapse: collapse;">
+        <tr style="border-bottom: 2px solid #009688;">
+            <th style="padding: 8px;">FastAPI Constant</th>
+            <th style="padding: 8px;">When to Use It</th>
+        </tr>
+        <tr style="border-bottom: 1px solid #ccc;">
+            <td style="padding: 8px;"><code>status.HTTP_500_INTERNAL_SERVER_ERROR</code></td>
+            <td style="padding: 8px;">The ultimate nightmare. FastAPI throws this automatically if our raw Python code
+                crashes (e.g., trying to divide by zero). It fundamentally means our code is broken.</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px;"><code>status.HTTP_503_SERVICE_UNAVAILABLE</code></td>
+            <td style="padding: 8px;">Use this to gracefully tell our users that our database is temporarily rebooting,
+                or an external 3rd-party API we rely on is completely down. "We are okay, but our tools are broken."
+            </td>
+        </tr>
+    </table>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 99</span>
+    </div>
+</div>

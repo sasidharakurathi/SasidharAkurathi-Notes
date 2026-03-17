@@ -1,0 +1,227 @@
+<!-- Chapter 28 Page 1 -->
+<div class="page" id="chapter-28">
+    <div class="header">CHAPTER 28 - WebSockets</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 28 - WebSockets</h2>
+
+    <h3>The Phone Call Analogy</h3>
+    <p>Until now, every single interaction in our API has used standard HTTP. HTTP is exactly like sending a postcard
+        via the post office. The client writes a message (a Request), drops it in the mail, and waits. Our server
+        receives it, writes a response (a Response), and mails it back. HTTP is entirely one-directional at a time, and
+        every single request has to start a completely new, blank conversation.</p>
+
+    <p>What if we want to build a live chat room? Or a live stock market ticker that updates 50 times a second? Mailing
+        50 postcards a second to the server asking "Is there new data yet?" would instantly crash our database.</p>
+
+    <p>This is where <strong>WebSockets</strong> come in. A WebSocket is like picking up a phone and calling the server.
+        Once the server answers, the line stays permanently open. The browser can scream numbers into the phone, and the
+        server can scream data back at the exact same time, infinitely, until someone finally hangs up.</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> WebSockets are dedicated, two-way, open channels where data can instantly
+        stream back and forth without having to reconnect for every single message.
+    </div>
+
+    <h3>Our First WebSocket Endpoint</h3>
+    <p>FastAPI natively speaks WebSockets using the exact same beautiful syntax we already know. We just swap
+        <code>@app.get</code> for <code>@app.websocket</code>!
+    </p>
+
+    <pre>
+from fastapi import FastAPI, WebSocket
+
+app = FastAPI()
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    # 1. Answer the phone
+    await websocket.accept()
+    
+    # 2. Stay on the line forever
+    while True:
+        # A. Wait for the browser to say something
+        data = await websocket.receive_text()
+        
+        # B. Shout something back
+        await websocket.send_text(f"Message text was: {data}")
+  </pre>
+
+    <p><strong>Line 8:</strong> <code>await websocket.accept()</code> is absolutely mandatory. This tells the browser,
+        "Yes, we agree to upgrade this from a normal HTTP request to a permanent WebSocket connection."</p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 73</span>
+    </div>
+</div>
+
+<!-- Chapter 28 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 28 - WebSockets</div>
+
+    <h3>Path and Query Parameters</h3>
+    <p>Because WebSockets are technically built directly on top of FastAPI's core routing logic, we can still use all of
+        our favorite tricks!</p>
+
+    <p>If we want to create a dedicated chat room path, or ask a user to provide a token in the query string, it looks
+        identical to an HTTP route:</p>
+
+    <pre>
+from fastapi import WebSocket, Query
+
+@app.websocket("/chat/{room_id}")
+async def chat_room(
+    websocket: WebSocket, 
+    room_id: str, 
+    token: str = Query(None)
+):
+    await websocket.accept()
+    await websocket.send_text(f"Welcome to room {room_id}!")
+    
+    if token != "supersecret":
+        await websocket.send_text("Intruder alert!")
+        await websocket.close()
+  </pre>
+
+    <h3>Handling Disconnects Gracefully</h3>
+    <p>In our first basic example, we used an infinite <code>while True:</code> loop to keep the phone line open
+        forever.</p>
+
+    <p>But what if the user closes their browser tab? The phone line is instantly severed. Our Python code will try to
+        run <code>await websocket.receive_text()</code>, but because the line is dead, Starlette will throw a violent
+        <code>WebSocketDisconnect</code> error and our server will crash loudly.
+    </p>
+
+    <p>We must gracefully catch these hangups:</p>
+
+    <pre>
+from fastapi import WebSocket, WebSocketDisconnect
+
+@app.websocket("/safe-ws")
+async def safe_websocket(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            data = await websocket.receive_text()
+            await websocket.send_text(f"Echo: {data}")
+    except WebSocketDisconnect:
+        # The user closed their browser or lost internet!
+        print("A client disconnected quietly.")
+  </pre>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 74</span>
+    </div>
+</div>
+
+<!-- Chapter 28 Page 3 -->
+<div class="page">
+    <div class="header">CHAPTER 28 - WebSockets</div>
+
+    <h3>Building a Connection Manager</h3>
+    <p>So far, our server is only talking to one person at a time in isolation. If we want to build a real chat room,
+        our server needs to receive a message from Alice, and then instantly forward a copy of that message to Bob,
+        Charlie, and Dave.</p>
+
+    <p>To do this, we literally just create a giant Python list of all the open phone connections! We call this a
+        <code>ConnectionManager</code>.
+    </p>
+
+    <pre>
+from typing import List
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+
+app = FastAPI()
+
+class ConnectionManager:
+    def __init__(self):
+        # The master list of all active phone lines
+        self.active_connections: List[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: str):
+        # Loop through every open line and shout the message
+        for connection in self.active_connections:
+            await connection.send_text(message)
+
+# Global memory storage
+manager = ConnectionManager()
+  </pre>
+
+    <p>Let's look at how beautifully simple this is!</p>
+    <ul>
+        <li>When a user connects, we append their specific <code>WebSocket</code> object to our
+            <code>active_connections</code> list.
+        </li>
+        <li>When they disconnect normally, we simply remove their object from our list so we stop trying to talk to
+            them.</li>
+        <li>When we want to <code>broadcast()</code> a chat message, our server iterates through the entire list and
+            sends the string down every single active phone line simultaneously.</li>
+    </ul>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 75</span>
+    </div>
+</div>
+
+<!-- Chapter 28 Page 4 -->
+<div class="page">
+    <div class="header">CHAPTER 28 - WebSockets</div>
+
+    <h3>The Full Chat Room Example</h3>
+    <p>Now we seamlessly merge our <code>ConnectionManager</code> with our route and our
+        <code>WebSocketDisconnect</code> handler.
+    </p>
+
+    <pre>
+@app.websocket("/ws/{client_id}")
+async def websocket_endpoint(websocket: WebSocket, client_id: int):
+    # 1. Alice connects. We accept and add her to the master list.
+    await manager.connect(websocket)
+    
+    # 2. Tell everyone else in the room that Alice arrived!
+    await manager.broadcast(f"Client #{client_id} joined the chat")
+    
+    try:
+        while True:
+            # 3. Wait for Alice to send a message
+            data = await websocket.receive_text()
+            
+            # 4. Broadcast Alice's message to everyone else (including herself)
+            await manager.broadcast(f"Client #{client_id} says: {data}")
+            
+    except WebSocketDisconnect:
+        # 5. Alice closed her browser. 
+        manager.disconnect(websocket)
+        await manager.broadcast(f"Client #{client_id} left the chat")
+  </pre>
+
+    <div class="usage-box">
+        <strong>Scaling Warning:</strong>
+        This connection manager is absolutely perfect for a small startup running on a single server.<br><br>
+        However, if our application grows so massive that we have to run our FastAPI code on 5 different servers
+        simultaneously, Server #1 will not know about the connections stored in the memory of Server #2! To build a
+        globally spanning chat room, we would eventually need to graduate to a tool like <strong>Redis Pub/Sub</strong>
+        to sync messages globally across all our servers.
+    </div>
+
+    <h3>Testing WebSockets</h3>
+    <p>The standard Swagger UI (the beautiful <code>/docs</code> page we use constantly) does <em>not</em> natively
+        support WebSockets.</p>
+    <p>To safely test WebSockets during development, we should either write our own bare-minimum HTML/JavaScript
+        frontend, or use incredible desktop tools like <strong>Postman</strong> or <strong>Insomnia</strong>, which both
+        have dedicated, native WebSocket testing interfaces.</p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 76</span>
+    </div>
+</div>

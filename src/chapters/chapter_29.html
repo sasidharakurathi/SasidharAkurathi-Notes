@@ -1,0 +1,160 @@
+<!-- Chapter 29 Page 1 -->
+<div class="page" id="chapter-29">
+    <div class="header">CHAPTER 29 - Async & Concurrency Deep Dive</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 29 - Async & Concurrency Deep Dive</h2>
+
+    <h3>async def vs def: The Real Difference</h3>
+    <p>In almost every framework before FastAPI (like early Django and Flask), if a user requested data from the
+        database, the entire server stopped to wait for the database to reply. If 100 users asked at once, the server
+        serviced them one by one, like a single incredibly stressed cashier at a grocery store.</p>
+
+    <p>FastAPI defaults to <strong>Asynchronous Concurrency</strong>. This is like a single cashier who is incredibly
+        smart: while they are waiting for User A's credit card to process, they don't just stand there staring at the
+        screen. They instantly pivot to scan User B's items, and then maybe bag User C's items. When User A's receipt
+        finally prints, they pivot back to hand it to them.</p>
+
+    <p>By writing <code>async def</code>, we are telling FastAPI: "This function contains code that can be paused (using
+        the <code>await</code> keyword). Feel free to go help other users while I'm stuck waiting."</p>
+
+    <h3>I/O Bound vs CPU Bound</h3>
+    <p>To master FastAPI, we must memorize the difference between two types of work.</p>
+
+    <h4>I/O Bound Work (Input/Output)</h4>
+    <p>This is work that requires our computer to <strong>wait</strong> for an external system. Connecting to a
+        database, making an HTTP request to another API, reading a file from the hard drive, and sending an email are
+        all I/O Bound.</p>
+    <p><strong>Rule:</strong> Always use <code>async def</code> for I/O Bound work.</p>
+
+    <h4>CPU Bound Work</h4>
+    <p>This is work that requires our computer's processor to sweat. Resizing a 4GB video frame-by-frame, training an AI
+        machine learning model, or calculating a million prime numbers are all CPU Bound.</p>
+    <p><strong>Rule:</strong> Always use normal <code>def</code> for CPU Bound work.</p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 77</span>
+    </div>
+</div>
+
+<!-- Chapter 29 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 29 - Async & Concurrency Deep Dive</div>
+
+    <h3>The Thread Pool Magic</h3>
+    <p>If <code>async def</code> is so fast, why would we ever use normal <code>def</code>?</p>
+
+    <p>Remember the smart cashier handling 3 customers at once? If one customer drops a massive bag of 1,000 pennies and
+        demands the cashier count them individually (CPU Bound work), the cashier is completely paralyzed. No other
+        customers can be served until all 1,000 pennies are counted.</p>
+
+    <p>This is called <strong>Blocking the Event Loop</strong>. It is the deadliest mistake in FastAPI. If we put heavy
+        CPU work inside an <code>async def</code>, the entire server crashes to a halt for everyone else.</p>
+
+    <p>But FastAPI is brilliant. If we write a normal <code>def</code> instead of <code>async def</code>, FastAPI
+        detects it and automatically pushes that function out to an external <strong>Thread Pool</strong>. It basically
+        hires a temporary, separate cashier just to count those pennies, while the main <code>async</code> cashier
+        continues serving the rest of the line seamlessly!</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> Write <code>async def</code> when waiting. Write <code>def</code> when
+        calculating. FastAPI handles the rest.
+    </div>
+
+    <h3>Parallel execution with asyncio.gather</h3>
+    <p>What if we need to fetch data from three separate databases to build a user's dashboard? We definitely do not
+        want to wait for them one at a time!</p>
+
+    <pre>
+import asyncio
+from fastapi import FastAPI
+
+app = FastAPI()
+
+async def get_orders():
+    await asyncio.sleep(2) # Fake 2-second DB call
+    return ["Guitar", "Keyboard"]
+
+async def get_profile():
+    await asyncio.sleep(2) # Fake 2-second DB call
+    return {"name": "Alice"}
+
+@app.get("/dashboard")
+async def get_dashboard():
+    # Run them simultaneously!
+    orders, profile = await asyncio.gather(get_orders(), get_profile())
+    
+    # This route takes 2 seconds total, not 4 seconds!
+    return {"orders": orders, "profile": profile}
+  </pre>
+
+    <p><strong>Line 17:</strong> <code>asyncio.gather()</code> fires off both functions at the exact same millisecond.
+        The server finishes the entire route in 2 seconds flat.</p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 78</span>
+    </div>
+</div>
+
+<!-- Chapter 29 Page 3 -->
+<div class="page">
+    <div class="header">CHAPTER 29 - Async & Concurrency Deep Dive</div>
+
+    <h3>Using run_in_executor</h3>
+    <p>Let's say we have an <code>async def</code> route, but deep inside it we are forced to use an old, synchronous
+        library (like an archaic database driver) that does not support <code>await</code>. If we just call the legacy
+        library, it will block the event loop!</p>
+
+    <p>We can manually force that specific blocking code into the external thread pool using
+        <code>run_in_executor</code>.
+    </p>
+
+    <pre>
+import time
+import asyncio
+from fastapi import FastAPI
+
+app = FastAPI()
+
+def archaic_blocking_function():
+    time.sleep(3) # A terribly slow, non-async function
+    return "Finally done!"
+
+@app.get("/hybrid")
+async def smooth_route():
+    loop = asyncio.get_running_loop()
+    
+    # Force the terrible function onto a separate thread
+    result = await loop.run_in_executor(None, archaic_blocking_function)
+    
+    return {"status": result}
+  </pre>
+
+    <p><strong>Line 16:</strong> By passing our old function into the executor, the main FastAPI event loop stays
+        perfectly responsive to other users for the entire 3 seconds.</p>
+
+    <h3>The "Don't Mix" Rule</h3>
+    <p>As a senior developer, here is the golden rule we must always follow:</p>
+
+    <div class="mistake-box">
+        <strong>⚠️ Never Mix Sync and Async!</strong><br>
+        If we write an <code>async def</code> route, <strong>every single library</strong> we call inside it that deals
+        with I/O (like HTTP calls or database queries) MUST natively support the <code>await</code> keyword.<br><br>
+        If we stick an old-school <code>requests.get()</code> or a synchronous SQLAlchemy query inside an
+        <code>async def</code> route, our entire server will seize up entirely.
+    </div>
+
+    <p>If we absolutely must use a synchronous library (like the standard <code>requests</code> package or Sync
+        SQLAlchemy), we must write our route as a normal <code>def</code>. FastAPI will recognize it and safely put it
+        in the thread pool.</p>
+
+    <p>If we want to be blazing fast with <code>async def</code>, we must upgrade our tools (e.g., using
+        <code>httpx</code> instead of <code>requests</code>, and using <code>AsyncSession</code> in SQLAlchemy).
+    </p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 79</span>
+    </div>
+</div>

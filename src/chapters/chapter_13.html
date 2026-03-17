@@ -1,0 +1,121 @@
+<!-- Chapter 13 Page 1 -->
+<div class="page" id="chapter-13">
+    <div class="header">CHAPTER 13 - Form Data</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 13 - Form Data</h2>
+
+    <h3>HTML Forms vs. JSON Bodies</h3>
+    <p>Until now, whenever we wanted to send a large chunk of data to the server (like a user profile), we sent it as a
+        JSON payload. JSON is fantastic when our frontend is a modern React or Vue application.</p>
+
+    <p>But what if our frontend is a simple, old-school HTML webpage using standard <code>&lt;form&gt;</code> tags? When
+        a user clicks "Submit" on a standard HTML form, the browser does not create a neat JSON object. Instead, it
+        packages the data using a completely different, much older format called
+        <code>application/x-www-form-urlencoded</code>.
+    </p>
+
+    <p>If we try to read an HTML form using the Pydantic JSON skills we learned in Chapter 6, FastAPI will crash and
+        reject the request! We must explicitly tell FastAPI: "Stop looking for JSON. Look for Form data instead."</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> JSON and Form Data are two completely different languages. If our frontend
+        speaks "Form", our backend must explicitly use <code>Form()</code> to understand it.
+    </div>
+
+    <h3>Receiving Form Data</h3>
+    <p>To tell FastAPI to expect old-school form fields, we import the <code>Form</code> tool from the main
+        <code>fastapi</code> package.
+    </p>
+
+    <p><em>Note: Before using forms in FastAPI, we must quickly run <code>pip install python-multipart</code> in our
+            terminal, as FastAPI relies on this tiny extra package to parse the strange form language.</em></p>
+
+    <pre>
+from fastapi import FastAPI, Form
+
+app = FastAPI()
+
+@app.post("/login/")
+def login(username: str = Form(), password: str = Form()):
+    return {"username": username}
+  </pre>
+
+    <p><strong>Line 6:</strong> By writing <code>= Form()</code>, we are telling FastAPI that <code>username</code> and
+        <code>password</code> will absolutely not be found in the URL, nor in a JSON body. They will be sent directly by
+        an HTML form.
+    </p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 33</span>
+    </div>
+</div>
+
+<!-- Chapter 13 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 13 - Form Data</div>
+
+    <h3>Form Models with Pydantic</h3>
+    <p>Just like with query parameters and headers, typing out fifty individual form fields would be miserable. We can
+        group our form data into a neat Pydantic model!</p>
+
+    <pre>
+from pydantic import BaseModel
+from fastapi import FastAPI, Form
+
+app = FastAPI()
+
+class LoginForm(BaseModel):
+    username: str
+    password: str
+
+@app.post("/login/")
+def login(form_data: LoginForm = Form()):
+    return form_data
+  </pre>
+
+    <p><strong>Line 11:</strong> We created our Pydantic model normally, but in the route decorator, we use
+        <code>= Form()</code>. FastAPI will magically collect all the scattered HTML form fields and assemble them into
+        a perfectly typed <code>LoginForm</code> object for us.
+    </p>
+
+    <div class="usage-box">
+        <strong>Use this when:</strong> We are building a traditional website where users submit standard HTML
+        forms.<br><br>
+        <strong>Don't use this when:</strong> We are building a modern API designed to communicate with a mobile app or
+        a React frontend. Stick to JSON bodies for modern APIs!
+    </div>
+
+    <h3>The "Either/Or" Rule (Forms vs JSON)</h3>
+    <p>There is one massive trap when working with forms. <strong>We cannot mix an HTML Form and a JSON Body in the
+            exact same request.</strong></p>
+
+    <p>It is physically impossible for the browser to send both formats at the same time. The request is either labeled
+        as <code>application/json</code> OR it is labeled as <code>application/x-www-form-urlencoded</code>. It cannot
+        be both.</p>
+
+    <p>If we write a route like this, FastAPI will scream at us and the code will fail:</p>
+
+    <pre>
+class UserDetails(BaseModel):
+    age: int
+
+@app.post("/update/")
+def update(
+    name: str = Form(),       # This expects Form format
+    details: UserDetails      # This expects JSON format
+):
+    ...
+  </pre>
+
+    <p>If we truly need to send both complex object data and simple form fields at the exact same time, we have to
+        surrender and send absolutely everything as a Form.</p>
+
+    <p>There is one major exception to this rule: File Uploads! File uploads use a special type of "Multipart Form",
+        which we will explore in the very next chapter.</p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 34</span>
+    </div>
+</div>

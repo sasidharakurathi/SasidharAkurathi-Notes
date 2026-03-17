@@ -1,0 +1,196 @@
+<!-- Chapter 5 Page 1 -->
+<div class="page" id="chapter-5">
+    <div class="header">CHAPTER 5 - Query Parameters</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 5 - Query Parameters</h2>
+
+    <h3>What is a Query Parameter?</h3>
+    <p>If path parameters are like the delivery address on a package, query parameters are the extra delivery
+        instructions. <em>"Deliver to 123 Main St... but please leave it at the back door."</em></p>
+
+    <p>We see them every day. Whenever we search for something on Google or filter shoes by size on Amazon, the URL
+        usually gains a question mark <code>?</code> followed by <code>key=value</code> pairs. For example,
+        <code>/shoes?size=10&color=red</code>.
+    </p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> Query parameters are optional extra instructions added to the end of a URL
+        after a question mark to filter, sort, or modify the response.
+    </div>
+
+    <p>FastAPI is incredibly smart about this. If we declare a variable in our Python function, but it does NOT appear
+        in our path decorator, FastAPI automatically assumes it is a query parameter.</p>
+
+    <pre>
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/items/")
+def read_items(skip: int = 0, limit: int = 10):
+    return {"skip": skip, "limit": limit}
+  </pre>
+
+    <p>Let's look at how this works:</p>
+    <p><strong>Line 5:</strong> We define a simple URL path <code>/items/</code>. There are no curly braces here!</p>
+    <p><strong>Line 6:</strong> We add <code>skip</code> and <code>limit</code> to our function. Because they are not in
+        the path (Line 5), FastAPI knows they must be query parameters. We give them default values of 0 and 10.</p>
+    <p><strong>Line 7:</strong> We return the values back to the user.</p>
+
+    <h3>Required vs Optional Parameters</h3>
+    <p>When we provide a default value (like <code>= 0</code>), a query parameter becomes optional. If a user visits
+        <code>/items/</code>, the API will happily use the defaults and return items 0 through 10.
+    </p>
+
+    <p>However, if we do NOT provide a default value, the query parameter becomes strictly <strong>required</strong>.
+    </p>
+
+    <pre>
+@app.get("/items/{item_id}")
+def read_item(item_id: str, search: str):
+    return {"item_id": item_id, "search": search}
+  </pre>
+
+    <p>In this example, <code>search</code> has no default value. If a user visits <code>/items/foo-item</code>, FastAPI
+        will block the request and show a missing parameter error. The user MUST visit
+        <code>/items/foo-item?search=some-keyword</code>.
+    </p>
+
+    <div class="mistake-box">
+        <strong>⚠️ Common Mistake:</strong> Forgetting to add a default value to something meant to be optional. If we
+        want an optional parameter but don't have a good default value to give it, use <code>= None</code>.
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 13</span>
+    </div>
+</div>
+
+<!-- Chapter 5 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 5 - Query Parameters</div>
+
+    <h3>Boolean Magic</h3>
+    <p>Sometimes we just want a simple "yes" or "no" toggle, like <code>?short=true</code>. FastAPI handles Python
+        <code>bool</code> (boolean) types beautifully.
+    </p>
+
+    <pre>
+@app.get("/items/{item_id}")
+def read_item(item_id: str, short: bool = False):
+    if not short:
+        return {"description": "This is an incredibly long description..."}
+    return {"description": "Too long; didn't read."}
+  </pre>
+
+    <p><strong>Line 2:</strong> We declared <code>short</code> as a boolean. Notice how clever FastAPI is: if a user
+        visits the URL with <code>?short=1</code>, or <code>?short=True</code>, or <code>?short=true</code>, or
+        <code>?short=on</code>, or <code>?short=yes</code>... FastAPI automatically understands they all mean "True" and
+        converts them perfectly.
+    </p>
+
+    <h3>Combining Path and Query Parameters</h3>
+    <p>We can mix path and query parameters together in the same function. FastAPI is smart enough to sort them out
+        automatically based on their names.</p>
+
+    <pre>
+@app.get("/users/{user_id}/items/{item_id}")
+def read_user_item(
+    user_id: int, item_id: str, q: str = None, short: bool = False
+):
+    # 'user_id' and 'item_id' are path parameters
+    # 'q' and 'short' are query parameters
+    return {"user": user_id, "item": item_id, "q": q, "short": short}
+  </pre>
+
+    <h3>Advanced Validation with Query()</h3>
+    <p>Just like we used <code>Path()</code> in the last chapter to add extra validation to path parameters, we can use
+        <code>Query()</code> to add extra validation to our query parameters. We import it from the main
+        <code>fastapi</code> package.
+    </p>
+
+    <h4>String Validation</h4>
+    <p>What if a search query is required, but it must be at least 3 characters long, and no more than 50 characters?
+    </p>
+
+    <pre>
+from fastapi import FastAPI, Query
+
+app = FastAPI()
+
+@app.get("/items/")
+def read_items(q: str = Query(default=None, min_length=3, max_length=50)):
+    return {"q": q}
+  </pre>
+
+    <p><strong>Line 6:</strong> Instead of writing <code>q: str = None</code>, we use <code>Query()</code> to set the
+        default value, and then securely chain our length limits to it.</p>
+    <p>We can even enforce regular expressions using <code>pattern="^fixedquery$"</code> if we only want to accept very
+        specifically formatted strings (like matching a specific employee ID format).</p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 14</span>
+    </div>
+</div>
+
+<!-- Chapter 5 Page 3 -->
+<div class="page">
+    <div class="header">CHAPTER 5 - Query Parameters</div>
+
+    <h4>Numeric Validation</h4>
+    <p>Just like with <code>Path()</code>, we can add greater-than and less-than rules to numbers using
+        <code>Query()</code>.
+    </p>
+
+    <pre>
+@app.get("/items/")
+def read_items(price: float = Query(default=0, gt=0, lt=105.50)):
+    return {"price": price}
+  </pre>
+
+    <p><strong>Line 2:</strong> This ensures the <code>price</code> query parameter is strictly greater than 0, and
+        strictly less than 105.50.</p>
+
+    <h3>Lists of Multiple Values</h3>
+    <p>Sometimes users want to filter by multiple things at once, like <code>?color=blue&color=red</code>. To capture
+        both, we just use a Python list!</p>
+
+    <pre>
+from typing import List
+from fastapi import FastAPI, Query
+
+app = FastAPI()
+
+@app.get("/items/")
+def read_items(q: List[str] = Query(default=["foo", "bar"])):
+    return {"q": q}
+  </pre>
+
+    <p><strong>Line 7:</strong> By using <code>List[str]</code>, FastAPI automatically gathers every <code>?q=</code>
+        parameter in the URL and hands them to us as a clean Python list. We also provided a default list of
+        <code>["foo", "bar"]</code> in case the user provides nothing at all.
+    </p>
+
+    <h3>Hiding and Deprecating</h3>
+    <p>Finally, what if we are trying to phase out an old query parameter? We can pass <code>deprecated=True</code> into
+        <code>Query()</code>. It will keep working, but it will show up as greyed-out and deprecated in our Swagger UI
+        docs.
+    </p>
+
+    <p>Or, what if we have a secret admin tool we do not want regular users to see in the documentation menu? We can
+        pass <code>include_in_schema=False</code> to completely hide the query parameter from the automatic docs, while
+        keeping it perfectly functional in the code!</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> The <code>Query()</code> tool gives us superpowers. It allows us to strictly
+        validate string lengths, limit number ranges, accept lists, and even hide parameters directly from the
+        documentation.
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 15</span>
+    </div>
+</div>

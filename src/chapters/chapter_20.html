@@ -1,0 +1,116 @@
+<!-- Chapter 20 Page 1 -->
+<div class="page" id="chapter-20">
+    <div class="header">CHAPTER 20 - Middleware</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 20 - Middleware</h2>
+
+    <h3>The Nightclub Bouncer Analogy</h3>
+    <p>In Chapter 16, we learned about Dependencies. We use dependencies when specific routes need something special
+        done before they run (like extracting a database connection or checking a secure token).</p>
+
+    <p>But what if we have a rule that must be applied to <em>every single request</em> coming into our entire server,
+        regardless of the route? This is exactly what <strong>Middleware</strong> is for.</p>
+
+    <p>Imagine our API is an exclusive nightclub. The individual bartenders inside are our route functions. The massive
+        bouncer standing outside the front door is our Middleware. Every single person entering the club <em>must</em>
+        pass through the bouncer. Every single person leaving the club <em>must</em> pass through the bouncer.</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> Middleware is a function that runs before every incoming request reaches our
+        routes, and after every outgoing response leaves our routes.
+    </div>
+
+    <h3>Our First Middleware: A Timing Tracker</h3>
+    <p>The easiest way to write middleware is using the <code>@app.middleware("http")</code> decorator. Let's create a
+        bouncer that holds a stopwatch, timing exactly how long every single request takes to process.</p>
+
+    <pre>
+import time
+from fastapi import FastAPI, Request
+
+app = FastAPI()
+
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    # 1. The request has just arrived. Start the stopwatch!
+    start_time = time.time()
+    
+    # 2. Hand the request back to FastAPI to go find the correct route.
+    # We literally pause here until the application finishes processing it.
+    response = await call_next(request)
+    
+    # 3. The route is finished! Stop the stopwatch.
+    process_time = time.time() - start_time
+    
+    # 4. Inject a new header into the outgoing response.
+    response.headers["X-Process-Time"] = str(process_time)
+    
+    return response
+    
+@app.get("/speed-test/")
+def test_speed():
+    time.sleep(1) # Fake a slow database query
+    return {"message": "Wow, what a fast database!"}
+  </pre>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 53</span>
+    </div>
+</div>
+
+<!-- Chapter 20 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 20 - Middleware</div>
+
+    <h3>How the Magic Happens</h3>
+    <p>Let's look at exactly what happened in our timing middleware:</p>
+
+    <p><code>request: Request</code> - This is the raw incoming HTTP request from the user.</p>
+    <p><code>call_next</code> - This is the most crucial part. This is a special function provided by FastAPI that
+        represents "the rest of the application".</p>
+
+    <p>When we call <code>await call_next(request)</code>, we are sending the request into the bowels of FastAPI.
+        FastAPI figures out which route it belongs to, runs the dependencies, runs the route function, creates the JSON,
+        and hands the finished <code>response</code> object right back to us!</p>
+
+    <p>We then have total freedom to modify that outgoing response (like adding our custom <code>X-Process-Time</code>
+        header) before finally returning it to the user's browser.</p>
+
+    <h3>BaseHTTPMiddleware from Starlette</h3>
+    <p>FastAPI is actually built completely on top of an incredibly fast, lightweight framework called Starlette. When
+        we write <code>@app.middleware("http")</code>, FastAPI is actually just using Starlette's
+        <code>BaseHTTPMiddleware</code> under the hood.
+    </p>
+
+    <p>In older tutorials or highly complex applications, we might see middleware written as classes instead of
+        functions, inheriting directly from Starlette. While both methods work gracefully, writing a simple async
+        function with the <code>@app.middleware</code> decorator (as we did above) is usually much cleaner for everyday
+        use.</p>
+
+    <h3>The Execution Order Trap</h3>
+    <p>What happens if we have three different bouncers at the door? Which order do they run in?</p>
+
+    <p>If we declare multiple middlewares, the last one we write in our code gets added to the <em>outside</em> of the
+        nightclub door. This is called the "onion" model.</p>
+
+    <p>If we have <code>Middleware A</code> and <code>Middleware B</code> (added in that exact order):</p>
+    <ol>
+        <li>The incoming request hits <code>Middleware B</code> first (the outermost layer).</li>
+        <li>It then hits <code>Middleware A</code> (the inner layer).</li>
+        <li>It hits our actual Route.</li>
+        <li>The outgoing response hits <code>Middleware A</code> first.</li>
+        <li>The outgoing response finally hits <code>Middleware B</code> last.</li>
+    </ol>
+
+    <div class="mistake-box">
+        <strong>⚠️ Common Mistake:</strong> Expecting middleware to magically have access to things like the
+        authenticated user. Middleware runs <em>before</em> FastAPI figures out which route to call, which means it runs
+        long before any <code>Depends()</code> security logic runs. Middleware cannot see our <code>current_user</code>!
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 54</span>
+    </div>
+</div>

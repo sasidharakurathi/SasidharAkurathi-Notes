@@ -1,0 +1,93 @@
+<!-- Chapter 17 Page 1 -->
+<div class="page" id="chapter-17">
+    <div class="header">CHAPTER 17 - Security Overview</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 17 - Security Overview</h2>
+
+    <h3>Authentication vs. Authorization</h3>
+    <p>Before we start writing code to lock down our APIs, we need to understand exactly what security means. The two
+        biggest words in security sound identical, but they mean completely different things.</p>
+
+    <p><strong>Authentication</strong> answers the question: <em>"Who are you?"</em><br>
+        (e.g., You provide a passport to prove you are John Doe.)</p>
+
+    <p><strong>Authorization</strong> answers the question: <em>"Are you allowed to do this?"</em><br>
+        (e.g., Now that we know you are John Doe, does your ticket allow you to enter the VIP lounge?)</p>
+
+    <p>FastAPI gives us incredible tools to handle both of these efficiently.</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> Authentication proves our identity. Authorization checks our permissions.
+    </div>
+
+    <h3>OAuth2 Explained Simply</h3>
+    <p>The modern web runs on OAuth2. But reading the official OAuth2 specification is like reading a legal dictionary
+        in a foreign language. Let's simplify it.</p>
+
+    <p>Imagine we drive our car to a fancy hotel. When we pull up, we don't give the valet our actual house keys, our
+        wallet, or our car's ownership title. We just hand them the valet key. This special key only turns on the engine
+        and opens the driver's door. It cannot open the glovebox or the trunk.</p>
+
+    <p>This is exactly how OAuth2 works. When an app needs access to our Google Calendar, we do not give that app our
+        actual Google username and password (the house keys). Instead, Google gives the app a temporary, limited
+        <strong>Token</strong> (the valet key). That token only lasts for a short time, and it only allows access to the
+        calendar, nothing else.
+    </p>
+
+    <p>Because the valet (the app) only has a temporary token, we can easily revoke that token at any time without
+        having to change our master Google password.</p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 43</span>
+    </div>
+</div>
+
+<!-- Chapter 17 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 17 - Security Overview</div>
+
+    <h3>JWT Explained Simply</h3>
+    <p>So, what exactly is this "Token" the valet receives? In modern apps, it is almost always a <strong>JWT</strong>
+        (JSON Web Token).</p>
+
+    <p>Imagine going to a concert. When we first arrive, the security guard checks our ID (Authentication). Once they
+        verify who we are, they stamp our hand with a special, glowing logo. For the rest of the night, whenever we want
+        to buy a drink or re-enter the venue, we do not have to show our ID again. We just show the glowing stamp.</p>
+
+    <p>A JWT is exactly like that stamp.</p>
+
+    <ol>
+        <li>Our frontend sends our username and password to the FastAPI backend one time.</li>
+        <li>FastAPI verifies they are correct, creates a JWT (the stamp), signs it cryptographically so it cannot be
+            forged, and sends it back to the browser.</li>
+        <li>The browser saves this JWT locally.</li>
+        <li>For every future request, the browser hands the JWT back to FastAPI. FastAPI checks the signature, sees the
+            glowing stamp, and knows exactly who we are without having to check the database password again.</li>
+    </ol>
+
+    <div class="mistake-box">
+        <strong>⚠️ Common Mistake:</strong> Thinking JWTs are secret. The payload inside a basic JWT is easily readable
+        by anyone who finds it. Only the <em>signature</em> is secure. Never, ever store passwords or sensitive bank
+        details inside the payload of a JWT!
+    </div>
+
+    <h3>What FastAPI Provides Out of the Box</h3>
+    <p>Now for the good news. Building secure, encrypted OAuth2 servers with JWTs from scratch is incredibly difficult
+        and dangerous. We could easily make a mistake that exposes our entire database.</p>
+
+    <p>FastAPI provides highly advanced, built-in security tools in the <code>fastapi.security</code> module. It gives
+        us everything we need to implement OAuth2 (including password hashes and Bearer tokens) with just a few lines of
+        code.</p>
+
+    <p>Even better, FastAPI's security tools automatically integrate into the Swagger UI (<code>/docs</code>). When we
+        add FastAPI security to our routes, a magical "Authorize" button appears at the top of our documentation,
+        allowing us to log in and test our secure routes directly from the browser.</p>
+
+    <p>In the next chapters, we will roll up our sleeves and build this exact system.</p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 44</span>
+    </div>
+</div>

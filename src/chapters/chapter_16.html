@@ -1,0 +1,122 @@
+<!-- Chapter 16 Page 1 -->
+<div class="page" id="chapter-16">
+    <div class="header">CHAPTER 16 - Introduction to Dependencies</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 16 - Introduction to Dependencies</h2>
+
+    <h3>What is Dependency Injection?</h3>
+    <p>Dependency Injection (often just called DI) sounds like a terrifyingly complex computer science concept. But in
+        reality, it is incredibly simple. We use it in real life every single day.</p>
+
+    <p>Imagine we walk into a coffee shop and order a latte. Does the barista ask us to go to the back room, roast the
+        beans, boil the water, pull the espresso shot, and steam the milk? Of course not. We simply ask for a "latte",
+        and the barista <strong>injects</strong> (hands) the finished latte to us.</p>
+
+    <p>In our code, our route functions are the angry customers. They do not want to connect to the database, parse
+        security tokens, or figure out pagination logic themselves. They just want the final result. Dependency
+        Injection allows our routes to declare exactly what they need (like a database connection), and FastAPI
+        magically builds it and hands it to them just before the function runs.</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> Dependency Injection simply means telling FastAPI: "Hey, before you run my
+        route code, go run this other function first, and give me whatever it produces."
+    </div>
+
+    <h3>Why FastAPI's System is Powerful</h3>
+    <p>Other frameworks have plugins or middleware that try to accomplish this, but they are often difficult to track.
+        With FastAPI, dependencies are just standard Python functions. That means our code editors provide flawless
+        auto-complete, testing them is trivial, and they integrate flawlessly with Swagger documentation.</p>
+
+    <h3>Our First Dependency</h3>
+    <p>Let's build a very simple dependency. Imagine we have three different routes that all need to know pagination
+        details (how many items to skip, and how many to limit).</p>
+
+    <pre>
+from fastapi import Depends, FastAPI
+
+app = FastAPI()
+
+def common_parameters(q: str = None, skip: int = 0, limit: int = 100):
+    return {"q": q, "skip": skip, "limit": limit}
+
+@app.get("/items/")
+def read_items(commons: dict = Depends(common_parameters)):
+    return commons
+
+@app.get("/users/")
+def read_users(commons: dict = Depends(common_parameters)):
+    return commons
+  </pre>
+
+    <p>Let's look at how beautifully simple this is!</p>
+    <p><strong>Lines 5-6:</strong> We create a totally normal Python function called <code>common_parameters</code>. It
+        is not a route. It just takes some standard query parameters and returns a dictionary.</p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 41</span>
+    </div>
+</div>
+
+<!-- Chapter 16 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 16 - Introduction to Dependencies</div>
+
+    <h3>How Depends() Actually Works</h3>
+    <p>Let's focus on what happens in the router:</p>
+
+    <pre>
+@app.get("/items/")
+def read_items(commons: dict = Depends(common_parameters)):
+    return commons
+  </pre>
+
+    <p><strong>Line 2:</strong> When a user hits <code>/items/</code>, FastAPI freezes our <code>read_items</code>
+        function. It sees <code>Depends(common_parameters)</code>. It immediately takes the incoming HTTP request and
+        passes it to <code>common_parameters</code>.</p>
+    <p>FastAPI waits for <code>common_parameters</code> to finish extracting the <code>q</code>, <code>skip</code>, and
+        <code>limit</code> variables. Once it returns that dictionary, FastAPI unfreezes our <code>read_items</code>
+        function and injects that exact dictionary into our <code>commons</code> variable!
+    </p>
+
+    <h3>Shared Logic Across Multiple Routes</h3>
+    <p>Look back at our first example. Notice that both <code>read_items</code> and <code>read_users</code> use the
+        exact same dependency. This is where dependencies shine!</p>
+
+    <p>If we ever decide to change our pagination logic (maybe limiting queries to a maximum of 50 items instead of
+        100), we only have to change the code in <strong>one single place</strong> (inside
+        <code>common_parameters</code>). All of our routes instantly inherit the new logic without us touching them.
+    </p>
+
+    <p>Even better, FastAPI looks inside <code>common_parameters</code> and automatically adds those expected query
+        parameters (<code>q</code>, <code>skip</code>, <code>limit</code>) to both the <code>/items/</code> and
+        <code>/users/</code> interactive Swagger documentation independently!
+    </p>
+
+    <h3>Type Annotations with Dependencies</h3>
+    <p>If we look closely at our example, our type annotation was a bit messy:
+        <code>commons: dict = Depends(...)</code>. While this works, we lose autocomplete. Our editor just knows
+        <code>commons</code> is a dictionary, but it doesn't know it holds <code>q</code>, <code>skip</code>, and
+        <code>limit</code>.
+    </p>
+
+    <p>We can solve this massively in modern Python 3.9+ by using <code>Annotated</code>!</p>
+
+    <pre>
+from typing import Annotated
+
+@app.get("/items/")
+def read_items(commons: Annotated[dict, Depends(common_parameters)]):
+    return commons
+  </pre>
+
+    <p>This does the exact same process, but the code reads beautifully. We are saying: "The variable is a dict, and by
+        the way, get it by depending on the common_parameters function." Note that since the dependency function returns
+        a dictionary, our editor still only knows it as a dictionary. Next chapter, we will see how to make dependencies
+        return classes for ultimate autocomplete power!</p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 42</span>
+    </div>
+</div>

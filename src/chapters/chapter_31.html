@@ -1,0 +1,158 @@
+<!-- Chapter 31 Page 1 -->
+<div class="page" id="chapter-31">
+    <div class="header">CHAPTER 31 - Templates (Jinja2)</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 31 - Templates (Jinja2)</h2>
+
+    <h3>Serving Full Web Pages</h3>
+    <p>In Chapter 27, we learned how to return raw HTML strings using <code>HTMLResponse</code>. But writing an entire
+        500-line HTML website inside a Python string variable is an absolute nightmare to maintain.</p>
+
+    <p>If we want our FastAPI server to build and serve complex, dynamic websites (exactly like classic Django or Flask
+        applications do), we use a templating engine. A templating engine allows us to write standard <code>.html</code>
+        files and inject dynamic Python variables (like a user's name or a list of database items) directly into the
+        HTML before sending it to the browser.</p>
+
+    <p>FastAPI natively supports <strong>Jinja2</strong>, which is the exact same industry-standard templating engine
+        used by Flask. First, we must install it:</p>
+
+    <p><code>pip install jinja2</code></p>
+
+    <h3>Setting Up Jinja2Templates</h3>
+    <p>To start serving templates, we need to create a dedicated folder to hold all of our <code>.html</code> files.
+        Let's create a folder named <code>templates/</code> right next to our <code>main.py</code>.</p>
+
+    <p>Inside our Python code, we import <code>Jinja2Templates</code> and point it directly at that folder.</p>
+
+    <pre>
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+
+app = FastAPI()
+
+# Tell FastAPI where our HTML files physically live
+templates = Jinja2Templates(directory="templates")
+  </pre>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> <code>Jinja2Templates</code> is a master object that scans our folder, reads
+        our raw HTML files, dynamically injects our Python variables into them, and converts them into a final
+        <code>HTMLResponse</code> for the browser.
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 83</span>
+    </div>
+</div>
+
+<!-- Chapter 31 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 31 - Templates (Jinja2)</div>
+
+    <h3>Rendering a Template with Context</h3>
+    <p>Let's create our first actual HTML file. Inside the <code>templates/</code> directory, we create
+        <code>hello.html</code>.
+    </p>
+
+    <pre>
+&lt;!-- templates/hello.html --&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;Hello Page&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;Welcome to our startup!&lt;/h1&gt;
+    
+    &lt;!-- This is Jinja2 syntax! We inject a variable here --&gt;
+    &lt;p&gt;Hello, {{ username }}! Your ID is {{ id }}.&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+  </pre>
+
+    <p>Now, let's write the FastAPI route that renders this file. To render a template, our route absolutely
+        <strong>must</strong> accept the <code>Request</code> object as a parameter, and pass it into the template
+        renderer.
+    </p>
+
+    <pre>
+# main.py
+@app.get("/users/{id}", response_class=HTMLResponse)
+async def read_user(request: Request, id: str):
+    # Fetch a fake user from a database
+    real_username = "Alice" 
+
+    # We use TemplateResponse to stitch it all together!
+    return templates.TemplateResponse(
+        request=request, 
+        name="hello.html", 
+        context={"id": id, "username": real_username}
+    )
+  </pre>
+
+    <p><strong>Lines 7-11:</strong> The magic happens here.</p>
+    <ul>
+        <li><code>request=request</code>: Jinja2 requires the raw HTTP request object to function properly.</li>
+        <li><code>name="hello.html"</code>: The exact filename inside our <code>templates/</code> folder.</li>
+        <li><code>context={...}</code>: A dictionary of all the Python variables we want to aggressively inject into the
+            HTML file. The keys in this dictionary must exactly match the <code>{{ variables }}</code> enclosed in
+            double-brackets inside the HTML file!</li>
+    </ul>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 84</span>
+    </div>
+</div>
+
+<!-- Chapter 31 Page 3 -->
+<div class="page">
+    <div class="header">CHAPTER 31 - Templates (Jinja2)</div>
+
+    <h3>Combining Templates with Static Files</h3>
+    <p>A bare HTML page is ugly. We want to add beautiful CSS and maybe some JavaScript. To do this, we combine the
+        Jinja2 templates we just learned with the <code>StaticFiles</code> we learned about in Chapter 25.</p>
+
+    <p>First, we mount our static folder in <code>main.py</code>:</p>
+
+    <pre>
+from fastapi.staticfiles import StaticFiles
+
+# Mount a "static" folder to hold our styles.css
+app.mount("/static", StaticFiles(directory="static"), name="static")
+  </pre>
+
+    <p>Now, inside our <code>hello.html</code> template, how do we link to <code>styles.css</code>? We <em>could</em>
+        hardcode the path like <code>&lt;link href="/static/styles.css"&gt;</code>, but what if we change our server
+        configuration later? The link will break.</p>
+
+    <p>Instead, Jinja2 provides a brilliant built-in function called <code>url_for()</code>. We can use it directly
+        inside our HTML to dynamically generate the exact, perfectly safe URL for our static files.</p>
+
+    <pre>
+&lt;!-- templates/hello.html --&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;Beautiful Page&lt;/title&gt;
+    
+    &lt;!-- Dynamically link our CSS file! --&gt;
+    &lt;link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1 class="fancy-title"&gt;Hello, {{ username }}!&lt;/h1&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+  </pre>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> Combining <code>Jinja2Templates</code> with <code>StaticFiles</code> allows
+        us to build and host exactly the same kind of massive, beautiful, server-rendered websites as Django or Ruby on
+        Rails, while keeping our code incredibly fast and lightweight.
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 85</span>
+    </div>
+</div>

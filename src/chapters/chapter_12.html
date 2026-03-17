@@ -1,0 +1,193 @@
+<!-- Chapter 12 Page 1 -->
+<div class="page" id="chapter-12">
+    <div class="header">CHAPTER 12 - Response Model & Status Codes</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 12 - Response Model & Status Codes</h2>
+
+    <h3>Why response_model Matters</h3>
+    <p>Until now, we have mostly focused on validating the data users send <em>to</em> us. But what about the data we
+        send <em>back</em>? This is arguably even more important!</p>
+
+    <p>Imagine a user logs in. Our database returns a giant object containing their username, their email, and their
+        highly secret, encrypted password hash. If we just return that raw object to the browser, we have completely
+        compromised our application's security!</p>
+
+    <p>This is where <code>response_model</code> saves the day. It acts like an outbound filter. We tell FastAPI exactly
+        what the final output should look like, and FastAPI will automatically strip away any extra, secret data before
+        it leaves the server.</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> The <code>response_model</code> acts as a secure filter. It guarantees that
+        our API only returns the exact data we promised, hiding any sensitive information we accidentally included from
+        the database.
+    </div>
+
+    <h3>Using response_model</h3>
+    <p>We do not define the response model inside the function parameters. Instead, we define it right inside the path
+        decorator itself.</p>
+
+    <pre>
+from pydantic import BaseModel
+from fastapi import FastAPI
+
+app = FastAPI()
+
+class UserIn(BaseModel):
+    username: str
+    password: str
+
+class UserOut(BaseModel):
+    username: str
+
+@app.post("/user/", response_model=UserOut)
+def create_user(user: UserIn):
+    # We save the user and password to the DB here...
+    # Then we return the original object!
+    return user
+  </pre>
+
+    <p><strong>Lines 6-11:</strong> We create two distinct models. <code>UserIn</code> requires a password.
+        <code>UserOut</code> does not even have a password field.
+    </p>
+    <p><strong>Line 13:</strong> We attach <code>response_model=UserOut</code> directly to the <code>@app.post</code>
+        decorator.</p>
+    <p><strong>Line 17:</strong> Even though our Python function returns the full <code>user</code> object (which
+        contains the secret password), FastAPI intercepts it on the way out the door, filters it through
+        <code>UserOut</code>, and strips the password completely. It also automatically updates the interactive Swagger
+        documentation to show exactly what this route returns!
+    </p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 30</span>
+    </div>
+</div>
+
+<!-- Chapter 12 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 12 - Response Model & Status Codes</div>
+
+    <h3>response_model_exclude_unset: The Hidden Gem</h3>
+    <p>What if our model has 30 optional fields (like a massive user profile), but the user has only filled out their
+        name and email? Normally, FastAPI will return a massive JSON object with 28 fields set to <code>null</code>.</p>
+    <p>To save bandwidth and keep our responses clean, we can use a hidden gem parameter.</p>
+
+    <pre>
+@app.get("/items/{item_id}", response_model=Item, response_model_exclude_unset=True)
+def read_item(item_id: str):
+    return items[item_id]
+  </pre>
+
+    <p><strong>Line 1:</strong> By adding <code>response_model_exclude_unset=True</code>, FastAPI incredibly looks at
+        the exact data we sent back. If a field was left blank (unset), FastAPI completely removes it from the final
+        JSON payload rather than sending a messy <code>null</code>.</p>
+
+    <h3>Include and Exclude</h3>
+    <p>If we want to be incredibly lazy and avoid creating a separate <code>UserOut</code> model, we can simply tell
+        FastAPI to manually exclude or include specific fields on its way out the door.</p>
+
+    <pre>
+@app.get("/users/{user_id}", response_model=UserIn, response_model_exclude={"password"})
+def read_user(user_id: str):
+    return get_user_from_db(user_id)
+  </pre>
+
+    <p>While this works, creating dedicated models (like <code>UserOut</code>) is highly recommended. It is much easier
+        to maintain, less prone to typos, and results in far better automatic documentation.</p>
+
+    <h3>Understanding HTTP Status Codes</h3>
+    <p>When our server responds, it does more than just send JSON. It also sends a 3-digit status code. This code
+        instantly tells the browser whether the request succeeded or failed.</p>
+
+    <p>Here is the essential cheat sheet for the status codes we will use every day:</p>
+
+    <ul>
+        <li><strong>200 OK:</strong> Everything worked perfectly. (This is FastAPI's default for everything!).</li>
+        <li><strong>201 Created:</strong> Everything worked perfectly, AND we successfully created something new in the
+            database.</li>
+        <li><strong>204 No Content:</strong> Everything worked perfectly, but we have absolutely no data to return (used
+            a lot when deleting things).</li>
+        <li><strong>400 Bad Request:</strong> The user sent us bad data (Pydantic usually triggers this automatically!).
+        </li>
+        <li><strong>401 Unauthorized:</strong> The user is not logged in.</li>
+        <li><strong>403 Forbidden:</strong> The user is not logged in, but also they might be permanently banned or
+            trying to hack us.</li>
+        <li><strong>404 Not Found:</strong> The user asked for a URL or a database item that does not exist.</li>
+        <li><strong>500 Internal Server Error:</strong> Our Python code crashed horribly. The user did nothing wrong; we
+            made a mistake.</li>
+    </ul>
+
+    <div class="mistake-box">
+        <strong>⚠️ Common Mistake:</strong> Returning error messages inside a 200 OK. Always use real status codes! If a
+        user is not found, do not return <code>{"error": "not found"}</code> with a happy 200 code. Return a real 404
+        code. Frontend applications rely on these numbers, not text!
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 31</span>
+    </div>
+</div>
+
+<!-- Chapter 12 Page 3 -->
+<div class="page">
+    <div class="header">CHAPTER 12 - Response Model & Status Codes</div>
+
+    <h3>The status_code Parameter</h3>
+    <p>As mentioned, FastAPI assumes every successful response should return a <code>200 OK</code> code. If we are
+        creating a new user or a new task, we should change that to a <code>201 Created</code>.</p>
+
+    <p>We can do this easily inside the route decorator!</p>
+
+    <pre>
+from fastapi import FastAPI, status
+
+app = FastAPI()
+
+@app.post("/items/", status_code=status.HTTP_201_CREATED)
+def create_item(name: str):
+    return {"name": name}
+  </pre>
+
+    <p><strong>Line 1:</strong> We import the <code>status</code> module directly from FastAPI.</p>
+    <p><strong>Line 5:</strong> We use the <code>status_code</code> parameter to manually override the default 200 code
+        with our new 201 code.</p>
+
+    <h3>Never Hardcode Numbers!</h3>
+    <p>Why did we type out the horribly long <code>status.HTTP_201_CREATED</code> instead of just typing the number
+        <code>201</code>? Two reasons.
+    </p>
+
+    <p>First, memory. Memorizing three-digit numbers is hard. Knowing that 201 means "Created" and 204 means "No
+        Content" takes practice. By typing <code>status.HTTP_</code>, our code editor will instantly pop up a helpful
+        menu with all the named status codes, preventing us from making silly mistakes.</p>
+
+    <p>Second, readability. When another developer reads our code six months from now, reading the word "CREATED" is
+        instantly understood. Reading the random number 201 forces them to go look it up.</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> Always use the English labels provided by <code>fastapi.status</code> instead
+        of typing raw status code numbers.
+    </div>
+
+    <h3>Additional Status Codes in Documentation</h3>
+    <p>If our route normally returns a 200 OK, but might occasionally return a 404 Not Found (if the ID doesn't exist),
+        we can officially document that possibility so frontend developers know what alternate responses to expect!</p>
+
+    <pre>
+@app.get(
+    "/items/{item_id}", 
+    responses={404: {"description": "The item was not found"}}
+)
+def read_item(item_id: str):
+    ...
+  </pre>
+
+    <p><strong>Line 3:</strong> We use the <code>responses</code> dictionary inside the decorator to define exactly what
+        extra status codes this route is capable of throwing. This will cleanly appear in our Swagger UI manual!</p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 32</span>
+    </div>
+</div>

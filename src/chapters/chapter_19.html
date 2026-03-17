@@ -1,0 +1,260 @@
+<!-- Chapter 19 Page 1 -->
+<div class="page" id="chapter-19">
+    <div class="header">CHAPTER 19 - JWT Authentication (Full Implementation)</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 19 - JWT Authentication</h2>
+
+    <h3>The Missing Pieces</h3>
+    <p>In the last chapter, we securely locked our doors using <code>OAuth2PasswordBearer</code> and
+        <code>get_current_user</code>. But we faked the most important part: creating and verifying the actual JWT (JSON
+        Web Token) "valet key".
+    </p>
+
+    <p>To do real cryptography and password hashing safely, we should never write the math ourselves. We will rely on
+        two industry-standard Python libraries. In our terminal, we need to run:</p>
+
+    <p><code>pip install "python-jose[cryptography]" "passlib[bcrypt]" python-multipart</code></p>
+
+    <ul>
+        <li><strong>passlib[bcrypt]:</strong> The ultimate tool for securely scrambling (hashing) user passwords so even
+            if our database is stolen, hackers cannot read them.</li>
+        <li><strong>python-jose:</strong> The tool that signs and verifies our glowing JWT stamps.</li>
+    </ul>
+
+    <h3>Hashing Passwords</h3>
+    <p>When a new user registers, we take their plaintext password (like "ilovecats123") and pass it through bcrypt. It
+        turns it into a chaotic string of characters. We save that chaotic string in our database.</p>
+
+    <p>When they log in later, we do <em>not</em> un-scramble the hash (that's impossible!). Instead, we take the new
+        password they just typed, scramble it the exact same way, and see if the two chaotic strings match.</p>
+
+    <pre>
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+  </pre>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> We use <code>passlib</code> to turn passwords into unbreakable hashes, and to
+        verify them without ever storing the real password.
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 48</span>
+    </div>
+</div>
+
+<!-- Chapter 19 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 19 - JWT Authentication (Full Implementation)</div>
+
+    <h3>Creating and Expiring the Token</h3>
+    <p>A valet key is only safe if it automatically expires. We need to define a secret key (a massive, unguessable
+        password that only our server knows) and an algorithm to digitally sign our JWTs so users cannot alter them.</p>
+
+    <pre>
+import os
+from datetime import datetime, timedelta
+from jose import jwt
+
+# In production, NEVER write your secret key in the code!
+# Save it as an environment variable.
+SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    
+    # Calculate exactly when this token will die
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    
+    # Cryptographically sign the token using our SECRET_KEY
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    
+    return encoded_jwt
+  </pre>
+
+    <p><strong>Line 15:</strong> We calculate a strict death-date for the token (30 minutes from right now) and inject
+        it into the payload under the standard <code>"exp"</code> key.</p>
+    <p><strong>Line 19:</strong> We use <code>python-jose</code> to combine our data, the expiration time, and our
+        massive <code>SECRET_KEY</code> to encode and securely sign the final JWT string.</p>
+
+    <div class="mistake-box">
+        <strong>⚠️ Common Mistake:</strong> Hardcoding the <code>SECRET_KEY</code> and pushing it to GitHub. If anyone
+        discovers our secret key, they can forge JWTs and instantly have administrator access to our entire application.
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 49</span>
+    </div>
+</div>
+
+<!-- Chapter 19 Page 3 -->
+<div class="page">
+    <div class="header">CHAPTER 19 - JWT Authentication (Full Implementation)</div>
+
+    <h3>The Complete End-to-End System</h3>
+    <p>Let's combine everything we know: our token creator, our password verificator, <code>OAuth2PasswordBearer</code>,
+        and our <code>get_current_user</code> dependency. This is a massive block of code, but it is the ultimate,
+        production-ready foundation for our API's security.</p>
+
+    <pre>
+from datetime import datetime, timedelta
+from typing import Annotated
+
+from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+
+# 1. Configuration
+SECRET_KEY = "super_secret_key_keep_safe"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+app = FastAPI()
+
+# 2. Fake Database with Hashed Passwords
+fake_users_db = {
+    "johndoe": {
+        "username": "johndoe",
+        # This is "secret" hashed with bcrypt
+        "hashed_password": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjIQqiRQYq" 
+    }
+}
+
+# 3. Helper Functions
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+  </pre>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 50</span>
+    </div>
+</div>
+
+<!-- Chapter 19 Page 4 -->
+<div class="page">
+    <div class="header">CHAPTER 19 - JWT Authentication (Full Implementation)</div>
+
+    <h3>The Complete End-to-End System (Part 2)</h3>
+
+    <pre>
+# 4. The Authenticator Dependency
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        # A. Decode the JWT and verify the signature
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+    except JWTError:
+        # B. If the token is expired or forged, ban them
+        raise credentials_exception
+        
+    # C. Look the user up in the database
+    user = fake_users_db.get(username)
+    if user is None:
+        raise credentials_exception
+    return user
+
+# 5. The Login Route (Generating the Token)
+@app.post("/token")
+async def login_for_access_token(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
+):
+    user_dict = fake_users_db.get(form_data.username)
+    if not user_dict or not verify_password(form_data.password, user_dict["hashed_password"]):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+        )
+    # Give them the glowing stamp!
+    access_token = create_access_token(data={"sub": user_dict["username"]})
+    return {"access_token": access_token, "token_type": "bearer"}
+
+# 6. The Secure Route
+@app.get("/users/me")
+async def read_users_me(
+    current_user: Annotated[dict, Depends(get_current_user)]
+):
+    return current_user
+  </pre>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 51</span>
+    </div>
+</div>
+
+<!-- Chapter 19 Page 5 -->
+<div class="page">
+    <div class="header">CHAPTER 19 - JWT Authentication (Full Implementation)</div>
+
+    <h3>Line-by-Line Breakdown</h3>
+    <p>This is the most complex code we have run into, so let's break down exactly what happens when a user tries to log
+        in and access their profile.</p>
+
+    <p><strong>Step 1: The Login</strong></p>
+    <ul>
+        <li>The user sends their username and password to <code>/token</code>.</li>
+        <li>We use <code>OAuth2PasswordRequestForm</code> as a dependency. This magically creates a standard HTML form
+            that the Swagger UI "Authorize" button knows how to use natively!</li>
+        <li>We look up the user. If they exist, we use <code>verify_password()</code> to compare the password they typed
+            with the scrambled bcrypt hash in our database.</li>
+        <li>If it matches, we call <code>create_access_token()</code>. We put their username in the <code>"sub"</code>
+            (subject) field, sign it with our secret key, and return the final JWT to the browser.</li>
+    </ul>
+
+    <p><strong>Step 2: The Secure Request</strong></p>
+    <ul>
+        <li>The user tries to visit <code>/users/me</code>.</li>
+        <li>The route is completely frozen by the <code>Depends(get_current_user)</code> lock.</li>
+        <li>FastAPI uses <code>oauth2_scheme</code> to extract the Bearer token from the headers and passes it to
+            <code>get_current_user</code>.
+        </li>
+        <li>Inside <code>get_current_user</code>, we use <code>jwt.decode()</code> to mathematically prove the token's
+            signature was created by our <code>SECRET_KEY</code>. If the token was altered by a hacker, or if 30 minutes
+            have passed and it is expired, <code>jwt.decode()</code> crashes with a <code>JWTError</code>.</li>
+        <li>We catch that exact error and throw a beautiful 401 Unauthorized exception, stopping the thief in their
+            tracks.</li>
+        <li>If all is well, we extract the username from the <code>"sub"</code> field inside the token, fetch their
+            profile from the database, and inject it seamlessly into our <code>read_users_me</code> function.</li>
+    </ul>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> We have built an incredibly strong, bank-grade vault door. Users check in at
+        the front desk (<code>/token</code>), verify their password, and get a temporary, cryptographically signed badge
+        (JWT). For the next 30 minutes, <code>get_current_user</code> checks that badge instantly for any secure room
+        they try to enter.
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 52</span>
+    </div>
+</div>

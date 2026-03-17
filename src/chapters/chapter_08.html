@@ -1,0 +1,188 @@
+<!-- Chapter 8 Page 1 -->
+<div class="page" id="chapter-8">
+    <div class="header">CHAPTER 8 - Request Examples & Schema Configuration</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 8 - Request Examples & Schema Configuration</h2>
+
+    <h3>Why Good Examples Matter</h3>
+    <p>Imagine opening a complex form and seeing a dozen blank text boxes. Without any hints, we have to guess what data
+        the API expects. Does it want a full name or just a first name? A numeric ID or a string? A good API prevents
+        this confusion.</p>
+
+    <p>By adding concrete examples to our documentation, we make our API 10x easier to use. When other developers open
+        our Swagger UI (<code>/docs</code>), the text boxes will pre-fill with realistic, working data. They can just
+        click the "Execute" button and run a successful test immediately.</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> We use examples to auto-fill the forms in our interactive documentation. This
+        shows developers exactly what a successful request looks like.
+    </div>
+
+    <h3>Adding Examples to Pydantic Models</h3>
+    <p>The most robust way to add an example is by attaching it directly to our Pydantic model. When we do this, the
+        example automatically appears everywhere that model is used across our entire API.</p>
+
+    <pre>
+from pydantic import BaseModel
+
+class Item(BaseModel):
+    name: str
+    description: str = None
+    price: float
+    tax: float = None
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "name": "Foo",
+                    "description": "A very nice Item",
+                    "price": 35.4,
+                    "tax": 3.2,
+                }
+            ]
+        }
+    }
+  </pre>
+
+    <p>Let's look at how this works:</p>
+    <p><strong>Lines 9-20:</strong> We create a special variable inside our class called <code>model_config</code>.
+        Inside that dictionary, we use the <code>json_schema_extra</code> key to inject our <code>examples</code>. </p>
+
+    <p>Now, whenever someone looks at the documentation for a route that expects an <code>Item</code>, the entire JSON
+        body will be neatly pre-filled with the exact "Foo" item we defined above.</p>
+
+    <div class="mistake-box">
+        <strong>⚠️ Note for older code:</strong> If we look at older FastAPI tutorials, we might see them using an
+        internal <code>class Config:</code> block with a <code>schema_extra</code> key. The <code>model_config</code>
+        dictionary is the modern, updated way to do this in the newest versions of FastAPI.
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 22</span>
+    </div>
+</div>
+
+<!-- Chapter 8 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 8 - Request Examples & Schema Configuration</div>
+
+    <h3>Using Examples in Field(), Path(), and Query()</h3>
+    <p>If we do not want to add examples to the entire model at once, we can get granular. We can attach examples
+        directly to individual fields using the `Field()` function.</p>
+
+    <pre>
+from pydantic import BaseModel, Field
+
+class Item(BaseModel):
+    name: str = Field(examples=["Foo"])
+    description: str = Field(default=None, examples=["A very nice Item"])
+    price: float = Field(examples=[35.4])
+    tax: float = Field(default=None, examples=[3.2])
+  </pre>
+
+    <p>This does the exact same thing as the <code>model_config</code> method, but we define the examples piece by
+        piece. It is incredibly clean and easy to read.</p>
+
+    <p>We can use this exact same pattern with <code>Path()</code>, <code>Query()</code>, and <code>Body()</code> inside
+        our route definitions.</p>
+
+    <pre>
+from fastapi import FastAPI, Body, Path
+
+app = FastAPI()
+
+@app.put("/items/{item_id}")
+def update_item(
+    item_id: int = Path(examples=[5]),
+    item: Item = Body(
+        examples=[
+            {
+                "name": "Foo",
+                "price": 35.4,
+            }
+        ],
+    ),
+):
+    return {"item_id": item_id, "item": item}
+  </pre>
+
+    <p><strong>Line 7:</strong> We tell the documentation that a good example for the path parameter
+        <code>item_id</code> is the number 5.
+    </p>
+    <p><strong>Lines 8-15:</strong> We use <code>Body()</code> to define a full JSON body example directly inside our
+        route function. This example will override any examples defined inside the Pydantic model itself!</p>
+
+    <div class="usage-box">
+        <strong>Use this when:</strong> We want to provide different examples for the same model depending on which
+        route is being used.<br><br>
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 23</span>
+    </div>
+</div>
+
+<!-- Chapter 8 Page 3 -->
+<div class="page">
+    <div class="header">CHAPTER 8 - Request Examples & Schema Configuration</div>
+
+    <h3>openapi_examples: Multiple Named Examples</h3>
+    <p>Giving one example is great. But what if our API behaves differently depending on the input? We might want to
+        show our users an example of a "normal" request, and another example of a "special" request.</p>
+
+    <p>We can do this using the highly advanced <code>openapi_examples</code> parameter. This lets us create a drop-down
+        menu in our Swagger documentation where users can switch between multiple named examples.</p>
+
+    <pre>
+@app.put("/items/{item_id}")
+def update_item(
+    item_id: int,
+    item: Item = Body(
+        openapi_examples={
+            "normal": {
+                "summary": "A normal example",
+                "description": "A **normal** item works correctly.",
+                "value": {
+                    "name": "Foo",
+                    "price": 35.4,
+                },
+            },
+            "invalid": {
+                "summary": "Invalid data",
+                "description": "This will trigger a validation error.",
+                "value": {
+                    "name": "Invalid Item",
+                    "price": "thirty five",
+                },
+            },
+        },
+    ),
+):
+    return {"item_id": item_id, "item": item}
+  </pre>
+
+    <p>Let's look at this incredibly powerful tool:</p>
+    <p><strong>Line 5:</strong> We open the <code>openapi_examples</code> dictionary.</p>
+    <p><strong>Line 6 & 14:</strong> We create two distinct, named options: "normal" and "invalid".</p>
+    <p><strong>Inside each option:</strong> We can provide a <code>summary</code> and <code>description</code> (which
+        supports Markdown formatting!) to explain what the example does. We then provide the actual payload inside the
+        <code>value</code> key.
+    </p>
+
+    <p>When a developer opens our <code>/docs</code> page for this route, they will see a beautiful dropdown menu
+        labeled "Examples". They can pick "normal" to see a working request, or pick "invalid" to see exactly how our
+        API handles bad data.</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> By spending a few extra minutes adding examples, we dramatically reduce the
+        amount of time we have to spend explaining our API to other developers.
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 24</span>
+    </div>
+</div>

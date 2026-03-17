@@ -1,0 +1,137 @@
+<!-- Chapter 34 Page 1 -->
+<div class="page" id="chapter-34">
+    <div class="header">CHAPTER 34 - Production Checklist</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 34 - Production Checklist</h2>
+
+    <h3>The Launch Day Survival Guide</h3>
+    <p>We are finally ready to take our beautiful FastAPI code and deploy it to the world. But before we push the launch
+        button, we absolutely must review this ultimate checklist. If we skip these steps, our app will crash under
+        heavy traffic, or worse, expose our company to massive security failures.</p>
+
+    <h4>1. Turn Off Debug Mode (and Hide the Docs)</h4>
+    <p>While coding on our laptops, those massive, red error traces are incredibly helpful. In production, if an error
+        trace prints out to the browser, a hacker could see our raw SQL queries and file paths! Furthermore, we might
+        not want the entire internet to be able to access our beautiful <code>/docs</code> URL.</p>
+    <pre>
+# main.py
+app = FastAPI(
+    debug=False,       # NEVER leave this True in production!
+    docs_url=None,     # Hide the Swagger UI from the public
+    redoc_url=None     # Hide ReDoc from the public
+)
+  </pre>
+
+    <h4>2. Use Environment Variables for Secrets</h4>
+    <p>As we covered in Chapter 30, never hardcode <code>DATABASE_URL</code>, <code>SECRET_KEY</code>, or API tokens. We
+        must use Pydantic <code>BaseSettings</code> to pull them securely from the server OS at runtime.</p>
+
+    <h4>3. Enable HTTPS (Non-Negotiable)</h4>
+    <p>Never run a production API on bare HTTP. We must place Nginx, Traefik, or an AWS Application Load Balancer in
+        front of our Uvicorn workers to perfectly wrap all our traffic in TLS/SSL encryption using Let's Encrypt.</p>
+
+    <h4>4. Configure Worker Count</h4>
+    <p>A single Uvicorn instance on an 8-core server wastes 87% of the machine's potential. We must configure Gunicorn
+        or Docker to spin up multiple workers. Remember the golden formula:<br>
+        <strong>Workers = (CPU Cores x 2) + 1</strong>
+    </p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 92</span>
+    </div>
+</div>
+
+<!-- Chapter 34 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 34 - Production Checklist</div>
+
+    <h4>5. Handle Lifespan Properly</h4>
+    <p>When our server boots up, we might need to load a massive 2GB Machine Learning model into memory before we accept
+        any traffic. When our server shuts down, we must politely disconnect from the Postgres database rather than just
+        violently killing the power.</p>
+    <p>FastAPI provides a beautiful <code>lifespan</code> manager for exactly this:</p>
+    <pre>
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+
+# The dictionary that holds our massive shared memory
+ml_models = {}
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # This runs exactly once, BEFORE the server starts taking traffic!
+    ml_models["spam_filter"] = "Loading 2GB model..."
+    yield
+    # This runs exactly once, right as the server is shutting down!
+    ml_models.clear()
+    print("Safely disconnected from the database.")
+
+app = FastAPI(lifespan=lifespan)
+  </pre>
+
+    <h4>6. Set Up Proper Logging</h4>
+    <p>If our API crashes at 3:00 AM, we will not be staring at the Uvicorn terminal to see what went wrong. We must
+        configure Python's standard `logging` module to physically write all errors into a permanent file, or send them
+        to an external dashboard like Datadog or Sentry.</p>
+
+    <h4>7. Set Up Monitoring & Health Checks</h4>
+    <p>We must have a simple <code>/health</code> endpoint returning a 200 OK JSON response. Our cloud provider (AWS,
+        Azure, Kubernetes) will repeatedly ping this route. If it fails, our cloud provider knows our Python code froze,
+        and it will automatically reboot the Docker container for us instantly.</p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 93</span>
+    </div>
+</div>
+
+<!-- Chapter 34 Page 3 -->
+<div class="page">
+    <div class="header">CHAPTER 34 - Production Checklist</div>
+
+    <h4>8. Rate Limiting (Using SlowAPI)</h4>
+    <p>If a malicious user writes a script to hit our "Login" route 10,000 times a second guessing passwords, our entire
+        database will catch on fire and all our legitimate customers will be locked out.</p>
+
+    <p>FastAPI doesn't have a native rate limiter, but the community heavily relies on an incredible tool called
+        <strong>SlowAPI</strong>. It perfectly tracks users' IP addresses using Redis.
+    </p>
+
+    <pre>
+# pip install slowapi
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from fastapi import FastAPI, Request
+
+# Create a limiter tracking the user's IP Address
+limiter = Limiter(key_func=get_remote_address)
+app = FastAPI()
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Only allow exactly 5 hits per minute!
+@app.post("/login")
+@limiter.limit("5/minute")
+async def login(request: Request):
+    return {"message": "You successfully logged in!"}
+  </pre>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> If a user hits the <code>/login</code> route 6 times in 60 seconds, SlowAPI
+        automatically acts like a nightclub bouncer, cutting off their connection and returning a "429 Too Many
+        Requests" error. No database connection is ever made!
+    </div>
+
+    <h4>9. Input Size Limits (Body Size)</h4>
+    <p>If we have an endpoint that accepts a massive string of JSON, a hacker could maliciously send a 50GB JSON file,
+        causing our entire server's RAM to explode instantly.</p>
+    <p>We should configure our Reverse Proxy (Nginx) to aggressively reject any HTTP payload over a certain size (like
+        5MB) before that giant payload even gets close to touching our fragile Python code!</p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 94</span>
+    </div>
+</div>

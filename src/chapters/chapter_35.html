@@ -1,0 +1,110 @@
+<!-- Chapter 35 Page 1 -->
+<div class="page" id="chapter-35">
+    <div class="header">CHAPTER 35 - FastAPI & APIRouter Reference</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 35 - FastAPI & APIRouter Reference</h2>
+
+    <h3>The FastAPI() Constructor</h3>
+    <p>When we instantiate our main <code>app = FastAPI()</code>, we can configure our entire application globally. Here
+        are the most critical parameters we should know as senior developers:</p>
+
+    <ul>
+        <li><code>title</code>: The gigantic bold title permanently displayed at the top of our <code>/docs</code> page.
+            (Default: "FastAPI").</li>
+        <li><code>description</code>: A massive, Markdown-supported string explaining our API underneath the title.</li>
+        <li><code>version</code>: The current API version (e.g., <code>"1.0.0"</code>). Very useful if we have a
+            public-facing API.</li>
+        <li><code>docs_url</code>: The path to our Swagger UI. Defaults to <code>"/docs"</code>.
+            <strong>Pro-tip:</strong> Set to <code>None</code> in production to completely disable and hide it from
+            hackers!
+        </li>
+        <li><code>redoc_url</code>: The path to Redoc (an alternative API documentation UI). Defaults to
+            <code>"/redoc"</code>. Set to <code>None</code> to disable.
+        </li>
+        <li><code>openapi_url</code>: The path that serves the raw JSON schema of our entire API. Both Swagger and Redoc
+            read this file to build their UIs. Defaults to <code>"/openapi.json"</code>.</li>
+        <li><code>dependencies</code>: A list of <code>Depends()</code> functions that will be aggressively executed
+            globally before <em>every single route</em> in our entire application.</li>
+        <li><code>servers</code>: A list of dicts defining exactly where this API is hosted (e.g.,
+            <code>{"url": "https://api.ourstartup.com"}</code>) for our OpenAPI clients to know.
+        </li>
+        <li><code>lifespan</code>: A single async context manager function we wrote to perfectly handle our app's
+            startup and shutdown sequence (loading AI models, closing DBs).</li>
+    </ul>
+
+    <h3>The APIRouter() Constructor</h3>
+    <p>When writing our <code>users.py</code> mini-apps using <code>APIRouter()</code>, we configure the entire
+        "Department" at once:</p>
+
+    <ul>
+        <li><code>prefix</code>: A string (like <code>"/users"</code>) that perfectly prefixes every single route inside
+            this router. Note: It cannot end with a trailing slash!</li>
+        <li><code>tags</code>: A list of strings (like <code>["Users", "Admin"]</code>). This magically groups all the
+            routes together under bold headings in the Swagger UI.</li>
+        <li><code>dependencies</code>: A list of <code>Depends()</code> functions that are aggressively enforced on
+            every single route uniquely inside this specific router.</li>
+        <li><code>responses</code>: A dictionary of HTTP status codes and descriptions (like
+            <code>{404: {"description": "Not Found"}}</code>) applied instantly to all routes in this router.
+        </li>
+    </ul>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 95</span>
+    </div>
+</div>
+
+<!-- Chapter 35 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 35 - FastAPI & APIRouter Reference</div>
+
+    <h3>Path Operation Decorator Parameters</h3>
+    <p>The beating heart of our app is the <code>@app.get()</code> or <code>@router.post()</code> decorators. Here is
+        absolutely everything we can inject into them to master FastAPI.</p>
+
+    <pre>
+# A masterclass in route configuration!
+@app.post(
+    path="/items/",
+    response_model=schemas.Item,
+    status_code=status.HTTP_201_CREATED,
+    tags=["Inventory"],
+    summary="Create a new shiny item",
+    description="This route inserts a brand new item into the PostgreSQL database. **Markdown is completely supported!**",
+    response_description="The successfully created item perfectly serialized.",
+    deprecated=False,
+    include_in_schema=True
+)
+async def create_item(item: schemas.ItemCreate):
+    return item
+  </pre>
+
+    <h4>The Full Breakdown:</h4>
+    <ul>
+        <li><code>path</code>: (Required) the string route (e.g., <code>"/users/{id}"</code>).</li>
+        <li><code>response_model</code>: The Pydantic schema FastAPI must forcefully strictly validate against and
+            serialize our return data into.</li>
+        <li><code>status_code</code>: The exact HTTP numerical code to return if successful (use
+            <code>status.HTTP_200_OK</code>, never hardcode numbers).
+        </li>
+        <li><code>tags</code>: Groups the route in Swagger UI.</li>
+        <li><code>dependencies</code>: Specific dependencies just for this single route.</li>
+        <li><code>summary</code>: A short, beautiful one-line title for the route inside Swagger UI.</li>
+        <li><code>description</code>: An incredibly long, Markdown-rich explanation of exactly what this route does and
+            why it exists.</li>
+        <li><code>response_description</code>: A description of the exact return payload.</li>
+        <li><code>deprecated</code>: If <code>True</code>, FastAPI magically strikes a line through the route in Swagger
+            UI telling all our frontend devs to stop using it!</li>
+        <li><code>include_in_schema</code>: If <code>False</code>, the route turns completely invisible in our public
+            Swagger UI documentation (great for secret admin endpoints!).</li>
+        <li><code>response_model_exclude_unset</code>: A brilliant boolean that strips away <code>None</code> or unset
+            values from our response JSON to keep it tiny.</li>
+        <li><code>response_model_include</code> / <code>_exclude</code>: Extremely specific sets telling FastAPI to
+            literally cut out specific Pydantic fields (like hiding a <code>password</code> field).</li>
+    </ul>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 96</span>
+    </div>
+</div>

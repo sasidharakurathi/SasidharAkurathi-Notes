@@ -1,0 +1,161 @@
+<!-- Chapter 33 Page 1 -->
+<div class="page" id="chapter-33">
+    <div class="header">CHAPTER 33 - Docker Deployment</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 33 - Docker Deployment</h2>
+
+    <h3>The "It works on my machine!" Problem</h3>
+    <p>We've all been there: we spend three weeks writing flawless FastAPI code on our Macbook, we send it to our
+        coworker with a Windows laptop, and it instantly crashes. They have the wrong version of Python, they didn't
+        install PostgreSQL correctly, and their environment variables are missing.</p>
+
+    <p><strong>Docker</strong> completely eliminates this problem. Docker allows us to build an impenetrable "shipping
+        container" that holds our code, the exact version of Python it needs, all the pip libraries, and even the
+        operating system itself.</p>
+
+    <p>When we launch a Docker container, it does not care if the host computer is a Macbook, a Raspberry Pi, or a
+        100-core AWS server. It runs exactly the same, 100% of the time.</p>
+
+    <h3>Writing a FastAPI Dockerfile</h3>
+    <p>To tell Docker how to pack our shipping container, we create a file called precisely <code>Dockerfile</code> (no
+        extension) in the root of our project.</p>
+
+    <p>A <strong>Multi-Stage Build</strong> is the gold standard for production. In Stage 1, we download all the heavy
+        compiling tools to install our pip packages. In Stage 2, we copy <em>only</em> the installed packages into a
+        fresh, completely empty container. This drops our final image size from 1,000MB down to maybe 150MB!</p>
+
+    <pre>
+# Dockerfile
+
+# Stage 1: The Builder (Heavy, downloading everything)
+FROM python:3.11-slim as builder
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --user -r requirements.txt
+
+# Stage 2: The Final Production Container (Ultra light)
+FROM python:3.11-slim
+WORKDIR /app
+
+# Copy only the installed packages from Stage 1
+COPY --from=builder /root/.local /root/.local
+ENV PATH=/root/.local/bin:$PATH
+
+# Copy our actual project code
+COPY . .
+
+# Expose port 80 and run Uvicorn!
+EXPOSE 80
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
+  </pre>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 89</span>
+    </div>
+</div>
+
+<!-- Chapter 33 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 33 - Docker Deployment</div>
+
+    <h3>Docker Compose: Orchestrating the Orchestra</h3>
+    <p>Our FastAPI container is brilliant, but it is lonely. It needs a Postgres database to save users, and a Redis
+        database to broadcast WebSockets.</p>
+
+    <p>We <em>could</em> manually spin up three separate Docker containers and try to wire them together. But the
+        industry standard is <strong>Docker Compose</strong>. We write one single <code>docker-compose.yml</code> file
+        that launches all three containers simultaneously and physically connects them over a private, invisible
+        network!</p>
+
+    <pre>
+# docker-compose.yml
+version: '3.8'
+
+services:
+  # 1. Our Postgres Database Container
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: supersecretpassword
+      POSTGRES_DB: fastapi_app
+    ports:
+      - "5432:5432"
+
+  # 2. Our Redis Cache Container
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  # 3. Our FastAPI Container
+  api:
+    build: . # Tells Docker to read our Dockerfile!
+    ports:
+      - "8000:80" # Map our laptop's port 8000 to the container's port 80
+    environment:
+      # Fastapi will automatically detect these for pydantic-settings!
+      - DATABASE_URL=postgresql://admin:supersecretpassword@db:5432/fastapi_app
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - db
+      - redis
+  </pre>
+
+    <p><strong>The Magic Trick:</strong> Look at the <code>DATABASE_URL</code> on line 28. Notice we used
+        <code>@db:5432</code> instead of an IP address! Because we used Docker Compose, Docker automatically creates an
+        internal DNS system. Our FastAPI container can literally talk to the Postgres container just by using its
+        service name (<code>db</code>)!
+    </p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 90</span>
+    </div>
+</div>
+
+<!-- Chapter 33 Page 3 -->
+<div class="page">
+    <div class="header">CHAPTER 33 - Docker Deployment</div>
+
+    <h3>The Health Check Endpoint</h3>
+    <p>When deploying to a massive production cluster (like Kubernetes or AWS ECS), the manager needs to know if our
+        application is actually alive, or if it has frozen and needs to be violently restarted.</p>
+
+    <p>We always, always provide a "Health Check" endpoint specifically for the robots.</p>
+
+    <pre>
+@app.get("/health", tags=["System"])
+def health_check():
+    # A robot pings this route every 10 seconds.
+    # If the robot receives a 200 OK, it leaves the container alone.
+    # If the request fails, the robot deletes our container and spawns a new one.
+    return {"status": "ok", "version": "1.0.3"}
+  </pre>
+
+    <h3>Nginx as a Reverse Proxy</h3>
+    <p>Earlier, we mentioned that letting the raw internet hit Uvicorn directly is incredibly dangerous, because Uvicorn
+        does not natively support HTTPS certificates on its own securely.</p>
+
+    <p>The standard architectural pattern is to place a massive, hardened steel gateway in <em>front</em> of our FastAPI
+        container. The two most popular choices are <strong>Nginx</strong> or <strong>Traefik</strong>.</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> Nginx sits bare on the internet. It catches the encrypted HTTPS traffic,
+        decrypts it to HTTP, and passes the clean data backward into our private Docker network to our FastAPI
+        container. We call this a "Reverse Proxy."
+    </div>
+
+    <p>If our startup goes hugely viral, we can launch 10 parallel FastAPI containers in Docker. We simply tell Nginx to
+        "Load Balance" across all 10 of them. When 10 users visit simultaneously, Nginx perfectly routes 1 user to each
+        container.</p>
+
+    <p>This completely shields our Python code from the violent chaos of the public internet, and ensures we can scale
+        infinitely.</p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 91</span>
+    </div>
+</div>

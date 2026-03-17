@@ -1,0 +1,86 @@
+<!-- Chapter 10 Page 1 -->
+<div class="page" id="chapter-10">
+    <div class="header">CHAPTER 10 - Cookie Parameters</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 10 - Cookie Parameters</h2>
+
+    <h3>What is a Cookie?</h3>
+    <p>A cookie is a tiny piece of data that a website asks our browser to store. Think of it like a coat check ticket.
+        When we arrive, the restaurant gives us a ticket. Whenever we walk past the front desk again, we show them the
+        ticket so they know who we are.</p>
+
+    <p>Every time our browser talks to the API, it automatically brings all its stored cookies along for the ride. We
+        usually use cookies to remember if a user is logged in, or to track their shopping cart across multiple days.
+    </p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> Cookies are small text files stored in our browser that automatically get
+        sent to the server with every request. They help the server remember who we are.
+    </div>
+
+    <h3>Reading Cookies with Cookie()</h3>
+    <p>Reading a cookie in FastAPI is exactly identical to reading a Query or Path parameter. We just import
+        <code>Cookie</code> and declare it in our function.
+    </p>
+
+    <pre>
+from fastapi import Cookie, FastAPI
+
+app = FastAPI()
+
+@app.get("/items/")
+def read_items(session_id: str = Cookie(default=None)):
+    return {"session_id": session_id}
+  </pre>
+
+    <p>Let's look at this carefully:</p>
+    <p><strong>Line 1:</strong> We import <code>Cookie</code> from the main <code>fastapi</code> package.</p>
+    <p><strong>Line 6:</strong> By assigning <code>= Cookie(default=None)</code>, we explicitly tell FastAPI that
+        <code>session_id</code> must be pulled from the browser's hidden cookies, NOT from a query parameter. Without
+        the <code>Cookie()</code> declaration, FastAPI would assume it was a normal query parameter at the end of the
+        URL.
+    </p>
+
+    <div class="mistake-box">
+        <strong>⚠️ Common Mistake:</strong> Confusing headers, queries, and cookies. If we forget to wrap the variable
+        in <code>Cookie()</code>, FastAPI will stubbornly look for it in the wrong place!
+    </div>
+
+    <h3>Cookie Models with Pydantic</h3>
+    <p>What if we expect multiple cookies? We could list them one by one in the function arguments, but that gets messy.
+        Just like with request bodies, we can build a Pydantic model to instantly validate and group multiple cookies
+        together.</p>
+
+    <pre>
+from pydantic import BaseModel
+from fastapi import Cookie, FastAPI
+
+class Cookies(BaseModel):
+    session_id: str
+    fatebook_tracker: str = None
+
+app = FastAPI()
+
+@app.get("/items/")
+def read_items(cookies: Cookies = Cookie()):
+    return cookies
+  </pre>
+
+    <p><strong>Line 11:</strong> Instead of asking for a string, we ask for our entire <code>Cookies</code> Pydantic
+        model, and we tell FastAPI to build it entirely out of browser cookies by using <code>= Cookie()</code>. If the
+        browser does not provide a <code>session_id</code> cookie, Pydantic immediately blocks the request because it is
+        marked as required.</p>
+
+    <h3>Setting Cookies</h3>
+    <p>So far, we have only talked about <strong>reading</strong> cookies that the browser sends to us. How do we
+        actually <strong>give</strong> the browser a new cookie to store?</p>
+
+    <p>This involves modifying the outgoing response directly, rather than just returning a simple dictionary. Because
+        this fundamentally changes how we write our route functions, we will skip it for now and cover it fully in the
+        Advanced sections later in our journey.</p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 27</span>
+    </div>
+</div>

@@ -1,0 +1,175 @@
+<!-- Chapter 38 Page 1 -->
+<div class="page" id="chapter-38">
+    <div class="header">CHAPTER 38 - FastAPI Cheat Sheet</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 38 - FastAPI Cheat Sheet</h2>
+
+    <h3>The Ultimate Quick Reference</h3>
+    <p>We've covered an immense amount of ground in this handbook. If you are ever stuck building a route, refer to this
+        exact page to remember the syntax for everything FastAPI offers.</p>
+
+    <h3>1. Decorators & Routing</h3>
+    <pre>
+from fastapi import FastAPI, APIRouter
+
+app = FastAPI()
+router = APIRouter(prefix="/users", tags=["Users"])
+
+@app.get("/items/{id}")        # Read data
+@app.post("/items/")           # Create data
+@app.put("/items/{id}")        # Replace entire item
+@app.patch("/items/{id}")      # Update partial item
+@app.delete("/items/{id}")     # Delete item
+@app.options("/items/")        # Check allowed methods
+@app.head("/items/")           # Check headers (no body)
+
+# Include a router into the main app
+app.include_router(router)
+  </pre>
+
+    <h3>2. All Parameter Types</h3>
+    <p>Where does the data come from? FastAPI imports specific classes to map precisely where to look.</p>
+    <pre>
+from fastapi import Path, Query, Body, Header, Cookie, Form, File, UploadFile
+
+@app.post("/everything/{item_id}")
+async def massive_route(
+    # 1. URL Path: /everything/42
+    item_id: int = Path(..., title="The ID", ge=1),
+
+    # 2. URL Query: ?q=search&limit=10
+    q: str = Query(None, min_length=3),
+    limit: int = Query(10, le=100),
+
+    # 3. JSON Body: {"name": "Apple"}
+    item: ItemSchema = Body(...),
+    
+    # 4. HTTP Headers: X-Token: "abc"
+    x_token: str = Header(None),
+    
+    # 5. Browser Cookies: session_id=123
+    session_id: str = Cookie(None),
+    
+    # 6. HTML Form Data: text input fields
+    username: str = Form(...),
+    
+    # 7. File Uploads: multipart/form-data
+    profile_pic: UploadFile = File(...)
+):
+    return {"message": "Success"}
+  </pre>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 102</span>
+    </div>
+</div>
+
+<!-- Chapter 38 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 38 - FastAPI Cheat Sheet</div>
+
+    <h3>3. Common Response Patterns</h3>
+    <p>How do we send data back? Usually just <code>return dict</code>, but we often need custom responses.</p>
+    <pre>
+from fastapi import Response, status
+from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
+
+# 1. Standard dict (FastAPI converts to JSON instantly)
+@app.get("/basic")
+def get_basic():
+    return {"hello": "world"}
+
+# 2. Custom Status Code (201 Created)
+@app.post("/item", status_code=status.HTTP_201_CREATED)
+def create():
+    return {"status": "created"}
+
+# 3. Direct JSONResponse (To set a custom cookie or header instantly)
+@app.get("/login")
+def login_cookie():
+    response = JSONResponse(content={"message": "Logged in"})
+    response.set_cookie(key="session", value="fake-token")
+    return response
+
+# 4. Redirecting the User
+@app.get("/old-link")
+def redirect_me():
+    return RedirectResponse(url="/new-link", status_code=status.HTTP_301_MOVED_PERMANENTLY)
+  </pre>
+
+    <h3>4. Dependency Injection Quick Reference</h3>
+    <p>Dependencies let us reuse code gracefully.</p>
+    <pre>
+from fastapi import Depends
+
+# 1. A basic dependency function
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# 2. Injecting it into a route
+@app.get("/users/")
+def get_users(db: Session = Depends(get_db)):
+    return db.query(User).all()
+
+# 3. Router-Level Dependency (Enforced on ALL routes in the router)
+router = APIRouter(dependencies=[Depends(verify_token)])
+  </pre>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 103</span>
+    </div>
+</div>
+
+<!-- Chapter 38 Page 3 -->
+<div class="page">
+    <div class="header">CHAPTER 38 - FastAPI Cheat Sheet</div>
+
+    <h3>5. Auth Quick Reference</h3>
+    <p>The standard pattern for protecting an endpoint with OAuth2 Password Bearer.</p>
+    <pre>
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from pydantic import BaseModel
+
+# 1. Tells Swagger UI where to send the login data
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+# 2. Our standard dependency to verify the token
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    if not token == "fake-secret-token":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return {"username": "alice"}
+
+# 3. Protecting an endpoint
+@app.get("/users/me")
+async def read_users_me(current_user: dict = Depends(get_current_user)):
+    return current_user
+  </pre>
+
+    <h3>6. Pydantic Schema vs SQLAlchemy Model</h3>
+    <div class="mistake-box">
+        <strong>⚠️ Absolute Critical Reminder:</strong><br>
+        <code>SQLAlchemy Models</code> represent the permanent structure of our physical PostgreSQL tables. They inherit
+        from <code>Base</code>.<br><br>
+        <code>Pydantic Schemas</code> represent the temporary shape of the JSON travelling over the internet. They
+        inherit from <code>BaseModel</code>.<br><br>
+        We must use <strong>Schemas</strong> in our FastAPI routes (<code>response_model=ItemSchema</code>), and write
+        Python code to literally convert the Database Model into the Schema. <strong>Never</strong> return a raw
+        SQLAlchemy Model over the internet!
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 104</span>
+    </div>
+</div>

@@ -1,0 +1,209 @@
+<!-- Chapter 7 Page 1 -->
+<div class="page" id="chapter-7">
+    <div class="header">CHAPTER 7 - Body Fields & Nested Models</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 7 - Body Fields & Nested Models</h2>
+
+    <h3>Taking Control with Field()</h3>
+    <p>Till now we briefly saw how to use <code>Field()</code> to add extra validation to our Pydantic
+        models. Now let's explore its true power. Think of <code>Field()</code> as a strict bouncer who has a very
+        detailed set of instructions.</p>
+
+    <pre>
+from pydantic import BaseModel, Field
+
+class Item(BaseModel):
+    name: str = Field(min_length=2, max_length=50)
+    description: str = Field(
+        default=None, 
+        title="Item Description", 
+        description="A detailed description of the item"
+    )
+    price: float = Field(gt=0, le=1000)
+    tax: float = Field(default=0.0, ge=0)
+  </pre>
+
+    <p>Here are the most useful options we can pass to <code>Field()</code>:</p>
+    <ul>
+        <li><strong>default:</strong> The default value if the user does not provide one.</li>
+        <li><strong>title & description:</strong> These show up beautifully in our interactive Swagger UI docs.</li>
+        <li><strong>min_length & max_length:</strong> For strings. Prevents names that are too short or essays where
+            just a short name is expected.</li>
+        <li><strong>gt, ge, lt, le:</strong> For numbers. Greater than, greater or equal, less than, less or equal.</li>
+        <li><strong>pattern:</strong> A regular expression that the string must perfectly match.</li>
+    </ul>
+
+    <h3>Nested Models (Models inside Models)</h3>
+    <p>Real-world data is rarely flat. When ordering a product online, an order is not just a list of text. An order
+        contains an item, and an item has its own details. We can represent this deep structure by putting Pydantic
+        models inside other Pydantic models.</p>
+
+    <pre>
+class Image(BaseModel):
+    url: str
+    name: str
+
+class Item(BaseModel):
+    name: str
+    description: str = None
+    image: Image = None
+  </pre>
+
+    <p><strong>Lines 1-3:</strong> We create a standard model for an Image.</p>
+    <p><strong>Line 8:</strong> We use our <code>Image</code> model as the type for the <code>image</code> attribute
+        inside our <code>Item</code> model. Now, our <code>Item</code> perfectly understands that it contains another
+        complex object inside of it.</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> We can snap Pydantic models together like Lego blocks to build deeply
+        layered, perfectly validated data structures.
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 19</span>
+    </div>
+</div>
+
+<!-- Chapter 7 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 7 - Body Fields & Nested Models</div>
+
+    <h3>Lists of Nested Models</h3>
+    <p>An item usually has more than one image. What if we want a list of images? We just wrap our nested model in the
+        standard Python <code>list</code> (or <code>List</code> from typing).</p>
+
+    <pre>
+from typing import List
+
+class Item(BaseModel):
+    name: str
+    description: str = None
+    images: List[Image] = None
+  </pre>
+
+    <p>If a user tries to send a list containing three perfect images and one broken image, FastAPI will stop the entire
+        request and tell the user exactly which image in the list is broken!</p>
+
+    <h3>Set Types for Unique Items</h3>
+    <p>Sometimes, a list is not enough. What if we want to ensure every image in the list is absolutely unique? We do
+        not want users uploading the exact same image URL five times.</p>
+    <p>To enforce uniqueness automatically, we use the Python <code>set</code> type instead of <code>list</code>.</p>
+
+    <pre>
+from typing import Set
+
+class Item(BaseModel):
+    name: str
+    images: Set[Image] = set()
+  </pre>
+
+    <p>Even if the user sends a request with duplicate items in the JSON array, FastAPI will automatically filter out
+        the duplicates before our code even runs.</p>
+
+    <h3>Deeply Nested Models</h3>
+    <p>There is no limit to how deep we can go. We can have an <code>Offer</code> model that contains a list of
+        <code>Item</code> models, and each <code>Item</code> model contains a list of <code>Image</code> models.
+    </p>
+
+    <pre>
+class Offer(BaseModel):
+    name: str
+    description: str = None
+    price: float
+    items: List[Item]
+  </pre>
+
+    <p>FastAPI will validate this entire massive tree of data in a fraction of a millisecond. If we tried to write this
+        validation manually with loops and if-statements, it would take hundreds of lines of code.</p>
+
+    <div class="mistake-box">
+        <strong>⚠️ Common Mistake:</strong> Defining models in the wrong order. Because Python reads top-to-bottom, we
+        must define the "inner" models (like <code>Image</code>) before we try to use them inside the "outer" models
+        (like <code>Item</code>).
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 20</span>
+    </div>
+</div>
+
+<!-- Chapter 7 Page 3 -->
+<div class="page">
+    <div class="header">CHAPTER 7 - Body Fields & Nested Models</div>
+
+    <h3>Special Types: URLs and Emails</h3>
+    <p>Validating an email address is famously difficult. We could write a massive Regex pattern, but FastAPI provides
+        built-in special types that handle this for us automatically.</p>
+
+    <p>By installing an extra package (<code>pip install "pydantic[email]"</code>), we unlock magical types like
+        <code>EmailStr</code> and <code>HttpUrl</code>.
+    </p>
+
+    <pre>
+from pydantic import BaseModel, HttpUrl, EmailStr
+
+class UserProfile(BaseModel):
+    name: str
+    email: EmailStr
+    website: HttpUrl
+  </pre>
+
+    <p>If the user sends "not-an-email" for the email, or "www.bad-link" (without the http://) for the website, Pydantic
+        immediately rejects the request with a detailed error. We get incredibly powerful validation with zero effort.
+    </p>
+
+    <h3>Bodies as Dictionaries</h3>
+    <p>Sometimes, we want to accept a dictionary where we know the type of the keys and the values, but we don't know
+        their exact names ahead of time. Think of recording temperature readings from dozens of differently-named
+        sensors.</p>
+
+    <pre>
+from typing import Dict
+
+@app.post("/index-weights/")
+def create_weights(weights: Dict[int, float]):
+    return weights
+  </pre>
+
+    <p>This tells FastAPI to expect a JSON object where every key is an integer, and every value is a float (like
+        <code>{"1": 4.5, "2": 9.1}</code>).
+    </p>
+
+    <h3>Union Types (Accepting Multiple Options)</h3>
+    <p>What if a field could be an integer OR a string? We use the <code>Union</code> type from Python to allow multiple
+        valid options.</p>
+
+    <pre>
+from typing import Union
+
+class Item(BaseModel):
+    name: str
+    specs: Union[str, int] = None
+  </pre>
+
+    <p>FastAPI will first check if the incoming data is a string. If it is not, it will check if it is an integer. If
+        both fail, it returns an error.</p>
+
+    <h3>Using Annotated with Field()</h3>
+    <p>As we use modern Python, we will often see <code>Annotated</code> used alongside <code>Field()</code>. It is a
+        cleaner way to attach validation rules to our types, especially when reusing them.</p>
+
+    <pre>
+from typing import Annotated
+from pydantic import BaseModel, Field
+
+class Item(BaseModel):
+    name: str
+    price: Annotated[float, Field(gt=0, description="The cost")]
+  </pre>
+
+    <p>This reads as: "The price is a float, and by the way, it must be greater than zero." It separates the data type
+        from the validation rules beautifully.</p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 21</span>
+    </div>
+</div>

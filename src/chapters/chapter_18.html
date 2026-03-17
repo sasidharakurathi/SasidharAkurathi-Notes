@@ -1,0 +1,168 @@
+<!-- Chapter 18 Page 1 -->
+<div class="page" id="chapter-18">
+    <div class="header">CHAPTER 18 - OAuth2 Password Flow (Basic)</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 18 - OAuth2 Password Flow (Basic)</h2>
+
+    <h3>Setting Up OAuth2PasswordBearer</h3>
+    <p>Now that we understand the concept of a "valet key" (a token), how do we actually tell FastAPI to demand one? We
+        use a brilliant built-in tool called <code>OAuth2PasswordBearer</code>.</p>
+
+    <p>This tool does one massive job for us: it searches the incoming HTTP request specifically for an
+        <code>Authorization</code> header, and looks for a token that starts with the word "Bearer".
+    </p>
+
+    <pre>
+from fastapi import Depends, FastAPI
+from fastapi.security import OAuth2PasswordBearer
+
+app = FastAPI()
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+@app.get("/items/")
+def read_items(token: str = Depends(oauth2_scheme)):
+    return {"token": token}
+  </pre>
+
+    <p><strong>Line 6:</strong> We create our security scheme. Notice we passed <code>tokenUrl="token"</code>. This does
+        NOT create the login route for us. It simply tells FastAPI's Swagger documentation: "Hey, when a user clicks the
+        Authorize button, send their username and password to the <code>/token</code> path to get the key."</p>
+
+    <p><strong>Line 9:</strong> We protect our route by adding <code>= Depends(oauth2_scheme)</code>. Now, if a user
+        tries to visit <code>/items/</code> without a valid Bearer token, FastAPI will automatically block them and
+        return a beautiful 401 Unauthorized JSON error. If they <em>do</em> provide the token, FastAPI hands it to our
+        function as a simple string!</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> <code>OAuth2PasswordBearer</code> ensures nobody gets into our route without
+        presenting a token.
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 45</span>
+    </div>
+</div>
+
+<!-- Chapter 18 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 18 - OAuth2 Password Flow (Basic)</div>
+
+    <h3>The Fake User Database</h3>
+    <p>To demonstrate how this works end-to-end, we need a fake database. We will use a simple Python dictionary where
+        the usernames are the keys, and the values are their full profiles (including an email and a name).</p>
+
+    <pre>
+fake_users_db = {
+    "johndoe": {
+        "username": "johndoe",
+        "full_name": "John Doe",
+        "email": "johndoe@example.com",
+    },
+    "alice": {
+        "username": "alice",
+        "full_name": "Alice Wonderland",
+        "email": "alice@example.com",
+    },
+}
+  </pre>
+
+    <h3>The get_current_user Master Pattern</h3>
+    <p>Right now, our <code>oauth2_scheme</code> only returns a raw token string (like "12345"). That is not very
+        helpful. We want to know exactly <em>which</em> user owns that token!</p>
+
+    <p>This introduces the most important dependency pattern in FastAPI: <code>get_current_user</code>.</p>
+
+    <p>We write a special dependency function that takes the raw token, looks it up in our database, and returns the
+        actual User dictionary (or Pydantic model).</p>
+
+    <pre>
+from pydantic import BaseModel
+from fastapi import HTTPException, status
+
+class User(BaseModel):
+    username: str
+    email: str | None = None
+    full_name: str | None = None
+
+def decode_token(token: str):
+    # Imagine this function decodes a Real JWT. For now, 
+    # we pretend the user just sent their username as the token.
+    return token
+
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    # 1. Decode the token to discover who they are
+    username = decode_token(token)
+    
+    # 2. Look them up in our database
+    user_dict = fake_users_db.get(username)
+    
+    # 3. If they don't exist, instantly ban them
+    if not user_dict:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+        )
+        
+    # 4. Return the perfect Pydantic model
+    return User(**user_dict)
+  </pre>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 46</span>
+    </div>
+</div>
+
+<!-- Chapter 18 Page 3 -->
+<div class="page">
+    <div class="header">CHAPTER 18 - OAuth2 Password Flow (Basic)</div>
+
+    <h3>Protecting a Route</h3>
+    <p>Now that we have built our magnificent <code>get_current_user</code> dependency, protecting any route in our
+        entire application becomes incredibly easy and clean.</p>
+
+    <pre>
+from typing import Annotated
+
+@app.get("/users/me")
+async def read_users_me(
+    current_user: Annotated[User, Depends(get_current_user)]
+):
+    return current_user
+  </pre>
+
+    <p>Let's admire this masterpiece:</p>
+    <ul>
+        <li>We tell the route to depend on <code>get_current_user</code>.</li>
+        <li>FastAPI automatically realizes that <code>get_current_user</code> depends on <code>oauth2_scheme</code>.
+        </li>
+        <li>FastAPI checks the incoming HTTP headers.</li>
+        <li>It extracts the Bearer token.</li>
+        <li>It passes the token to <code>get_current_user</code>.</li>
+        <li><code>get_current_user</code> decodes it, looks up "johndoe" in the database, and creates a
+            <code>User</code> Pydantic model.
+        </li>
+        <li>FastAPI finally unfreezes our route function and hands us the fully secure, fully verified
+            <code>current_user</code> object!
+        </li>
+    </ul>
+
+    <p>If any of those steps fail (missing token, bad header, user deleted from database), FastAPI instantly kicks the
+        user out with a 401 error. Our highly secure route never even runs unless the user is completely verified!</p>
+
+    <div class="usage-box">
+        <strong>Use this when:</strong> We need to secure an endpoint. By simply adding
+        <code>Depends(get_current_user)</code> to any route, we instantly lock it down and simultaneously gain access to
+        all the user's data. It is the ultimate two-for-one tool.
+    </div>
+
+    <p>In the next chapter, we will look at how to properly generate those complex, cryptographic JWT tokens we glossed
+        over in the `decode_token` function above!</p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 47</span>
+    </div>
+</div>

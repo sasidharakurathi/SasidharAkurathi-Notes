@@ -1,0 +1,120 @@
+<!-- Chapter 21 Page 1 -->
+<div class="page" id="chapter-21">
+    <div class="header">CHAPTER 21 - CORS (Cross-Origin Resource Sharing)</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 21 - CORS (Cross-Origin Resource Sharing)</h2>
+
+    <h3>What is CORS?</h3>
+    <p>CORS stands for Cross-Origin Resource Sharing. It is the number one cause of frustrating errors when connecting a
+        new frontend to our shiny new FastAPI backend.</p>
+
+    <p>Imagine we built an amazing API running at <code>https://api.mycoolstartup.com</code>. Then, we built a React
+        frontend running at <code>https://mycoolstartup.com</code>.</p>
+
+    <p>We load the React site in our browser, and our code tries to fetch data from our API. The browser instantly
+        panics and blocks the request, screaming a massive red "CORS ERROR" in the console.</p>
+
+    <p>Why? <strong>Security.</strong> The browser sees that the frontend's domain (the "Origin") is different from the
+        backend's domain. By default, modern browsers absolutely refuse to let a script from one domain secretly steal
+        data from another domain. This prevents evil websites from silently reading our private data while we browse the
+        web.</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> CORS is a security feature inside the user's web browser, NOT the server. The
+        browser will block our frontend from talking to our backend unless our backend explicitly gives permission.
+    </div>
+
+    <h3>Setting Up CORSMiddleware</h3>
+    <p>To fix this, we need to add a specialized bouncer called <code>CORSMiddleware</code> to our FastAPI app. This
+        bouncer's only job is to intercept incoming requests from the browser and attach a special HTTP header saying
+        "Yes, this frontend domain is officially allowed to talk to me!"</p>
+
+    <pre>
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+# 1. Define exactly who is allowed to talk to us
+origins = [
+    "http://localhost.tiangolo.com",
+    "https://localhost.tiangolo.com",
+    "http://localhost",
+    "http://localhost:8080",
+]
+
+# 2. Add the bouncer
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/")
+async def main():
+    return {"message": "Hello World"}
+  </pre>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 55</span>
+    </div>
+</div>
+
+<!-- Chapter 21 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 21 - CORS (Cross-Origin Resource Sharing)</div>
+
+    <h3>Breaking Down the Permissions</h3>
+    <p>Let's look at exactly what permissions we gave <code>CORSMiddleware</code>.</p>
+
+    <h4>allow_origins</h4>
+    <p>This is a strict list of frontend domains that are allowed to make requests to our API. If we deploy our frontend
+        to <code>https://app.example.com</code>, that exact string must be in this list.</p>
+    <p>If we want our API to be public (like a public weather API that anyone can use on any website), we can set this
+        to a wildcard: <code>allow_origins=["*"]</code>.</p>
+
+    <h4>allow_methods</h4>
+    <p>Maybe we want other websites to read our data (using GET requests), but absolutely not alter our data (using POST
+        or DELETE requests). We can restrict the HTTP methods here. By using <code>["*"]</code>, we permit all standard
+        HTTP methods.</p>
+
+    <h4>allow_headers</h4>
+    <p>When the browser makes a request, it might include custom headers (like <code>Authorization</code> or
+        <code>X-Custom-Header</code>). If we do not explicitly list those allowed headers here, the browser will block
+        the request. Using <code>["*"]</code> allows everything.
+    </p>
+
+    <h4>allow_credentials</h4>
+    <p>This is the most critical setting for authenticated apps. If our React frontend needs to send cookies, an
+        <code>Authorization</code> header with a Bearer token, or TLS client certificates across domains, this MUST be
+        set to <code>True</code>.
+    </p>
+
+    <div class="mistake-box">
+        <strong>⚠️ Common Mistake:</strong> We cannot use <code>allow_origins=["*"]</code> if we also have
+        <code>allow_credentials=True</code>. Browsers consider this a massive security risk! If we allow credentials, we
+        MUST type out the exact, specific origins in our <code>allow_origins</code> list.
+    </div>
+
+    <h3>Expose Headers and Max Age</h3>
+    <p>There are two more advanced settings we might occasionally need:</p>
+
+    <ul>
+        <li><code>expose_headers</code>: If our API sends back a totally custom HTTP header (like the
+            <code>X-Process-Time</code> header we built in the last chapter), the frontend browser code is not allowed
+            to read it by default! We must list it in <code>expose_headers</code> so the browser lets JavaScript see it.
+        </li>
+        <li><code>max_age</code>: When a browser is worried about CORS, it sends a secret "preflight" request (using the
+            OPTIONS method) to the server just to check the rules. To stop the browser from constantly bombarding our
+            server with preflight checks, we can set <code>max_age=600</code>. This tells the browser to "cache" the
+            CORS rules for 600 seconds (10 minutes) before asking again.</li>
+    </ul>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 56</span>
+    </div>
+</div>

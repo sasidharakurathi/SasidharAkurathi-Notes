@@ -1,0 +1,212 @@
+<!-- Chapter 26 Page 1 -->
+<div class="page" id="chapter-26">
+    <div class="header">CHAPTER 26 - SQL Databases with SQLAlchemy & SQLModel</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 26 - SQL Databases</h2>
+
+    <h3>SQLAlchemy Explained Simply</h3>
+    <p>Until now, every time we restarted our server, our fake dictionary database was completely erased. To build real
+        applications, we need a real database (like PostgreSQL, MySQL, or SQLite). However, writing raw SQL queries
+        (like <code>SELECT * FROM users</code>) natively inside Python is incredibly messy and prone to security hacks.
+    </p>
+
+    <p>Instead, the professional Python world uses an <strong>ORM</strong> (Object-Relational Mapper). An ORM translates
+        normal Python classes directly into SQL tables automatically.</p>
+
+    <p><strong>SQLAlchemy</strong> is the undisputed king of Python ORMs. It is incredibly powerful, but notoriously
+        complex. Because of this, the creator of FastAPI built a sister-library called <strong>SQLModel</strong>.
+        SQLModel is literally just SQLAlchemy and Pydantic perfectly merged together to make our lives infinitely
+        easier.</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> SQLAlchemy handles the heavy database lifting. SQLModel wraps SQLAlchemy in a
+        beautiful, simple syntax specifically designed for FastAPI. We will cover both approaches!
+    </div>
+
+    <h3>The Crucial Concept: Two Types of Models</h3>
+    <p>Before we write any code, we must understand the most critical distinction in all of FastAPI database design:</p>
+
+    <ul>
+        <li><strong>The Pydantic Schema:</strong> This defines the shape of the JSON that goes <em>in and out</em> of
+            our API over the internet. (e.g., A user sends a password to register).</li>
+        <li><strong>The ORM Model:</strong> This defines the shape of the data stored <em>inside</em> the database.
+            (e.g., We never store the plain password, we store a <code>hashed_password</code>).</li>
+    </ul>
+
+    <p>If we use pure SQLAlchemy, these two models are written completely separately. If we use SQLModel, we can
+        brilliantly combine them into one seamless class!</p>
+
+    <h3>Setting Up the Engine (Both Methods)</h3>
+    <p>Whether we use SQLAlchemy or SQLModel, we always need an "Engine". The engine is the connection between our
+        Python code and the database.</p>
+
+    <pre>
+# database.py
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
+
+# We use SQLite for an easy local file database
+SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"
+
+# 1. Create the engine
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+)
+
+# 2. Create a Session Factory
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# 3. Create the Base Class (For pure SQLAlchemy)
+Base = declarative_base()
+  </pre>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 67</span>
+    </div>
+</div>
+
+<!-- Chapter 26 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 26 - SQL Databases with SQLAlchemy & SQLModel</div>
+
+    <h3>Defining the Models: Pure SQLAlchemy</h3>
+    <p>If we use raw SQLAlchemy, we must inherit from the <code>Base</code> we just created, and manually map out
+        exactly what the SQL table looks like.</p>
+
+    <pre>
+# models.py (SQLAlchemy ORM Models)
+from sqlalchemy import Boolean, Column, Integer, String
+from database import Base
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True)
+    hashed_password = Column(String)
+    is_active = Column(Boolean, default=True)
+  </pre>
+
+    <p>Notice we had to use <code>Column()</code> everywhere. To make our API work, we now have to go build a completely
+        duplicate Pydantic schema in <code>schemas.py</code> just to accept the JSON payload.</p>
+
+    <h3>Defining the Models: SQLModel (The Better Way)</h3>
+    <p>Let's look at how much cleaner this is using SQLModel. We don't need a <code>Base</code> class, we just inherit
+        from <code>SQLModel</code>. It automatically builds <em>both</em> the database table and the Pydantic JSON
+        schema at the exact same time!</p>
+
+    <pre>
+# models.py (SQLModel)
+from typing import Optional
+from sqlmodel import Field, SQLModel
+
+class User(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    email: str = Field(unique=True, index=True)
+    hashed_password: str
+    is_active: bool = True
+  </pre>
+
+    <p>That's it! Because we added <code>table=True</code>, SQLModel knows to build a real database table. But under the
+        hood, this is a fully functioning Pydantic model we can use directly in our routes.</p>
+
+    <h3>The Database Session Dependency</h3>
+    <p>Now that our database is configured, how do our routes actually query it? We need a <strong>Session</strong>. A
+        session is a temporary workspace; we fetch data, make changes, and then close the workspace.</p>
+
+    <p>We do not want to accidentally leave sessions open forever, so we use a dependency with the <code>yield</code>
+        keyword.</p>
+
+    <pre>
+# dependencies.py
+from database import SessionLocal
+
+def get_db():
+    db = SessionLocal()
+    try:
+        # Give the route the database connection
+        yield db 
+    finally:
+        # Ensure we always close it when the route finishes!
+        db.close()
+  </pre>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 68</span>
+    </div>
+</div>
+
+<!-- Chapter 26 Page 3 -->
+<div class="page">
+    <div class="header">CHAPTER 26 - SQL Databases with SQLAlchemy & SQLModel</div>
+
+    <h3>CRUD Operations: SQLAlchemy Example</h3>
+    <p>CRUD stands for Create, Read, Update, Delete. Let's see how we use our <code>get_db</code> dependency to perform
+        a "Read" and a "Create" using the pure SQLAlchemy approach.</p>
+
+    <pre>
+from fastapi import FastAPI, Depends, HTTPException
+from sqlalchemy.orm import Session
+from database import get_db
+import models, schemas
+
+app = FastAPI()
+
+# Read (Fetch a user by ID)
+@app.get("/users/{user_id}", response_model=schemas.User)
+def read_user(user_id: int, db: Session = Depends(get_db)):
+    # Run the raw SQLAlchemy query
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return db_user
+
+# Create (Insert a new user)
+@app.post("/users/", response_model=schemas.User)
+def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    # 1. We receive the clean Pydantic JSON schema
+    # 2. We convert it into the SQLAlchemy ORM model
+    fake_hashed_password = user.password + "notreallyhashed"
+    db_user = models.User(email=user.email, hashed_password=fake_hashed_password)
+    
+    # 3. We add it to the session and commit (save) it to the real database!
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+  </pre>
+
+    <h3>CRUD Operations: SQLModel Example</h3>
+    <p>If we use SQLModel, the process is incredibly similar, but the queries themselves look much more like modern
+        Python.</p>
+
+    <pre>
+from sqlmodel import Session, select
+
+# Read with SQLModel
+@app.get("/users/{user_id}")
+def read_user_sqlmodel(user_id: int, db: Session = Depends(get_db)):
+    # SQLModel uses a cleaner 'select' syntax
+    statement = select(User).where(User.id == user_id)
+    user = db.exec(statement).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+  </pre>
+
+    <div class="usage-box">
+        <strong>Which should we choose?</strong><br>
+        If we are joining an existing monolithic company enterprise, they are already using raw SQLAlchemy. It is the
+        industry standard.<br><br>
+        If we are building a brand new FastAPI application from scratch today, we should absolutely use
+        <strong>SQLModel</strong>. It eliminates massive amounts of duplicate code while keeping all the power of
+        SQLAlchemy under the hood.
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 69</span>
+    </div>
+</div>

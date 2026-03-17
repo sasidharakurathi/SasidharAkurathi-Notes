@@ -1,0 +1,116 @@
+<!-- Chapter 25 Page 1 -->
+<div class="page" id="chapter-25">
+    <div class="header">CHAPTER 25 - Static Files</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 25 - Static Files</h2>
+
+    <h3>What Are Static Files?</h3>
+    <p>So far, we have mostly returned JSON data from our API so that a separate frontend framework (like React or Vue)
+        could consume it. But what if we want our FastAPI server to build and serve the literal, visual website directly
+        to the user's browser?</p>
+
+    <p>Websites need images, CSS stylesheets, and plain JavaScript files. These files are "static"-meaning the server
+        doesn't calculate or process anything inside them. It just grabs the file from the hard drive and sends it
+        straight to the browser exactly as it is.</p>
+
+    <p>We absolutely <em>could</em> write an endpoint for every single image and CSS file using
+        <code>FileResponse</code>, but that would take forever. Instead, we can tell FastAPI to "mount" a whole folder
+        of files to our application.
+    </p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> "Mounting" a folder means telling FastAPI: "Hey, if the user asks for any
+        file starting with this URL, stop looking for API routes and just go find the file inside this specific hard
+        drive folder."
+    </div>
+
+    <h3>Mounting StaticFiles</h3>
+    <p>To serve static files, we use a specialized tool from Starlette called <code>StaticFiles</code>.</p>
+
+    <pre>
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+
+app = FastAPI()
+
+# Mount the folder!
+app.mount("/static", StaticFiles(directory="static"), name="static")
+  </pre>
+
+    <p>Let's unpack Line 7:</p>
+    <ul>
+        <li><code>"/static"</code>: The URL path. If a user's browser asks for
+            <code>http://ourstartup.com/static/logo.png</code>, FastAPI takes over.
+        </li>
+        <li><code>directory="static"</code>: The physical folder on our computer. We must create a folder named exactly
+            <code>"static"</code> next to our <code>main.py</code> file, and put <code>logo.png</code> inside it.
+        </li>
+        <li><code>name="static"</code>: An internal name for FastAPI (used mainly for reverse URL lookups).</li>
+    </ul>
+
+    <p>Now, if we drop an image named <code>welcome.jpg</code> and a styling file named <code>styles.css</code> inside
+        that folder, the browser can instantly download them at <code>/static/welcome.jpg</code> and
+        <code>/static/styles.css</code>!
+    </p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 65</span>
+    </div>
+</div>
+
+<!-- Chapter 25 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 25 - Static Files</div>
+
+    <h3>Serving a Frontend Automatically</h3>
+    <p>If we want to build a Single Page Application (SPA), we could put our <code>index.html</code> (along with all its
+        massive compiled React/Vue bundles) right into the static folder.</p>
+
+    <p>If we set <code>html=True</code> inside the <code>StaticFiles</code> declaration, FastAPI will automatically
+        search that folder for an <code>index.html</code> file whenever the user visits that exact route.</p>
+
+    <pre>
+# Serve our React application root immediately
+app.mount("/", StaticFiles(directory="frontend/build", html=True), name="frontend")
+  </pre>
+
+    <p>This is brilliant for extremely small projects where we want our backend and compiled frontend served from the
+        exact same python process!</p>
+
+    <h3>Custom Paths for Uploads</h3>
+    <p>Static files aren't just for CSS and JavaScript! Remember the file upload endpoints we built in Chapter 14?</p>
+
+    <p>If our API allows users to upload profile avatars, we could save those avatars into an <code>uploads/</code>
+        directory on our server. To let other users actually <em>see</em> those avatars on the frontend, we just mount
+        the uploads folder!</p>
+
+    <pre>
+import os
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+
+# Make sure the directory actually exists
+os.makedirs("user_uploads", exist_ok=True)
+
+app = FastAPI()
+
+app.mount("/media", StaticFiles(directory="user_uploads"), name="media")
+  </pre>
+
+    <p>Now, if User A uploads a picture and our code saves it as <code>user_uploads/avatar_123.jpg</code>, User B can
+        view it in their browser simply by visiting <code>/media/avatar_123.jpg</code>.</p>
+
+    <h3>Combining with HTML Templates</h3>
+    <p>While React and Vue are massive, we don't always need them. If we are using FastAPI to render classic,
+        server-side HTML (like we used to with Django or Flask using Jinja2 templates), static files are absolutely
+        essential.</p>
+
+    <p>Inside our Jinja2 templates, we can use the exact <code>name="static"</code> from our mount command to
+        dynamically generate the correct URL paths to our CSS and JS files.</p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 66</span>
+    </div>
+</div>

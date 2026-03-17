@@ -1,0 +1,179 @@
+<!-- Chapter 3 Page 1 -->
+<div class="page" id="chapter-3">
+    <div class="header">CHAPTER 3 - Path Operations</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 3 - Path Operations (The Building Blocks)</h2>
+
+    <h3>What is a "Path Operation"?</h3>
+    <p>Think of an API like a massive vending machine. The "path" is the exact button we press. The "operation" is what
+        action we are asking the machine to do (buy a snack, return change, restock). In FastAPI, a <strong>Path
+            Operation</strong> is the combination of an exact URL path and a specific HTTP method.</p>
+
+    <p>Before any user can interact with our application, we must define exactly which paths are available, and what
+        actions are allowed on those paths.</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> A path operation tells FastAPI: "When someone visits this specific URL, and
+        they use this specific HTTP method, run this exact Python function."
+    </div>
+
+    <h3>The Core HTTP Methods</h3>
+    <p>To talk to a web server, our browser does not just send a URL. It also sends a "method" to explain its intention.
+        Most of the time, our browser just asks to <em>read</em> data, but APIs allow users to do much more.</p>
+
+    <p>Here is a guide to the methods we will use in FastAPI, and when to use them:</p>
+
+    <table>
+        <tr>
+            <th>Method</th>
+            <th>Real World Analogy</th>
+            <th>Best Used For</th>
+        </tr>
+        <tr>
+            <td><strong>GET</strong></td>
+            <td>Reading a book at the library.</td>
+            <td>Reading or fetching data. We are not changing anything.</td>
+        </tr>
+        <tr>
+            <td><strong>POST</strong></td>
+            <td>Dropping a letter in a mailbox.</td>
+            <td>Creating brand new data, like registering a new user.</td>
+        </tr>
+        <tr>
+            <td><strong>PUT</strong></td>
+            <td>Replacing a broken car engine with a new one.</td>
+            <td>Replacing an entire piece of data with a completely new version.</td>
+        </tr>
+        <tr>
+            <td><strong>DELETE</strong></td>
+            <td>Throwing a paper in the trash can.</td>
+            <td>Deleting data permanently.</td>
+        </tr>
+        <tr>
+            <td><strong>PATCH</strong></td>
+            <td>Putting a band-aid on a small cut.</td>
+            <td>Updating just one tiny piece of data (like changing a user's phone number, but keeping their name).</td>
+        </tr>
+    </table>
+
+    <p>There are also a few rare methods (OPTIONS, HEAD, TRACE) that servers use to talk to each other behind the scenes
+        to verify connections. We almost never write code for these manually.</p>
+
+    <div class="usage-box">
+        <strong>Use this when:</strong> We are designing our API. We should match the appropriate HTTP method to the
+        action the user wants to perform.<br><br>
+        <strong>Don't use this when:</strong> We are trying to use a GET request to create or delete data. This breaks
+        how the internet fundamentally works!
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 7</span>
+    </div>
+</div>
+
+<!-- Chapter 3 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 3 - Path Operations</div>
+
+    <h3>The Decorator Syntax Explained</h3>
+    <p>Now that we understand the theory, let's look at how we actually wire up a path operation in Python.</p>
+
+    <pre>
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.post("/login")
+def login_user():
+    return {"message": "We are logged in!"}
+  </pre>
+
+    <p>This looks simple, but there is a lot of hidden power here. Let's break down exactly what the decorator does.</p>
+    <p><strong>Line 5:</strong> The <code>@app.post("/login")</code> is the decorator. Let's split it into three pieces:
+    </p>
+    <ul>
+        <li><code>@app</code>: The <code>@</code> symbol tells Python to wrap the function underneath it with some extra
+            logic. <code>app</code> is the name of our FastAPI instance.</li>
+        <li><code>.post</code>: This is the HTTP method we chose from our table above. We are creating data (logging
+            in), so we use POST.</li>
+        <li><code>("/login")</code>: This is the exact path or URL the user must visit.</li>
+    </ul>
+    <p><strong>Line 6:</strong> The Python function directly below the decorator is the code that will actually run when
+        a matching request arrives.</p>
+
+    <div class="mistake-box">
+        <strong>⚠️ Common Mistake:</strong> Forgetting the leading slash. Writing <code>"login"</code> instead of
+        <code>"/login"</code> will cause errors. Every path must start with a forward slash!
+    </div>
+
+    <h3>Order Matters!</h3>
+    <p>FastAPI reads our file from top to bottom. As soon as it finds a path that perfectly matches the user's request,
+        it stops looking and runs the attached function.</p>
+
+    <p>Because of this, we must always put specific, hardcoded paths <strong>before</strong> dynamic, flexible paths.
+    </p>
+
+    <pre>
+@app.get("/users/me")
+def read_current_user():
+    return {"user_id": "the current user"}
+
+@app.get("/users/{user_id}")
+def read_user(user_id: str):
+    return {"user_id": user_id}
+  </pre>
+
+    <p>In this example, if a user visits <code>/users/me</code>, FastAPI checks the first function. It perfectly
+        matches! So it returns the current user. If we swapped the order, the dynamic <code>{user_id}</code> path would
+        catch the request first, and the API would assume "me" is just a random user ID.</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> Always put our specific, hardcoded paths at the top of our file, and our
+        dynamic paths (the ones with curly braces) underneath them.
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 8</span>
+    </div>
+</div>
+
+<!-- Chapter 3 Page 3 -->
+<div class="page">
+    <div class="header">CHAPTER 3 - Path Operations</div>
+
+    <h3>Configuring Our Operations</h3>
+    <p>Finally, let's explore how to make our automatic documentation look professional. We can configure our path
+        operations by simply passing extra information into the decorator.</p>
+
+    <p>The Swagger UI automatically reads this configuration and uses it to organize our manual.</p>
+
+    <pre>
+@app.get(
+    "/items/",
+    tags=["Store Items"],
+    summary="Get all items in the store",
+    description="This will return a list of every item currently in inventory. It can take a long time to run.",
+    deprecated=True
+)
+def read_items():
+    return [{"item": "Apple"}, {"item": "Banana"}]
+  </pre>
+
+    <p>Let's look at what each of these configuration options does:</p>
+    <p><strong>tags:</strong> This is a list of strings. FastAPI groups all path operations with the same tag together
+        visually in the documentation. This is amazing for keeping large APIs organized.</p>
+    <p><strong>summary:</strong> A short, one-sentence description of what this route does. It appears right next to the
+        path in the Swagger UI.</p>
+    <p><strong>description:</strong> A longer, detailed explanation. This shows up when the user clicks the route to
+        expand it in the documentation. It fully supports Markdown styling.</p>
+    <p><strong>deprecated=True:</strong> If we are planning to delete a route in the future, we can mark it as
+        deprecated. It will still work, but it will be greyed out in the documentation to warn users to stop using it.
+    </p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 9</span>
+    </div>
+</div>

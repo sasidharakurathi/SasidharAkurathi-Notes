@@ -1,0 +1,135 @@
+<!-- Chapter 9 Page 1 -->
+<div class="page" id="chapter-9">
+    <div class="header">CHAPTER 9 - Extra Data Types</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 9 - Extra Data Types</h2>
+
+    <h3>Beyond Strings and Integers</h3>
+    <p>Until now, we have mostly used basic Python types like <code>str</code>, <code>int</code>, <code>float</code>,
+        and <code>bool</code>. But real-world applications require far more complex data. We need to handle dates, exact
+        monetary values, and uniquely generated IDs.</p>
+
+    <p>Normally, sending these over the web is incredibly annoying. JSON (the language of the web) only understands
+        strings, numbers, booleans, and lists. It literally does not know what a "date" is. It just sees text.</p>
+
+    <p>FastAPI handles this translation for us automatically. We write our code using standard, powerful Python data
+        types, and FastAPI silently converts them to and from simple JSON strings when talking to the browser.</p>
+
+    <h3>Working with UUIDs</h3>
+    <p>A UUID (Universally Unique Identifier) is a long, randomly generated string of letters and numbers (like
+        <code>123e4567-e89b-12d3-a456-426614174000</code>). In modern applications, we almost never use simple integers
+        like <code>1</code>, <code>2</code>, or <code>3</code> for database IDs, because hackers could easily guess the
+        next ID. We use UUIDs instead.
+    </p>
+
+    <pre>
+from uuid import UUID
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.put("/items/{item_id}")
+def update_item(item_id: UUID):
+    return {"item_id": item_id}
+  </pre>
+
+    <p><strong>Line 1:</strong> We import the standard <code>UUID</code> class that comes built-in with Python.</p>
+    <p><strong>Line 7:</strong> We tell FastAPI the path parameter must be a valid UUID. If a user visits
+        <code>/items/apple</code>, FastAPI will automatically reject it, realizing "apple" is not a valid 36-character
+        UUID pattern.
+    </p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> We use UUIDs to give database records unbreakable, un-guessable IDs. FastAPI
+        automatically checks that the user's string is a valid UUID format before letting it pass.
+    </div>
+
+    <h3>Dates and Times</h3>
+    <p>We often need to record exactly when a user signed up, or when an item expires. Python provides four brilliant
+        tools for this inside the built-in <code>datetime</code> module: <code>datetime</code>, <code>date</code>,
+        <code>time</code>, and <code>timedelta</code>.
+    </p>
+
+    <ul>
+        <li><strong>datetime:</strong> A specific date and a specific time. (e.g., 2026-07-21T14:30:00)</li>
+        <li><strong>date:</strong> Just the calendar day. (e.g., 2026-07-21)</li>
+        <li><strong>time:</strong> Just the time on a clock, regardless of the day. (e.g., 14:30:00)</li>
+        <li><strong>timedelta:</strong> A duration, or span of time. (e.g., 14 days, 3 hours)</li>
+    </ul>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 25</span>
+    </div>
+</div>
+
+<!-- Chapter 9 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 9 - Extra Data Types</div>
+
+    <h3>Decimals and Bytes</h3>
+    <p>When dealing with money or financial calculations, we should never, ever use <code>float</code>. Floats round
+        numbers weirdly in computer memory (like saying $10.00 is actually $9.9999999999). Instead, we use the standard
+        Python <code>Decimal</code> type, which is mathematically perfect.</p>
+
+    <p>We might also need to read raw, binary computer data (like reading a raw file before saving it). For this, we use
+        the standard Python <code>bytes</code> type.</p>
+
+
+    <h3>A Complete Example</h3>
+    <p>Let's look at how beautifully FastAPI processes all of these complex Python types at the exact same time,
+        automatically converting them to JSON for us.</p>
+
+    <pre>
+from datetime import datetime, time, timedelta
+from decimal import Decimal
+from uuid import UUID
+
+from fastapi import Body, FastAPI
+
+app = FastAPI()
+
+@app.put("/items/{item_id}")
+def update_item(
+    item_id: UUID,
+    start_datetime: datetime = Body(),
+    end_time: time = Body(),
+    process_after: timedelta = Body(),
+    price: Decimal = Body(),
+):
+    end_datetime = start_datetime + process_after
+    return {
+        "item_id": item_id,
+        "start_datetime": start_datetime,
+        "end_time": end_time,
+        "process_after": process_after,
+        "price": price,
+        "expected_finish": end_datetime
+    }
+  </pre>
+
+    <p>Let's break down the magic happening here:</p>
+    <ul>
+        <li><strong>Line 11:</strong> The <code>item_id</code> is a perfect UUID, pulled directly from the URL.</li>
+        <li><strong>Line 12:</strong> We expect a full date and time string in the JSON body. FastAPI takes that string,
+            and beautifully converts it into a real Python <code>datetime</code> object for us.</li>
+        <li><strong>Line 13:</strong> We pull out just a time (like 14:30:00).</li>
+        <li><strong>Line 14:</strong> We expect a duration. We might send a float across the internet (like 10.5
+            seconds), but FastAPI transforms it into a <code>timedelta</code> object before giving it to our code.</li>
+        <li><strong>Line 15:</strong> We accept a price guarantee. We can send a string like "19.99" in the JSON, and
+            FastAPI will convert it safely into a flawless <code>Decimal</code> object for our financial math.</li>
+        <li><strong>Line 17:</strong> Because FastAPI converted these into real Python objects, we can actually do math
+            with them! We simply add <code>start_datetime + process_after</code> to figure out exactly when our process
+            will finish.</li>
+    </ul>
+
+    <div class="mistake-box">
+        <strong>⚠️ Common Mistake:</strong> Trying to use <code>float</code> for money. Never do it! Always import
+        <code>Decimal</code> from the <code>decimal</code> module to prevent missing pennies.
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 26</span>
+    </div>
+</div>

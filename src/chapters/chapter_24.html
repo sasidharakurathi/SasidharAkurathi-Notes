@@ -1,0 +1,134 @@
+<!-- Chapter 24 Page 1 -->
+<div class="page" id="chapter-24">
+    <div class="header">CHAPTER 24 - Background Tasks</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 24 - Background Tasks</h2>
+
+    <h3>What Are Background Tasks?</h3>
+    <p>Imagine we run an online store. When a customer clicks "Buy Now", our API has to do three things: charge their
+        credit card, insert the order into the database, and send them a beautifully formatted receipt email.</p>
+
+    <p>Connecting to an email server and sending an email can be extremely slow (it might take 2 to 3 seconds). If we do
+        this inside our route function, the customer's browser will show a spinning loading icon for 3 long seconds
+        before they finally see the "Order Successful" page.</p>
+
+    <p>That is terrible user experience. What we want to do is charge the card, immediately return the "Order
+        Successful" page to the customer, and then have our server send the email secretly in the background while the
+        customer goes on their merry way.</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> Background Tasks allow our API to immediately return a fast response to the
+        user, while continuing to do slow, non-essential work behind the scenes.
+    </div>
+
+    <h3>Using BackgroundTasks in a Route</h3>
+    <p>FastAPI natively handles exactly this scenario. All we have to do is ask for the <code>BackgroundTasks</code>
+        object as a parameter in our route.</p>
+
+    <pre>
+from fastapi import BackgroundTasks, FastAPI
+
+app = FastAPI()
+
+def write_notification(email: str, message=""):
+    with open("log.txt", "a") as email_file:
+        email_file.write(f"notification for {email}: {message}\n")
+
+@app.post("/send-notification/{email}")
+async def send_notification(email: str, background_tasks: BackgroundTasks):
+    # 1. We tell FastAPI to run our slow function later
+    background_tasks.add_task(write_notification, email, message="Order Confirmed!")
+    
+    # 2. We instantly return a happy response to the user
+    return {"message": "Notification sent in the background"}
+  </pre>
+
+    <p><strong>Lines 5-7:</strong> We define a standard, potentially slow Python function. Note this is <em>not</em> an
+        async function; FastAPI will intelligently run it in a separate thread so it doesn't block our main server! (We
+        can pass <code>async def</code> functions too if we want).</p>
+    <p><strong>Line 10:</strong> We declare <code>background_tasks: BackgroundTasks</code>. FastAPI automatically
+        creates the object and injects it for us.</p>
+    <p><strong>Line 12:</strong> We use <code>.add_task()</code>. The first argument is the function itself (we don't
+        execute it with parentheses!). Any arguments after that are the variables that will be passed into that
+        function.</p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 63</span>
+    </div>
+</div>
+
+<!-- Chapter 24 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 24 - Background Tasks</div>
+
+    <h3>Dependencies and Background Tasks</h3>
+    <p>Just like standard routes, our dependency functions can also add background tasks! If we have a massive
+        <code>get_current_user</code> dependency, we could easily have it log login times in the background every single
+        time it runs.
+    </p>
+
+    <pre>
+from typing import Annotated
+from fastapi import BackgroundTasks, Depends, FastAPI
+
+app = FastAPI()
+
+def log_login(user: str):
+    with open("auth.txt", "a") as f:
+        f.write(f"User {user} logged in\n")
+
+def get_current_user(background_tasks: BackgroundTasks):
+    user = "alice"
+    background_tasks.add_task(log_login, user)
+    return user
+
+@app.get("/profile/")
+async def read_profile(
+    user: Annotated[str, Depends(get_current_user)]
+):
+    return {"hello": user}
+  </pre>
+
+    <p><strong>Line 10:</strong> We tell our <code>get_current_user</code> dependency that it needs
+        <code>BackgroundTasks</code>.
+    </p>
+    <p><strong>Line 12:</strong> We add the task. FastAPI merges all background tasks generated from all dependencies
+        and the main route together, and runs them safely after the final response is delivered.</p>
+
+    <h3>Background Tasks vs. Celery vs. ARQ</h3>
+    <p>FastAPI's built-in background tasks are incredibly convenient, but they have a massive limitation.</p>
+
+    <div class="mistake-box">
+        <strong>⚠️ The Danger:</strong> If we restart our FastAPI server or it crashes randomly, <em>every single
+            background task currently running or waiting in line is instantly deleted and lost forever!</em>
+    </div>
+
+    <p>Built-in background tasks are perfect for <strong>lightweight, non-critical work</strong> (like sending a
+        courtesy email, updating view counts, or logging files).</p>
+
+    <p>If our background task involves resizing a 4GB video, generating an AI model, or processing a vital financial
+        transaction that CANNOT be lost, we must switch to a heavy-duty tool. We need a proper distributed task queue.
+    </p>
+
+    <ul>
+        <li><strong>Celery:</strong> The absolute giant of the Python world. It is incredibly powerful, battle-tested by
+            massive corporations, and integrates flawlessly with Redis and RabbitMQ. It guarantees that if our server
+            crashes, the task is saved safely in a queue to be processed later. However, it requires a lot of setup and
+            is relatively heavy.</li>
+        <li><strong>ARQ:</strong> A modern, lightning-fast, async-native task queue uniquely designed for Python 3. It
+            is much simpler to configure than Celery and leverages modern async/await perfectly. If we are using
+            FastAPI, ARQ is an amazing, sleek choice.</li>
+    </ul>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> Use FastAPI's <code>BackgroundTasks</code> for fast, simple things it is okay
+        to occasionally lose. Use <strong>Celery</strong> or <strong>ARQ</strong> for heavy, critical CPU work over 5
+        seconds long.
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 64</span>
+    </div>
+</div>

@@ -1,0 +1,161 @@
+<!-- Chapter 37 Page 1 -->
+<div class="page" id="chapter-37">
+    <div class="header">CHAPTER 37 - Recommended Libraries Ecosystem</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 37 - Recommended Libraries Ecosystem</h2>
+
+    <h3>The Ecosystem We Need</h3>
+    <p>FastAPI is intentionally designed to be a lightweight, lightning-fast micro-framework. It does not force a heavy
+        database, a specific email sender, or an admin dashboard on us (unlike massive frameworks like Django). This
+        gives us ultimate architectural freedom.</p>
+
+    <p>However, that sheer freedom means we constantly have to look for third-party libraries to handle routine tasks
+        like sending JWT tokens, hashing passwords, or tracking down mysterious midnight server errors.</p>
+
+    <p>To save us hundreds of hours of research, here is the absolute industry-standard, gold-tier compilation of the
+        python packages that almost every senior developer bolts onto almost every production FastAPI project.</p>
+
+    <h3>Database & Data Management</h3>
+    <table style="width: 100%; text-align: left; border-collapse: collapse; margin-bottom: 20px;">
+        <tr style="border-bottom: 2px solid #009688;">
+            <th style="padding: 8px;">Library</th>
+            <th style="padding: 8px;">Purpose</th>
+            <th style="padding: 8px;">Command</th>
+            <th style="padding: 8px;">Notes</th>
+        </tr>
+        <tr style="border-bottom: 1px solid #ccc;">
+            <td style="padding: 8px;"><strong>pydantic-settings</strong></td>
+            <td style="padding: 8px;">Environment Config</td>
+            <td style="padding: 8px;"><code>pip install pydantic-settings</code></td>
+            <td style="padding: 8px;">Reads <code>.env</code> files directly into beautifully type-safe Python classes.
+                The only correct way to load secrets safely.</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #ccc;">
+            <td style="padding: 8px;"><strong>sqlalchemy</strong></td>
+            <td style="padding: 8px;">SQL ORM</td>
+            <td style="padding: 8px;"><code>pip install sqlalchemy</code></td>
+            <td style="padding: 8px;">The king of linking Python classes directly to PostgreSQL, MySQL, or SQLite tables
+                seamlessly.</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #ccc;">
+            <td style="padding: 8px;"><strong>alembic</strong></td>
+            <td style="padding: 8px;">Database Migrations</td>
+            <td style="padding: 8px;"><code>pip install alembic</code></td>
+            <td style="padding: 8px;">Built by the creator of SQLAlchemy. Magically tracks changes we make to our Python
+                code and alters the live SQL database safely to match.</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #ccc;">
+            <td style="padding: 8px;"><strong>motor</strong></td>
+            <td style="padding: 8px;">Async MongoDB Driver</td>
+            <td style="padding: 8px;"><code>pip install motor</code></td>
+            <td style="padding: 8px;">The official async Python driver for MongoDB. Replaces standard PyMongo so our
+                event loop never blocks!</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px;"><strong>beanie</strong></td>
+            <td style="padding: 8px;">MongoDB ODM</td>
+            <td style="padding: 8px;"><code>pip install beanie</code></td>
+            <td style="padding: 8px;">An incredibly modern, purely async Python ODM (Object Document Mapper) for MongoDB
+                that uses pure Pydantic underneath. Think "SQLModel for Mongo."</td>
+        </tr>
+    </table>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 100</span>
+    </div>
+</div>
+
+<!-- Chapter 37 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 37 - Recommended Libraries Ecosystem</div>
+
+    <h3>Security & Queues</h3>
+    <table style="width: 100%; text-align: left; border-collapse: collapse; margin-bottom: 20px;">
+        <tr style="border-bottom: 2px solid #009688;">
+            <th style="padding: 8px;">Library</th>
+            <th style="padding: 8px;">Purpose</th>
+            <th style="padding: 8px;">Command</th>
+            <th style="padding: 8px;">Notes</th>
+        </tr>
+        <tr style="border-bottom: 1px solid #ccc;">
+            <td style="padding: 8px;"><strong>python-jose / pyjwt</strong></td>
+            <td style="padding: 8px;">JWT Tokens</td>
+            <td style="padding: 8px;"><code>pip install python-jose[cryptography]</code></td>
+            <td style="padding: 8px;">Creates, cryptographically signs, and decodes the JSON Web Tokens our app gives
+                out on a successful login.</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #ccc;">
+            <td style="padding: 8px;"><strong>passlib</strong></td>
+            <td style="padding: 8px;">Password Hashing</td>
+            <td style="padding: 8px;"><code>pip install passlib[bcrypt]</code></td>
+            <td style="padding: 8px;">Safely heavily scrambles a user's password into garbage using Bcrypt so we never,
+                ever store raw passwords inside our Postgres tables.</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #ccc;">
+            <td style="padding: 8px;"><strong>redis / aioredis</strong></td>
+            <td style="padding: 8px;">Lightweight caching</td>
+            <td style="padding: 8px;"><code>pip install redis</code></td>
+            <td style="padding: 8px;">Connects our code to Redis to store blazing fast session memory or to sync
+                WebSockets globally across 5 disconnected API servers.</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px;"><strong>celery / arq</strong></td>
+            <td style="padding: 8px;">Background Jobs</td>
+            <td style="padding: 8px;"><code>pip install celery</code></td>
+            <td style="padding: 8px;">We graduate from FastAPI's native <code>BackgroundTasks</code> to these to ensure
+                CPU-heavy 20-minute video encodings are safely queued and never lost.</td>
+        </tr>
+    </table>
+
+    <h3>Operations, Metrics & Magic</h3>
+    <table style="width: 100%; text-align: left; border-collapse: collapse; margin-bottom: 20px;">
+        <tr style="border-bottom: 2px solid #009688;">
+            <th style="padding: 8px;">Library</th>
+            <th style="padding: 8px;">Purpose</th>
+            <th style="padding: 8px;">Command</th>
+            <th style="padding: 8px;">Notes</th>
+        </tr>
+        <tr style="border-bottom: 1px solid #ccc;">
+            <td style="padding: 8px;"><strong>httpx</strong></td>
+            <td style="padding: 8px;">Async HTTP Client</td>
+            <td style="padding: 8px;"><code>pip install httpx</code></td>
+            <td style="padding: 8px;">If we need our API to call Microsoft's API, we must throw away the ancient
+                <code>requests</code> package. <code>httpx</code> is completely async and won't block the loop.
+            </td>
+        </tr>
+        <tr style="border-bottom: 1px solid #ccc;">
+            <td style="padding: 8px;"><strong>slowapi</strong></td>
+            <td style="padding: 8px;">Rate Limiting</td>
+            <td style="padding: 8px;"><code>pip install slowapi</code></td>
+            <td style="padding: 8px;">Blocks hackers who bash our login screen 10,000 times a second by automatically
+                tracking their IP address. Essential for production.</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #ccc;">
+            <td style="padding: 8px;"><strong>loguru</strong></td>
+            <td style="padding: 8px;">Beautiful Logging</td>
+            <td style="padding: 8px;"><code>pip install loguru</code></td>
+            <td style="padding: 8px;">Swaps Python's famously confusing logging package for something insanely easy that
+                writes rotating, date-stamped log files instantly.</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #ccc;">
+            <td style="padding: 8px;"><strong>sentry-sdk</strong></td>
+            <td style="padding: 8px;">Crash Analytics</td>
+            <td style="padding: 8px;"><code>pip install sentry-sdk[fastapi]</code></td>
+            <td style="padding: 8px;">Ping our phones in the middle of the night if Python crashes, giving us the exact
+                line of code that broke without us having to SSH into the server to read logs.</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px;"><strong>pytest-asyncio</strong></td>
+            <td style="padding: 8px;">Testing</td>
+            <td style="padding: 8px;"><code>pip install pytest pytest-asyncio</code></td>
+            <td style="padding: 8px;">The undisputed king of writing flawless Python unit tests. The asyncio plugin
+                allows our testing robots to natively test our <code>async def</code> endpoints.</td>
+        </tr>
+    </table>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 101</span>
+    </div>
+</div>

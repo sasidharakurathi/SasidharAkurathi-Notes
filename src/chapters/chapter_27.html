@@ -1,0 +1,194 @@
+<!-- Chapter 27 Page 1 -->
+<div class="page" id="chapter-27">
+    <div class="header">CHAPTER 27 - Custom Responses</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 27 - Custom Responses</h2>
+
+    <h3>Returning JSONResponse Directly</h3>
+    <p>Normally, we just return a Python <code>dict</code> or a Pydantic model, and FastAPI automatically converts it
+        into JSON behind the scenes. But sometimes, we need absolute control over the exact response being built.</p>
+
+    <p>If we want to bypass FastAPI's automatic conversion (maybe we are building a completely weird, custom error
+        handler), we can return a <code>JSONResponse</code> directly.</p>
+
+    <pre>
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+
+app = FastAPI()
+
+@app.get("/custom-json")
+def get_custom_json():
+    # We are returning the raw Response object, not a dict!
+    return JSONResponse(
+        content={"message": "I built this response manually!"},
+        status_code=201,
+        headers={"X-Custom-Header": "Hello"}
+    )
+  </pre>
+
+    <p>Notice how building the response manually allows us to inject custom HTTP headers and status codes in exactly one
+        step.</p>
+
+    <h3>HTMLResponse & PlainTextResponse</h3>
+    <p>APIs do not have to return JSON! If we want to return a raw HTML string so the browser renders a webpage, we use
+        <code>HTMLResponse</code>.
+    </p>
+
+    <pre>
+from fastapi.responses import HTMLResponse, PlainTextResponse
+
+@app.get("/html", response_class=HTMLResponse)
+def get_html():
+    html_content = """
+    &lt;html&gt;
+        &lt;head&gt;&lt;title&gt;My Custom Page&lt;/title&gt;&lt;/head&gt;
+        &lt;body&gt;
+            &lt;h1&gt;Look, I'm returning a website!&lt;/h1&gt;
+        &lt;/body&gt;
+    &lt;/html&gt;
+    """
+    return HTMLResponse(content=html_content, status_code=200)
+
+@app.get("/plain", response_class=PlainTextResponse)
+def get_plain_text():
+    return "This is just boring, unformatted text."
+  </pre>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> By declaring <code>response_class=HTMLResponse</code>, we guarantee FastAPI's
+        Swagger docs correctly describe the route as returning HTML, rather than assuming it returns JSON.
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 70</span>
+    </div>
+</div>
+
+<!-- Chapter 27 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 27 - Custom Responses</div>
+
+    <h3>RedirectResponse</h3>
+    <p>Sometimes we want to bounce a user to a completely different URL. Maybe they visited an old, deprecated route, or
+        maybe they just successfully logged in and we need to push them to the dashboard.</p>
+
+    <pre>
+from fastapi.responses import RedirectResponse
+
+@app.get("/old-route")
+def redirect_to_new():
+    # We use a 307 or 308 Temporary Redirect
+    return RedirectResponse(url="/new-amazing-route", status_code=307)
+  </pre>
+
+    <h3>FileResponse</h3>
+    <p>If we want to let the user download a file stored directly on our hard drive (like a PDF report they generated),
+        <code>FileResponse</code> is perfect.
+    </p>
+
+    <p>It acts like a smart bouncer. It automatically reads the file size and sets the exact correct headers so the
+        user's browser knows what kind of file it is downloading.</p>
+
+    <pre>
+from fastapi.responses import FileResponse
+
+@app.get("/download-report")
+def download_file():
+    # It automatically sets exactly the right Content-Type!
+    return FileResponse(
+        path="monthly_report.pdf", 
+        filename="Your_Awesome_Report.pdf", # The name the user sees
+        media_type="application/pdf"
+    )
+  </pre>
+
+    <h3>StreamingResponse</h3>
+    <p>If we need to return a massive 50GB file, <code>FileResponse</code> might still struggle. Additionally, if we are
+        returning a live video feed from a webcam, there is no physical file on the hard drive to send!</p>
+
+    <p>This is where <code>StreamingResponse</code> shines. We give it a Python <em>generator</em> (a function with
+        <code>yield</code>), and it mathematically trickles the data to the browser piece by piece over a long period of
+        time.
+    </p>
+
+    <pre>
+from fastapi.responses import StreamingResponse
+
+def fake_video_streamer():
+    for i in range(10):
+        yield b"chunk of video data\n"
+
+@app.get("/video")
+def get_video_stream():
+    return StreamingResponse(
+        fake_video_streamer(), 
+        media_type="video/mp4"
+    )
+  </pre>
+
+    <p>This ensures our server memory stays perfectly flat, no matter how gigantic the stream is.</p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 71</span>
+    </div>
+</div>
+
+<!-- Chapter 27 Page 3 -->
+<div class="page">
+    <div class="header">CHAPTER 27 - Custom Responses</div>
+
+    <h3>Setting Custom Headers & Cookies Directly</h3>
+    <p>Instead of manually constructing a full <code>JSONResponse</code>, FastAPI allows us to simply ask for the
+        <code>Response</code> object directly inside our route. We can modify this object before returning our standard
+        dictionary, and FastAPI smoothly merges them!
+    </p>
+
+    <pre>
+from fastapi import FastAPI, Response
+
+app = FastAPI()
+
+@app.get("/set-cookie")
+def set_cookie(response: Response):
+    # 1. Modify the response before it goes out
+    response.set_cookie(key="fakesession", value="fake-cookie-session-value")
+    response.headers["X-Custom-Greeting"] = "Hello from FastAPI"
+    
+    # 2. Just return our normal dictionary!
+    return {"message": "Look in your browser's dev tools!"}
+  </pre>
+
+    <p>This is incredibly useful when setting HTTP-only session cookies upon a successful login.</p>
+
+    <h3>ORJSONResponse & ORJSONResponse</h3>
+    <p>FastAPI uses the standard Python <code>json</code> library to encode outgoing responses. It is usually fast
+        enough.</p>
+
+    <p>However, if our API needs to return a totally massive, 50,000-line dictionary, standard JSON serialization might
+        slow us down. We can install hyper-optimized C++ backends instead!</p>
+
+    <p><code>pip install orjson</code> or <code>pip install ujson</code></p>
+
+    <pre>
+from fastapi.responses import ORJSONResponse
+
+@app.get("/heavy-data", response_class=ORJSONResponse)
+def get_heavy_data():
+    big_list = [{"id": i} for i in range(100000)]
+    return big_list
+  </pre>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> <code>ORJSONResponse</code> is significantly faster, but it doesn't always
+        support the strangest, custom data types. Use it only on specific routes that are returning absolutely massive
+        arrays of data.
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 72</span>
+    </div>
+</div>

@@ -1,0 +1,205 @@
+<!-- Chapter 14 Page 1 -->
+<div class="page" id="chapter-14">
+    <div class="header">CHAPTER 14 - File Uploads</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 14 - File Uploads</h2>
+
+    <h3>Receiving Files with File()</h3>
+    <p>Accepting a file upload (like a profile picture or a spreadsheet) sounds complicated, but FastAPI makes it
+        incredibly simple. Because files are essentially just complex forms, we need the <code>python-multipart</code>
+        package installed, just like we did in the last chapter.</p>
+
+    <p>The most basic way to receive a file is to use the <code>File()</code> function to pull the raw bytes directly
+        into memory.</p>
+
+    <pre>
+from fastapi import FastAPI, File
+
+app = FastAPI()
+
+@app.post("/files/")
+def create_file(file: bytes = File()):
+    return {"file_size": len(file)}
+  </pre>
+
+    <p><strong>Line 6:</strong> We tell FastAPI that we expect a variable named <code>file</code>, that its type is raw
+        <code>bytes</code>, and that it must be pulled from an uploaded <code>File()</code>.
+    </p>
+
+    <div class="mistake-box">
+        <strong>⚠️ Warning:</strong> Using <code>bytes</code> means FastAPI will read the entire file into the
+        computer's RAM (memory). If ten users try to upload 1GB videos at the exact same time, our server will
+        completely run out of memory and crash. Never use this for large files!
+    </div>
+
+    <h3>UploadFile - The Better Way</h3>
+    <p>Because loading entire files into memory is dangerous, FastAPI gives us a much safer, much smarter tool:
+        <code>UploadFile</code>.
+    </p>
+
+    <pre>
+from fastapi import FastAPI, File, UploadFile
+
+app = FastAPI()
+
+@app.post("/uploadfile/")
+def create_upload_file(file: UploadFile):
+    return {"filename": file.filename}
+  </pre>
+
+    <p><strong>Line 6:</strong> By changing the type hint to <code>UploadFile</code>, we unlock FastAPI's file
+        management super powers.</p>
+
+    <p><code>UploadFile</code> uses a "spooled" file system. If the file is small (under 1 MB), it safely holds it in
+        memory. If a user uploads a massive 4GB video, FastAPI intelligently streams the data onto the server's hard
+        drive piece by piece, preventing our server's memory from ever crashing.</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> Always default to using <code>UploadFile</code>. It protects our server from
+        crashing when users upload gigantic files, and gives us excellent built-in tools to manipulate the file.
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 35</span>
+    </div>
+</div>
+
+<!-- Chapter 14 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 14 - File Uploads</div>
+
+    <h3>UploadFile Attributes</h3>
+    <p>When we accept an <code>UploadFile</code>, it comes with several incredibly useful properties attached to it that
+        we can use immediately:</p>
+
+    <ul>
+        <li><code>file.filename</code>: The actual name of the file the user uploaded (e.g.,
+            <code>"my_selfie.png"</code>).
+        </li>
+        <li><code>file.content_type</code>: The exact type of the file, like <code>"image/jpeg"</code> or
+            <code>"application/pdf"</code>.
+        </li>
+        <li><code>file.size</code>: The exact size of the file in bytes (if available).</li>
+        <li><code>file.file</code>: The actual Python file-like object. We can pass this directly to libraries that
+            expect a standard Python file.</li>
+    </ul>
+
+    <h3>Reading File Content Asynchronously</h3>
+    <p>Because an <code>UploadFile</code> might be massive, reading its contents happens <em>asynchronously</em>. This
+        means our server can go process other users' requests while waiting for the hard drive to finish reading the
+        giant file.</p>
+
+    <pre>
+@app.post("/uploadfile/")
+async def create_upload_file(file: UploadFile):
+    contents = await file.read()
+    return {
+        "filename": file.filename, 
+        "file_size": len(contents)
+    }
+  </pre>
+
+    <p><strong>Line 2:</strong> Notice that we changed our function to an <code>async def</code>.</p>
+    <p><strong>Line 3:</strong> We use the <code>await file.read()</code> command to safely read the contents. We can
+        also use <code>await file.seek(0)</code> to go back to the start of the file, or
+        <code>await file.write(data)</code> if we needed to inject more data into it.
+    </p>
+
+    <h3>Multiple File Uploads</h3>
+    <p>What if a user wants to upload an entire photo album at once? We just use our trusty Python <code>List</code>
+        type!</p>
+
+    <pre>
+from typing import List
+from fastapi import FastAPI, UploadFile
+
+app = FastAPI()
+
+@app.post("/uploadfiles/")
+async def create_upload_files(files: List[UploadFile]):
+    file_names = [file.filename for file in files]
+    return {"filenames": file_names}
+  </pre>
+
+    <p><strong>Line 7:</strong> By asking for a <code>List[UploadFile]</code>, the Swagger documentation will
+        automatically generate a button letting the user select multiple files at once.</p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 36</span>
+    </div>
+</div>
+
+<!-- Chapter 14 Page 3 -->
+<div class="page">
+    <div class="header">CHAPTER 14 - File Uploads</div>
+
+    <h3>Files + Form Data Together</h3>
+    <p>In the last chapter, we learned a strict rule: we cannot mix HTML forms and JSON bodies. However, we <em>can</em>
+        mix HTML forms and <strong>Files</strong>!</p>
+    <p>This is what happens when we fill out a profile page: we type in our text fields (Form) and upload an avatar
+        image (File) at the exact same time.</p>
+
+    <pre>
+from fastapi import FastAPI, File, Form, UploadFile
+
+app = FastAPI()
+
+@app.post("/profile/")
+async def update_profile(
+    username: str = Form(),
+    avatar: UploadFile = File(...)
+):
+    return {
+        "username": username,
+        "avatar_name": avatar.filename
+    }
+  </pre>
+
+    <p><strong>Lines 7-8:</strong> We declare our <code>username</code> as a standard <code>Form()</code>, and our
+        <code>avatar</code> as a <code>File(...)</code> (the <code>...</code> just means it is strictly required).
+    </p>
+    <p>FastAPI will automatically declare this route as a "multipart" form, perfectly splitting the text fields from the
+        massive file chunks.</p>
+
+    <h3>File Limits and Validation Tips</h3>
+    <p>Right now, our code allows users to upload any file they want. What if an evil bot tries to upload a 50GB file
+        named <code>virus.exe</code> when we only wanted a PDF?</p>
+
+    <p>Currently, FastAPI does not have a native, built-in parameter to limit file sizes or force a specific file
+        extension directly in the route definition. We have to validate this manually inside our function.</p>
+
+    <pre>
+from fastapi import HTTPException
+
+@app.post("/upload-pdf/")
+async def upload_pdf(file: UploadFile):
+    # 1. Validate the file type
+    if file.content_type != "application/pdf":
+        raise HTTPException(
+            status_code=400, 
+            detail="Only PDF files are allowed"
+        )
+        
+    # 2. Validate the size (rough estimation by chunking)
+    file_size = 0
+    while chunk := await file.read(1024 * 1024): # Read 1MB at a time
+        file_size += len(chunk)
+        if file_size > (5 * 1024 * 1024): # 5 Megabytes
+            raise HTTPException(
+                status_code=400, 
+                detail="File too large. Max size is 5MB"
+            )
+            
+    return {"filename": file.filename, "size": file_size}
+  </pre>
+
+    <p>By manually checking the <code>content_type</code> and carefully reading the file in chunks to measure the size,
+        we can protect our server from dangerous payloads!</p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 37</span>
+    </div>
+</div>

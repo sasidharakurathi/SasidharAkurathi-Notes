@@ -1,0 +1,126 @@
+<!-- Chapter 11 Page 1 -->
+<div class="page" id="chapter-11">
+    <div class="header">CHAPTER 11 - Header Parameters</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 11 - Header Parameters</h2>
+
+    <h3>What is a Header?</h3>
+    <p>When our browser sends a request to a server, it does not just send the URL and the body. It also sends a hidden
+        list of metadata called "Headers".</p>
+
+    <p>Think of headers like the stamp on an envelope. We don't read the stamp to understand the letter, but the post
+        office uses the stamp to figure out how to handle the delivery. Headers tell the server things like what type of
+        browser we are using, what language we prefer, or a secret token proving we are logged in.</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> Headers are hidden key-value pairs of metadata sent along with every web
+        request. They contain technical context about the request.
+    </div>
+
+    <h3>Reading Headers with Header()</h3>
+    <p>Reading a header in FastAPI is just as simple as reading a query or a cookie. We import <code>Header</code> from
+        the main <code>fastapi</code> package.</p>
+
+    <pre>
+from fastapi import FastAPI, Header
+
+app = FastAPI()
+
+@app.get("/items/")
+def read_items(user_agent: str = Header(default=None)):
+    return {"User-Agent": user_agent}
+  </pre>
+
+    <p><strong>Line 6:</strong> By using <code>= Header(default=None)</code>, we instruct FastAPI to specifically look
+        inside the hidden HTTP headers for our variable.</p>
+
+    <h3>The Underscore-to-Hyphen Magic</h3>
+    <p>Did we notice something strange in the example above? Our Python variable is named <code>user_agent</code> (with
+        an underscore), but the standard HTTP header we are trying to read is actually named <code>User-Agent</code>
+        (with a hyphen).</p>
+
+    <p>FastAPI performs a magical, automatic conversion here. Because hyphens (<code>-</code>) are completely illegal in
+        Python variable names, we cannot name our variable <code>User-Agent</code>. FastAPI solves this by automatically
+        converting any underscores in our variable names into hyphens when it searches the HTTP headers!</p>
+
+    <p>Not only that, HTTP headers are supposed to be case-insensitive. So <code>USER_AGENT</code>,
+        <code>user_agent</code>, and <code>User_Agent</code> will all successfully catch the <code>User-Agent</code>
+        header. It just works.
+    </p>
+
+    <div class="mistake-box">
+        <strong>⚠️ Common Mistake:</strong> Trying to disable the magic. If for some weird reason we actually need to
+        read a custom header that literally has an underscore in its name (like <code>strange_header</code>), we must
+        explicitly tell FastAPI to stop converting it by using <code>Header(convert_underscores=False)</code>.
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 28</span>
+    </div>
+</div>
+
+<!-- Chapter 11 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 11 - Header Parameters</div>
+
+    <h3>Duplicate or Multiple Headers</h3>
+    <p>Sometimes, a browser will send the exact same header multiple times in one request, but with different values.
+        For example, a user might send multiple <code>X-Token</code> headers.</p>
+
+    <p>If we want to capture all of them, we just declare our variable as a Python <code>List</code>.</p>
+
+    <pre>
+from typing import List
+from fastapi import FastAPI, Header
+
+app = FastAPI()
+
+@app.get("/items/")
+def read_items(x_token: List[str] = Header(default=None)):
+    return {"X-Token values": x_token}
+  </pre>
+
+    <p><strong>Line 7:</strong> By using <code>List[str]</code>, FastAPI will find every single <code>X-Token</code>
+        header in the request and gather them seamlessly into a clean list for us.</p>
+
+    <h3>Header Models with Pydantic</h3>
+    <p>Just like we did with cookies and request bodies, if we expect a massive list of custom headers, we can group
+        them all into an ultra-strict Pydantic model.</p>
+
+    <pre>
+from pydantic import BaseModel
+from fastapi import FastAPI, Header
+
+class CommonHeaders(BaseModel):
+    host: str
+    save_data: bool
+    x_custom_token: str
+
+app = FastAPI()
+
+@app.get("/items/")
+def read_items(headers: CommonHeaders = Header()):
+    return headers
+  </pre>
+
+    <p><strong>Line 12:</strong> We use <code>= Header()</code> to instruct FastAPI to build the entire
+        <code>CommonHeaders</code> model exclusively out of incoming HTTP headers.
+    </p>
+
+    <h3>Common Headers We Will See</h3>
+    <p>While we can invent our own headers (usually starting with <code>X-</code>, like <code>X-Secret-Token</code>),
+        here are the most common standard headers we might want to read:</p>
+    <ul>
+        <li><strong>User-Agent:</strong> Tells us what browser and operating system the user has.</li>
+        <li><strong>Authorization:</strong> Contains the security tokens used for logging in.</li>
+        <li><strong>Accept-Language:</strong> Tells us whether the user prefers to read the site in English, Spanish,
+            etc.</li>
+        <li><strong>Host:</strong> Tells us the exact domain name the user requested.</li>
+    </ul>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 29</span>
+    </div>
+</div>

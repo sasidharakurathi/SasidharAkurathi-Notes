@@ -1,0 +1,175 @@
+<!-- Chapter 15 Page 1 -->
+<div class="page" id="chapter-15">
+    <div class="header">CHAPTER 15 - Handling Errors</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 15 - Handling Errors</h2>
+
+    <h3>Raising HTTPException</h3>
+    <p>In Chapter 12, we learned about HTTP status codes. But what happens when something actually goes wrong inside our
+        code? Maybe a user asks for an item ID that doesn't exist in our database, or they try to access a page they
+        don't have permission to see.</p>
+
+    <p>We cannot just return a normal Python dictionary with an error message, because FastAPI will wrap that in a happy
+        "200 OK" status code. Instead, we must strictly halt our code and throw an error back to the browser. We do this
+        by <strong>raising</strong> an <code>HTTPException</code>.</p>
+
+    <pre>
+from fastapi import FastAPI, HTTPException
+
+app = FastAPI()
+
+items = {"foo": "The Foo Wrestlers"}
+
+@app.get("/items/{item_id}")
+async def read_item(item_id: str):
+    if item_id not in items:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return {"item": items[item_id]}
+  </pre>
+
+    <p><strong>Line 10:</strong> Notice we use the Python keyword <code>raise</code>, not <code>return</code>. Raising
+        an <code>HTTPException</code> instantly stops our function right there. The code below it never runs. FastAPI
+        catches the exception, creates a clean JSON response with the <code>detail</code> message, and sets the exact
+        HTTP status code we asked for (like a 404 Not Found).</p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> Use <code>raise HTTPException()</code> whenever we need to immediately stop
+        our code, send an error message, and return a failure status code (like 400 or 404).
+    </div>
+
+    <h3>Custom Error Details</h3>
+    <p>The <code>detail</code> parameter of an HTTPException doesn't have to be a simple string. Depending on how
+        complex our error is, we can pass a Python <code>list</code> or even a full <code>dict</code> (dictionary).
+        FastAPI will cleanly convert whatever we pass into beautiful JSON.</p>
+
+    <pre>
+@app.get("/users/{user_id}")
+async def read_user(user_id: int):
+    if user_id > 100:
+        raise HTTPException(
+            status_code=400, 
+            detail={"error": "ID too high", "max_allowed": 100}
+        )
+    return {"user": "Valid User"}
+  </pre>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 38</span>
+    </div>
+</div>
+
+<!-- Chapter 15 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 15 - Handling Errors</div>
+
+    <h3>Custom Exception Handlers</h3>
+    <p>What if our application relies on a totally custom Python error? Let's say we wrote a completely unique
+        <code>UnicornException</code> that gets triggered whenever a magical database goes down.
+    </p>
+
+    <p>If we just <code>raise UnicornException(name="Sparkles")</code> in our routing code, FastAPI won't know what to
+        do with it, and it will return an ugly "500 Internal Server Error" to the user.</p>
+
+    <p>We can solve this globally! We can teach FastAPI how to handle our custom exceptions automatically using the
+        <code>@app.exception_handler</code> decorator.
+    </p>
+
+    <pre>
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+
+class UnicornException(Exception):
+    def __init__(self, name: str):
+        self.name = name
+
+app = FastAPI()
+
+@app.exception_handler(UnicornException)
+async def unicorn_exception_handler(request: Request, exc: UnicornException):
+    return JSONResponse(
+        status_code=418,
+        content={"message": f"Oops! {exc.name} did something. There goes a rainbow..."},
+    )
+
+@app.get("/unicorns/{name}")
+async def read_unicorn(name: str):
+    if name == "yolo":
+        raise UnicornException(name=name)
+    return {"unicorn_name": name}
+  </pre>
+
+    <p>Let's unpack this magic:</p>
+    <p><strong>Lines 4-6:</strong> We create a standard Python exception class. Nothing related to FastAPI yet.</p>
+    <p><strong>Line 10:</strong> We use <code>@app.exception_handler</code> and pass our custom class. We are telling
+        FastAPI: "If you ever see a UnicornException anywhere in our app, stop what you are doing and run this function
+        instead."</p>
+    <p><strong>Lines 12-15:</strong> Inside the handler, we must manually return a <code>JSONResponse</code>, picking
+        exactly what status code (like the joke 418 I'm a teapot) and what content to send back.</p>
+    <p><strong>Line 20:</strong> Inside our actual route, we just cleanly <code>raise UnicornException</code>. The
+        global handler catches it perfectly.</p>
+
+    <div class="usage-box">
+        <strong>Use this when:</strong> We have core database or logic exceptions that might be thrown from deep inside
+        our code, and we want to reliably catch them at the top level to return clean JSON errors to the user.
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 39</span>
+    </div>
+</div>
+
+<!-- Chapter 15 Page 3 -->
+<div class="page">
+    <div class="header">CHAPTER 15 - Handling Errors</div>
+
+    <h3>Overriding Default Handlers</h3>
+    <p>FastAPI uses Pydantic to validate data. When Pydantic catches bad data (like an integer instead of a string),
+        FastAPI throws an internal error called <code>RequestValidationError</code> and returns a 422 Unprocessable
+        Entity status.</p>
+
+    <p>But what if we don't like the way FastAPI's default 422 errors look? What if our frontend application expects
+        error messages in a very specific format? We can override FastAPI's built-in handlers using the exact same
+        trick!</p>
+
+    <pre>
+from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+
+app = FastAPI()
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={
+            "error_type": "VALIDATION_FAILURE",
+            "messy_details": exc.errors(),
+            "body_received": exc.body
+        },
+    )
+  </pre>
+
+    <p><strong>Line 7:</strong> By putting <code>RequestValidationError</code> into our exception handler, we completely
+        hijack FastAPI's default validation error process.</p>
+    <p><strong>Line 13:</strong> The <code>exc.errors()</code> function gives us the raw list of exactly what Pydantic
+        complained about.</p>
+    <p><strong>Line 14:</strong> The <code>exc.body</code> gives us the exact raw JSON the user tried to send us, which
+        is incredible for debugging.</p>
+
+    <h3>Overriding the HTTPException Itself</h3>
+    <p>We can even override FastAPI's standard <code>HTTPException</code> globally if we wanted to enforce a strict
+        corporate response format (for example, wrapping all errors in an <code>"error_envelope": {}</code> dictionary).
+    </p>
+
+    <p>The only trick here is ensuring we re-use FastAPI's default handlers if we only want to tweak a tiny thing. We
+        can import them via <code>from fastapi.exception_handlers import http_exception_handler</code> and run them
+        inside our custom overrides!</p>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 40</span>
+    </div>
+</div>

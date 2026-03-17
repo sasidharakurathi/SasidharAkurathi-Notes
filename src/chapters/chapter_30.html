@@ -1,0 +1,180 @@
+<!-- Chapter 30 Page 1 -->
+<div class="page" id="chapter-30">
+    <div class="header">CHAPTER 30 - Settings & Configuration</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 30 - Settings & Configuration</h2>
+
+    <h3>Why Hardcoding is Bad</h3>
+    <p>Imagine we are building our startup's API, and we have a critical database password:
+        <code>super_secret_db_pass_123</code>. If we copy and paste that exact string directly into our
+        <code>database.py</code> file, we have created a massive security and operational nightmare.
+    </p>
+
+    <p>First, if we ever upload our code to GitHub, the entire internet can instantly see our password and steal our
+        company's data. Secondly, when we finally launch our app, our production server will need a completely different
+        password than our local development laptop. We cannot manually rewrite the code every single time we switch
+        computers.</p>
+
+    <p>The universal solution in software engineering is to use <strong>Environment Variables</strong>. These are
+        invisible variables that live directly on the operating system of the server itself, totally separated from our
+        code.</p>
+
+    <h3>Pydantic Settings: The Modern Approach</h3>
+    <p>Traditionally, developers used <code>os.getenv("DATABASE_URL")</code> to fetch these variables from the server.
+        But FastAPI was built by the creator of Pydantic, so we have something vastly superior:
+        <code>BaseSettings</code>.
+    </p>
+
+    <p>First, we need to install the companion package: <code>pip install pydantic-settings</code>.</p>
+
+    <pre>
+from pydantic_settings import BaseSettings
+
+class Settings(BaseSettings):
+    app_name: str = "My Awesome API"
+    admin_email: str
+    items_per_user: int = 50
+    debug_mode: bool = False
+
+# We instantiate grabbing the server's environment variables instantly!
+settings = Settings()
+  </pre>
+
+    <p>This is incredibly powerful! Pydantic will automatically look at the operating system's environment variables. If
+        it sees a variable called <code>ADMIN_EMAIL</code>, it will automatically pull it in and attach it to
+        <code>settings.admin_email</code>.
+    </p>
+
+    <div class="plain-english-box">
+        <strong>In plain English:</strong> <code>BaseSettings</code> takes messy, unreliable operating system text
+        strings and transforms them into perfectly safe, validated, and auto-completed Python objects.
+    </div>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 80</span>
+    </div>
+</div>
+
+<!-- Chapter 30 Page 2 -->
+<div class="page">
+    <div class="header">CHAPTER 30 - Settings & Configuration</div>
+
+    <h3>Type-Safe Configuration</h3>
+    <p>The absolute greatest feature of Pydantic <code>BaseSettings</code> is that it guarantees <strong>Type
+            Safety</strong>.</p>
+
+    <p>Operating system environment variables are <em>always</em> strings. If we set an environment variable locally
+        like <code>ITEMS_PER_USER="50"</code> or <code>DEBUG_MODE="False"</code>, the raw OS just sees quotes. If we
+        used standard Python <code>os.getenv()</code>, we would have to manually parse those strings into integers and
+        booleans.</p>
+
+    <p>But Pydantic automatically reads our type hints (<code>int</code>, <code>bool</code>)! When it reads the string
+        <code>"50"</code>, it instantly converts it to an integer. When it reads the string <code>"False"</code> (or "0"
+        or "off"), it instantly converts it to a boolean <code>False</code>!
+    </p>
+
+    <p>If we accidentally set the server's environment variable to <code>ITEMS_PER_USER="apple"</code>, our FastAPI
+        server will instantly crash on startup and scream at us with a beautiful validation error, completely preventing
+        a disaster in production.</p>
+
+    <h3>.env File Support</h3>
+    <p>Setting raw environment variables directly on our Windows or Mac laptops every time we want to code is extremely
+        annoying. Instead, we usually create a hidden text file named literally just <code>.env</code> in the root of
+        our project.</p>
+
+    <pre>
+# .env (NEVER upload this file to GitHub!)
+ADMIN_EMAIL=ceo@ourstartup.com
+ITEMS_PER_USER=100
+DEBUG_MODE=True
+SECRET_API_KEY=x9f8ja83n2b
+  </pre>
+
+    <p>By simply adding <code>model_config</code> to our <code>Settings</code> class, Pydantic will automatically scan
+        our folder, find the <code>.env</code> file, and load all the variables as if they were real server variables.
+    </p>
+
+    <pre>
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+class Settings(BaseSettings):
+    admin_email: str
+    items_per_user: int = 50
+    debug_mode: bool = False
+    secret_api_key: str
+
+    # Tell Pydantic to read our hidden file!
+    model_config = SettingsConfigDict(env_file=".env")
+  </pre>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 81</span>
+    </div>
+</div>
+
+<!-- Chapter 30 Page 3 -->
+<div class="page">
+    <div class="header">CHAPTER 30 - Settings & Configuration</div>
+
+    <h3>Different Configurations for Dev vs Prod</h3>
+    <p>Because Pydantic is so flexible, we easily manage the difference between our local laptop (Development) and our
+        remote company server (Production).</p>
+
+    <p>On our local laptop, we create a <code>.env</code> file holding our localhost database URLs and fake passwords.
+        When we write our code, everything runs against the local tests.</p>
+
+    <p>When we upload our code to our production server (like AWS or render), we absolutely do <strong>not</strong>
+        include the <code>.env</code> file. Instead, we manually type real, secure Environment Variables directly into
+        the AWS dashboard.</p>
+
+    <p>When our FastAPI server boots up in production, Pydantic looks for the <code>.env</code> file, fails to find it
+        (which is perfectly fine), and seamlessly falls back to reading the true Environment Variables from the AWS
+        server itself!</p>
+
+    <h3>A Full Working Settings Example</h3>
+    <p>Let's look at how we inject our beautifully typed settings into our actual routes using the magical
+        <code>lru_cache</code>. We don't want Python to read from the hard drive 1,000 times a second, so we cache the
+        settings object!
+    </p>
+
+    <pre>
+# config.py
+from functools import lru_cache
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+class Settings(BaseSettings):
+    app_name: str = "My Awesome API"
+    admin_email: str
+    database_url: str
+
+    model_config = SettingsConfigDict(env_file=".env")
+
+@lru_cache
+def get_settings():
+    # Only runs once per startup!
+    return Settings()
+  </pre>
+
+    <pre>
+# main.py
+from fastapi import FastAPI, Depends
+from config import get_settings, Settings
+
+app = FastAPI()
+
+@app.get("/info")
+async def info(settings: Settings = Depends(get_settings)):
+    return {
+        "app_name": settings.app_name,
+        "admin_contact": settings.admin_email,
+        # We successfully used our settings dynamically!
+    }
+  </pre>
+
+    <div class="footer">
+        <span>FastAPI Complete Handbook</span>
+        <span>Page 82</span>
+    </div>
+</div>
