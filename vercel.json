@@ -5,6 +5,14 @@
   "trailingSlash": false,
   "rewrites": [
     {
+      "source": "/docker_chapter_:slug",
+      "destination": "/docker/chapter_:slug"
+    },
+    {
+      "source": "/docker_chapter_:slug.html",
+      "destination": "/docker/chapter_:slug"
+    },
+    {
       "source": "/chapter_:slug",
       "destination": "/fastapi/chapter_:slug"
     },
