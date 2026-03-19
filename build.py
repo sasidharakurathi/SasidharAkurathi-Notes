@@ -112,11 +112,11 @@ def build_hub():
     <title>Developer Handbooks Hub</title>
     <style>
         :root {
-            --ink: #0f172a;
-            --paper: #f8fafc;
-            --teal: #0f766e;
-            --blue: #0369a1;
-            --muted: #475569;
+            --ink: #e6edf8;
+            --paper: #101a2e;
+            --teal: #10bfae;
+            --blue: #2496ed;
+            --muted: #9bb0d1;
         }
 
         * { box-sizing: border-box; }
@@ -127,9 +127,9 @@ def build_hub():
             font-family: "Sora", "Segoe UI", sans-serif;
             color: var(--ink);
             background:
-                radial-gradient(circle at 8% 10%, rgba(15, 118, 110, 0.22), transparent 38%),
-                radial-gradient(circle at 92% 90%, rgba(3, 105, 161, 0.24), transparent 42%),
-                linear-gradient(165deg, #f6fffd 0%, #eef7ff 48%, #f8fafc 100%);
+                radial-gradient(circle at 8% 10%, rgba(16, 191, 174, 0.24), transparent 36%),
+                radial-gradient(circle at 92% 90%, rgba(36, 150, 237, 0.28), transparent 40%),
+                linear-gradient(165deg, #070d19 0%, #081528 48%, #070c16 100%);
             display: grid;
             place-items: center;
             padding: 24px;
@@ -138,10 +138,10 @@ def build_hub():
         .shell {
             width: min(1040px, 100%);
             border-radius: 28px;
-            border: 1px solid rgba(15, 23, 42, 0.08);
-            background: rgba(255, 255, 255, 0.82);
+            border: 1px solid rgba(140, 167, 206, 0.2);
+            background: rgba(9, 19, 34, 0.78);
             backdrop-filter: blur(6px);
-            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.13);
+            box-shadow: 0 24px 60px rgba(2, 6, 12, 0.56);
             padding: 44px 38px;
             animation: rise 420ms ease-out both;
         }
@@ -179,7 +179,7 @@ def build_hub():
             text-decoration: none;
             color: var(--ink);
             background: var(--paper);
-            border: 1px solid rgba(15, 23, 42, 0.1);
+            border: 1px solid rgba(140, 167, 206, 0.22);
             border-radius: 20px;
             padding: 24px;
             min-height: 208px;
@@ -190,7 +190,7 @@ def build_hub():
 
         .card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 14px 36px rgba(15, 23, 42, 0.12);
+            box-shadow: 0 14px 36px rgba(2, 8, 18, 0.5);
         }
 
         .fastapi:hover {
@@ -212,7 +212,7 @@ def build_hub():
         }
 
         .chip.fastapi { background: rgba(15, 118, 110, 0.12); color: var(--teal); }
-        .chip.docker { background: rgba(3, 105, 161, 0.12); color: var(--blue); }
+        .chip.docker { background: rgba(36, 150, 237, 0.16); color: var(--blue); }
 
         h2 {
             margin: 14px 0 10px;
@@ -229,7 +229,7 @@ def build_hub():
             margin-top: 16px;
             font-family: "IBM Plex Mono", monospace;
             font-size: 0.83rem;
-            color: #0b253e;
+            color: #bdd8ff;
         }
 
         @media (max-width: 820px) {
