@@ -1,0 +1,175 @@
+<div class="page" id="chapter-06">
+    <div class="header">Chapter 6: Expressions</div>
+
+    <h2 style="margin-top: 0;">Chapter 6: Expressions &amp; the n8n Data Model</h2>
+
+    <h3>The n8n Item Model</h3>
+    <p>To write expressions, we first have to understand what an "Item" actually is in memory. When a node outputs
+        data-say, fetching a row from Postgres-n8n wraps that data in a standard Item object containing two root keys:
+        <code>json</code> and <code>binary</code>.
+    </p>
+
+    <pre><code class="language-javascript">// What a single Item looks like under the hood:
+{
+  "json": {
+    "user_id": 1234,
+    "email": "dev@company.com",
+    "name": "Jane Developer"
+  },
+  "binary": {
+    "profile_pic": {
+      "mimeType": "image/png",
+      "fileType": "png",
+      "fileName": "avatar.png",
+      "data": "...base64_string..."
+    }
+  }
+}</code></pre>
+
+    <p>Everything we do in n8n visually is just manipulating the <code>json</code> or <code>binary</code> object of
+        these Items.</p>
+
+    <h3>Expression Syntax</h3>
+    <p>Expressions dynamically evaluate JavaScript inside almost any text field in a node. We surround expressions with
+        double curly braces: <code>{{ }}</code>.</p>
+
+    <ul>
+        <li><code>{{ $json.email }}</code> - Grabs the email from the current item.</li>
+        <li><code>{{ $json.user_id + 100 }}</code> - We can perform pure math.</li>
+        <li><code>{{ $json.name.toLowerCase() }}</code> - We can use strict native JS methods.</li>
+        <li><code>{{ $json.address?.city }}</code> - <strong>Crucial:</strong> Use optional chaining (<code>?.</code>)
+            to prevent the entire workflow from crashing if <code>address</code> is null on one of the items.</li>
+    </ul>
+
+    <div class="mistake-box">
+        <strong>Common Mistake:</strong> Do not write <code>{{ $json['first-name'] }}</code> if we can avoid it. n8n's
+        expression editor autocomplete heavily relies on dot notation. Only use bracket notation for keys with spaces or
+        hyphens.
+    </div>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 1</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 6: Expressions</div>
+
+    <h3>Accessing Previous Node Output</h3>
+    <p>Often, we are five nodes deep into a workflow and we need the ID from the very first trigger node. We don't
+        have to pass it manually through every step. We can query any previous node's output directly.</p>
+
+    <pre><code class="language-javascript">// Standard cross-node reference:
+{{ $('Stripe Trigger').item.json.data.object.id }}
+
+// Accessing the exact first item of a previous node (bypasses current item iteration mapping):
+{{ $('Get CRM Users').first().json.email }}
+
+// Accessing ALL items from a previous node as an array:
+{{ $('Database Query').all().map(item => item.json.id) }}</code></pre>
+
+    <h3>Built-in Variables</h3>
+    <p>n8n exposes several global variables inside expressions to give we contextual awareness of the execution
+        environment.</p>
+
+    <table class="reference-table">
+        <thead>
+            <tr>
+                <th>Variable</th>
+                <th>What it does</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>$json</code> / <code>$binary</code></td>
+                <td>The data for the <em>current</em> iteration/item passing through the node.</td>
+            </tr>
+            <tr>
+                <td><code>$input</code></td>
+                <td>The complete array of all items entering the node (<code>$input.all()</code>).</td>
+            </tr>
+            <tr>
+                <td><code>$env("KEY")</code></td>
+                <td>Pulls a value from our <code>.env</code> file (e.g., <code>{{ $env("N8N_HOST") }}</code>).</td>
+            </tr>
+            <tr>
+                <td><code>$workflow.id</code></td>
+                <td>The unique UUID of the current workflow (great for creating automatic error Slack links).</td>
+            </tr>
+            <tr>
+                <td><code>$execution.id</code></td>
+                <td>The ID of this specific run.</td>
+            </tr>
+            <tr>
+                <td><code>$now</code> / <code>$today</code></td>
+                <td>Luxon DateTime objects bound to the server's timezone.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="usage-box">
+        <strong>Security Tip:</strong> n8n strictly blocks <code>$env("N8N_ENCRYPTION_KEY")</code> and other sensitive
+        internal variables from being exposed in expressions to prevent malicious blueprint imports from stealing our
+        keys.
+    </div>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 2</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 6: Expressions</div>
+
+    <h3>JMESPath and Data Searching</h3>
+    <p>When dealing with massive, deeply nested JSON responses (like from the AWS or Jira APIs), mapping arrays manually
+        using JS <code>.filter()</code> or <code>.map()</code> inside an expression gets messy.</p>
+    <p>n8n natively supports <strong>JMESPath</strong> using the <code>$jmespath()</code> function to query and slice
+        JSON elegantly.</p>
+
+    <pre><code class="language-javascript">// Given an array of 500 users attached to $json.users, extract an array of ONLY the names
+// of users who are strictly active:
+
+{{ $jmespath($json, "users[?status=='active'].name") }}</code></pre>
+
+
+    <h3>Luxon: Time Manipulation</h3>
+    <p>Writing <code>new Date().toISOString()</code> works, but manipulating time zones, adding days, and formatting
+        strings in vanilla JS is famously brutal. n8n bundles the <strong>Luxon</strong> library globally.</p>
+
+    <p>Whenever we use <code>$now</code> or <code>$today</code>, we are working with a Luxon DateTime object.</p>
+
+    <pre><code class="language-javascript">// Get the exact time exactly 7 days from right now in UTC format
+{{ $now.plus({ days: 7 }).toUTC().toISO() }}
+
+// Get the last day of the current month formatted nicely for an email
+{{ $today.endOf('month').toFormat('MMMM dd, yyyy') }}
+
+// Parse an ugly API timestamp string and convert it to our timezone
+{{ $now.fromISO($json.created_at).setZone('America/New_York').toFormat('HH:mm') }}</code></pre>
+
+
+    <h3>Handling Null / Missing Fields Safely</h3>
+    <p>If Node A fetches 10 users, and User #4 doesn't have a <code>company</code> block, an expression like
+        <code>{{ $json.company.name }}</code> will crash the entire node with a
+        <code>TypeError: Cannot read properties of undefined</code>.
+    </p>
+
+    <p>Always use modern JS fallback patterns in expressions when dealing with optional API data:</p>
+
+    <pre><code class="language-javascript">// 1. Optional Chaining (Prevents crash, returns undefined)
+{{ $json.company?.name }}
+
+// 2. Nullish Coalescing (Provides a fallback instead of undefined)
+{{ $json.company?.name ?? 'Independent Contractor' }}
+
+// 3. Logical OR (Falls back on empty strings '' as well as null/undefined)
+{{ $json.company?.name || 'Unknown' }}</code></pre>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 3</span>
+    </div>
+</div>

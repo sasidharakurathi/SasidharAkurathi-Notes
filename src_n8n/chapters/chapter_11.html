@@ -1,0 +1,160 @@
+<div class="page" id="chapter-11">
+    <div class="header">Chapter 11: Data Transformations</div>
+
+    <h2 style="margin-top: 0;">Chapter 11: Working with Data - Transformations</h2>
+
+    <h3>The Array Mentality</h3>
+    <p>In n8n, everything is an array of JSON objects (called "items"). When we fetch 50 users from a database, our node
+        doesn't output one big JSON document with a <code>users</code> array. Instead, it outputs 50 distinct items.
+        Every subsequent node we attach will run 50 times automatically.</p>
+    <p>This is incredibly powerful for simple 1-to-1 data moving, but what happens when we need to combine data from two
+        different APIs? Or what if an API only accepts 10 items at a time? We use n8n's core data transformation nodes.
+    </p>
+
+    <h3>Merging Data Streams (The Join Operation)</h3>
+    <p>The <strong>Merge</strong> node is how we stitch parallel execution paths back together. If our workflow
+        splits-fetching data from Shopify on the top wire, and Postgres on the bottom wire-we use the Merge node to
+        combine them.</p>
+
+    <ul>
+        <li><strong>Mode: Append.</strong> The simplest merge. If Shopify gives us 5 items, and Postgres gives us 3, the
+            Merge node outputs 8 items sequentially.</li>
+        <li><strong>Mode: Merge By Index.</strong> If we know for an absolute fact that item #1 from Shopify corresponds
+            exactly to item #1 from Postgres, this mode zips them together horizontally into a single item.</li>
+        <li><strong>Mode: Merge By Key.</strong> This is our equivalent to a SQL <code>LEFT JOIN</code> or
+            <code>INNER JOIN</code>. We define the matching key (e.g., <code>email</code>). If Shopify item #2 has
+            <code>email: alice@test.com</code>, and Postgres item #9 has <code>email: alice@test.com</code>, n8n merges
+            their properties into one pristine item.
+        </li>
+    </ul>
+
+    <table class="comparison-table">
+        <thead>
+            <tr>
+                <th>Merge Mode</th>
+                <th>SQL Equivalent</th>
+                <th>When to Use</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Append</strong></td>
+                <td><code>UNION ALL</code></td>
+                <td>Combining two independent lists into one stream</td>
+            </tr>
+            <tr>
+                <td><strong>Merge by Index</strong></td>
+                <td><code>ZIP</code> (positional)</td>
+                <td>Both sources return identical item counts in matching order</td>
+            </tr>
+            <tr>
+                <td><strong>Merge by Key</strong></td>
+                <td><code>LEFT JOIN / INNER JOIN</code></td>
+                <td>Matching records across APIs by a shared field (email, ID)</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="warning-box">
+        <strong>⚠️ Warning:</strong> "Merge by Index" silently drops items if the two input streams have different
+        lengths. If Shopify returns 5 items but Postgres returns 3, items #4 and #5 from Shopify will be lost. Always
+        prefer "Merge by Key" when data counts might differ.
+    </div>
+
+    <h3>Processing Large Datasets: Split in Batches</h3>
+    <p>Never pass 10,000 items into a single HTTP node loop if the target API has strict rate limits. We will get
+        IP-banned immediately.</p>
+
+    <p>Instead, we use the <strong>Split in Batches</strong> node. We set the Batch Size (e.g., 50). n8n will take our
+        10,000 items, and release exactly 50 of them down the wire.</p>
+    <p>At the end of our processing chain, we attach the final node directly <em>back</em> to the Split in Batches node,
+        creating a visual loop on the canvas. The loop automatically continues until all 10,000 items are exhausted.</p>
+
+    <div class="plain-english-box">
+        <strong>Wait Nodes in Loops:</strong> When using Split in Batches to respect API rate limits, it is highly
+        recommended to place a <strong>Wait node</strong> (e.g., Wait 2 Seconds) inside the execution loop. This acts as
+        a throttle, ensuring we process exactly 50 items every 2 seconds without breaching quota ceilings.
+    </div>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 1</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 11: Data Transformations</div>
+
+    <h3>Grouping Data: The Aggregate Node</h3>
+    <p>If our workflow generated 15 individual items representing physical line-items in an order, and we need to POST
+        one single JSON array containing all 15 items to an accounting API, we must use the <strong>Aggregate</strong>
+        node.</p>
+    <p>The Aggregate node takes an array of individual items and squashes them into a single item containing an array
+        field, essentially reversing n8n's default item expansion. We can also group by specific keys-calculating the
+        <code>sum</code> of the amounts, the <code>average</code> value, or extracting an array of unique emails.
+    </p>
+
+    <h3>Sorting and Removing Duplicates</h3>
+    <p>Data integrity is paramount when synchronizing CRMs or databases.</p>
+
+    <p><strong>Sort Node:</strong> Does exactly what we expect. We define a field (e.g., <code>createdAt</code>) and ask
+        it to sort ascending or descending. Crucially, it reorders the actual item indexing so the next node processes
+        them chronologically.</p>
+
+    <p><strong>Remove Duplicates Node:</strong> Before hitting a target API, we often want to strip out redundant data.
+        Let's say we scraped 500 LinkedIn users, but 200 of them share the same company name. We can drop in a Remove
+        Duplicates node, tell it to deduplicate based on the <code>company_name</code> field, and it will output exactly
+        300 unique items to the next node.</p>
+
+    <h3>The Filter Node</h3>
+    <p>Often, we do not want to use an IF node to split our workflow execution path. We simply want to aggressively
+        prune our data stream.</p>
+    <p>The <strong>Filter</strong> node allows us to define complex conditional logic (e.g.,
+        <code>transaction_status == 'PAID'</code> AND <code>amount > 500</code>). Any item that matches the criteria
+        continues to the next node. Any item that fails is instantly dropped from the execution entirely.
+    </p>
+    <p>This is drastically cleaner than using an IF node and leaving the "False" path disconnected.</p>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 2</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 11: Data Transformations</div>
+
+    <h3>Real Example: SQL-style Joins Across APIs</h3>
+    <p>Imagine we need to sync Intercom users with our internal Postgres database before updating a third dashboard.</p>
+    <ol>
+        <li>We add an <strong>Intercom</strong> node configured to fetch "All Users".</li>
+        <li>We add a <strong>Postgres</strong> node configured to run <code>SELECT id, email, ltv FROM users;</code>
+        </li>
+        <li>We drag the outputs of <em>both</em> nodes into the inputs of a <strong>Merge</strong> node.</li>
+        <li>We set the Merge Mode to <code>Merge By Key</code>.</li>
+        <li>We specify the key name for Input 1 as <code>email</code>, and the key name for Input 2 as
+            <code>email</code>.
+        </li>
+        <li>The Merge node outputs a beautiful, unified dataset containing Intercom's metadata merged horizontally with
+            our database's LTV metrics. We can now pass this enriched data securely to our target dashboard.</li>
+    </ol>
+
+    <h3>Real Example: Processing 1000 Records in Batches</h3>
+    <p>We receive a webhook containing 1000 new lead emails. We must enrich them using a tool like Clearbit, but
+        Clearbit enforces a strict 60 requests-per-minute rate limit.</p>
+    <ol>
+        <li>Start with a Webhook node that outputs 1000 items.</li>
+        <li>Connect a <strong>Split In Batches</strong> node. Set the Batch Size to <code>50</code>.</li>
+        <li>Connect an HTTP Request node (pointing to Clearbit). It will process the first 50 items.</li>
+        <li>Connect a <strong>Wait</strong> node. Configure it to pause execution for <code>60 Seconds</code>.</li>
+        <li>Drag the output wire of the Wait node <em>backward</em> and drop it directly onto the input of the Split In
+            Batches node.</li>
+    </ol>
+    <p>The workflow will seamlessly loop: process 50 leads, sleep 60 seconds, grab the next 50 leads... until the entire
+        webhook payload is processed safely without triggering DDoS protections.</p>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 3</span>
+    </div>
+</div>

@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>n8n Complete Handbook</title>
+    <script type="text/javascript">
+        (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, "clarity", "script", "vxhj0j0zwn");
+    </script>
+    <style>:root {
+  --primary: #ff6d5a;
+  --primary-strong: #ea4262;
+  --bg-main: #0a0b10;
+  --bg-surface: #141b22;
+  --bg-elevated: #1c2431;
+  --text-main: #e8f6f4;
+  --text-muted: #b39f9b;
+  --code-bg: #151211;
+  --border-color: #2b3544;
+  --danger-bg: #3b1f24;
+  --warn-bg: #3a2e1b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  overflow-x: hidden;
+  background: radial-gradient(circle at 8% 0%, #2c1516, transparent 40%), var(--bg-main);
+}
+
+body {
+  min-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 11pt;
+  color: var(--text-main);
+  background: transparent;
+  margin: 0;
+  display: block;
+}
+
+a,
+button {
+  touch-action: manipulation;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  border-bottom: 1px solid var(--border-color);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  background: rgba(10, 11, 16, 0.86);
+}
+
+.topbar-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  gap: 12px;
+}
+
+.topbar-context {
+  margin-left: auto;
+  margin-right: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 109, 90, 0.28);
+  background: rgba(255, 109, 90, 0.12);
+  color: #ffdfdb;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.brand {
+  text-decoration: none;
+  color: #ffffff;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.top-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-wrap: nowrap;
+}
+
+.top-link {
+  text-decoration: none;
+  color: #f1f5f9;
+  border: 1px solid rgba(255, 109, 90, 0.28);
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.top-link:visited {
+  color: #f1f5f9;
+}
+
+.top-link-btn {
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.hamburger-icon {
+  width: 16px;
+  height: 14px;
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.hamburger-icon span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  transform-origin: center;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.top-link-btn.is-open .hamburger-icon span:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.top-link-btn.is-open .hamburger-icon span:nth-child(2) {
+  opacity: 0;
+}
+
+.top-link-btn.is-open .hamburger-icon span:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+.top-link:hover {
+  background: rgba(255, 109, 90, 0.14);
+  color: #ffffff;
+}
+
+.top-link.active {
+  background: rgba(255, 109, 90, 0.22);
+  color: #ffffff;
+}
+
+.top-link.active:visited {
+  color: #ffffff;
+}
+
+.layout {
+  display: flex;
+  width: 100%;
+  min-height: calc(100vh - 57px);
+}
+
+.sidebar {
+  width: 320px;
+  background: linear-gradient(180deg, rgba(20, 27, 34, 0.98), rgba(10, 11, 16, 0.98));
+  border-right: 1px solid var(--border-color);
+  overflow-y: auto;
+  padding: 22px 18px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 57px;
+  height: calc(100vh - 57px);
+}
+
+.sidebar h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: var(--primary);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 10px;
+  letter-spacing: 0.03em;
+}
+
+.content-wrapper {
+  flex-grow: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 20px 38px;
+  background: linear-gradient(180deg, rgba(10, 11, 16, 0.4), rgba(10, 11, 16, 0.9));
+}
+
+.nav-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 36px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border-color);
+  width: min(210mm, 100%);
+}
+
+.nav-btn {
+  background-color: var(--primary);
+  color: #1a0505;
+  padding: 10px 18px;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 700;
+  transition: transform 0.18s ease, filter 0.18s ease;
+}
+
+.nav-btn:visited {
+  color: #1a0505;
+}
+
+.nav-btn:hover {
+  filter: brightness(0.94);
+  transform: translateY(-1px);
+}
+
+.nav-btn:hover,
+.nav-btn:focus-visible,
+.nav-btn:active,
+.nav-btn:hover:visited,
+.nav-btn:focus-visible:visited,
+.nav-btn:active:visited {
+  color: #1a0505;
+}
+
+.nav-btn.disabled {
+  background-color: #3d2b29;
+  color: #a3918f;
+  pointer-events: none;
+}
+
+.nav-btn.disabled:visited {
+  color: #a3918f;
+}
+
+.cover-page+.nav-buttons {
+  justify-content: center;
+  border-top: 0;
+  padding-top: 0;
+  margin-top: 22px;
+}
+
+.cover-page+.nav-buttons .nav-btn {
+  border-radius: 999px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #ff8a7a, #ea4262);
+  color: #ffffff;
+  letter-spacing: 0.02em;
+  box-shadow: 0 10px 24px rgba(234, 66, 98, 0.35);
+}
+
+.cover-page+.nav-buttons .nav-btn:visited {
+  color: #ffffff;
+}
+
+.cover-page+.nav-buttons .nav-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.02);
+  box-shadow: 0 14px 30px rgba(234, 66, 98, 0.42);
+}
+
+.cover-page+.nav-buttons .nav-btn:hover,
+.cover-page+.nav-buttons .nav-btn:focus-visible,
+.cover-page+.nav-buttons .nav-btn:active,
+.cover-page+.nav-buttons .nav-btn:hover:visited,
+.cover-page+.nav-buttons .nav-btn:focus-visible:visited,
+.cover-page+.nav-buttons .nav-btn:active:visited {
+  color: #ffffff;
+}
+
+.page {
+  background: linear-gradient(180deg, #1c2431, #141b22);
+  width: min(210mm, 100%);
+  min-height: 0;
+  margin-bottom: 24px;
+  box-shadow: 0 12px 38px rgba(0, 0, 0, 0.42);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: clamp(16px, 2.8vw, 1in);
+  position: relative;
+  page-break-after: always;
+}
+
+.page>h2:first-of-type {
+  margin-top: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+p,
+li {
+  line-height: 1.65;
+  color: var(--text-main);
+}
+
+a {
+  color: #ff8a7a;
+  transition: color 0.2s ease;
+}
+
+a:hover,
+a:focus-visible {
+  color: #ffaa9e;
+}
+
+a:visited {
+  color: #e55a48;
+}
+
+.cover-page {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.cover-logo {
+  display: block;
+  align-self: center;
+  margin-top: 34px;
+  margin-bottom: 20px;
+}
+
+.cover-title {
+  font-size: clamp(34px, 4.2vw, 58px);
+  margin-bottom: 16px;
+  color: var(--primary);
+}
+
+.cover-subtitle {
+  font-size: clamp(16px, 2.2vw, 24px);
+  color: #d6cfce;
+  margin-bottom: 34px;
+  font-weight: 500;
+}
+
+.cover-note,
+.cover-date {
+  font-size: 12pt;
+  color: var(--text-muted);
+}
+
+pre {
+  background-color: var(--code-bg);
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--primary);
+  padding: 14px;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 10pt;
+  overflow-x: auto;
+  border-radius: 8px;
+  max-height: 70vh;
+  overflow-y: auto;
+  color: #ebe3e1;
+}
+
+code {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 10pt;
+  background-color: rgba(255, 109, 90, 0.12);
+  color: #ffdfdb;
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+
+pre code {
+  background-color: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+.code-wrapper {
+  position: relative;
+  margin: 16px 0;
+}
+
+.code-wrapper pre {
+  margin: 0;
+  padding-top: 40px;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(255, 109, 90, 0.5);
+  background: rgba(20, 27, 34, 0.95);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.copy-btn:hover {
+  transform: translateY(-1px);
+  background: rgba(30, 41, 59, 0.98);
+  border-color: rgba(255, 109, 90, 0.8);
+}
+
+.copy-btn.copied {
+  background: rgba(255, 109, 90, 0.22);
+  color: #ffffff;
+}
+
+.plain-english-box {
+  background-color: rgba(255, 109, 90, 0.12);
+  border: 1px solid rgba(255, 109, 90, 0.45);
+  padding: 15px;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+.plain-english-box strong {
+  color: #ffaa9e;
+}
+
+.mistake-box {
+  background-color: var(--danger-bg);
+  border-left: 4px solid #ff5d73;
+  padding: 15px;
+  margin: 20px 0;
+  border-radius: 6px;
+}
+
+.usage-box {
+  background-color: var(--warn-bg);
+  border-left: 4px solid #ffc04d;
+  padding: 15px;
+  margin: 20px 0;
+  border-radius: 6px;
+}
+
+.warning-box {
+  background-color: rgba(255, 93, 115, 0.10);
+  border-left: 4px solid #ff5d73;
+  padding: 15px;
+  margin: 20px 0;
+  border-radius: 6px;
+}
+
+.warning-box strong {
+  color: #ff8fa0;
+}
+
+.tip-box {
+  background-color: rgba(90, 200, 170, 0.10);
+  border-left: 4px solid #5ac8aa;
+  padding: 15px;
+  margin: 20px 0;
+  border-radius: 6px;
+}
+
+.tip-box strong {
+  color: #7edbc0;
+}
+
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 9.5pt;
+}
+
+.comparison-table th {
+  background: rgba(255, 109, 90, 0.18);
+  color: #ffaa9e;
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 2px solid rgba(255, 109, 90, 0.35);
+}
+
+.comparison-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-main);
+}
+
+.comparison-table tr:hover td {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.header,
+.footer {
+  color: var(--text-muted);
+  position: static;
+  border-color: var(--border-color);
+}
+
+.header {
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 10px;
+  padding-bottom: 5px;
+  font-size: 9pt;
+  text-align: right;
+}
+
+.footer {
+  border-top: 1px solid var(--border-color);
+  margin-top: 14px;
+  padding-top: 5px;
+  font-size: 9pt;
+  display: flex;
+  justify-content: space-between;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 25px 0;
+}
+
+th,
+td {
+  border: 1px solid var(--border-color);
+  padding: 12px;
+  text-align: left;
+}
+
+th {
+  background-color: rgba(255, 109, 90, 0.1);
+  color: #ffdfdb;
+}
+
+.toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.toc-list li {
+  margin-bottom: 8px;
+}
+
+.toc-list a,
+.toc-link {
+  appearance: none;
+  border: 0;
+  width: 100%;
+  text-align: left;
+  text-decoration: none;
+  background: transparent;
+  color: #d6cfce;
+  font: inherit;
+  font-size: 0.98rem;
+  line-height: 1.45;
+  letter-spacing: 0.005em;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  overflow-wrap: anywhere;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 8px;
+}
+
+.toc-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2ch;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(255, 109, 90, 0.16);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.toc-label {
+  min-width: 0;
+}
+
+.toc-list a:hover,
+.toc-list a:focus-visible,
+.toc-link:hover,
+.toc-link:focus-visible {
+  background: rgba(255, 109, 90, 0.14);
+  color: #ffffff;
+  border-color: rgba(255, 109, 90, 0.34);
+}
+
+.toc-list a.active,
+.toc-link.active {
+  background: linear-gradient(90deg, rgba(255, 109, 90, 0.22), rgba(255, 109, 90, 0.08));
+  color: #ebfffc;
+  border-color: rgba(255, 109, 90, 0.45);
+}
+
+.toc-list a:visited {
+  color: #aba09e;
+}
+
+.toc-section {
+  font-weight: 700;
+  font-size: 10pt;
+  color: var(--primary);
+  letter-spacing: 0.5px;
+  margin-top: 12px;
+  padding-top: 8px;
+}
+
+.toc-list .page-num {
+  color: var(--text-muted);
+  margin-left: 8px;
+}
+
+.link-status {
+  position: fixed;
+  left: 12px;
+  bottom: 10px;
+  z-index: 1200;
+  max-width: min(460px, calc(100vw - 24px));
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 109, 90, 0.5);
+  background: rgba(20, 27, 34, 0.95);
+  color: #ffffff;
+  font-size: 9.5pt;
+  line-height: 1.2;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.link-status.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@page {
+  size: A4;
+  margin: 0;
+}
+
+@media print {
+  body {
+    background: #fff;
+    color: #111;
+    display: block;
+  }
+
+  .topbar {
+    display: none;
+  }
+
+  .layout {
+    min-height: 0;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .page {
+    box-shadow: none;
+    border: 0;
+    border-radius: 0;
+    width: 100%;
+    min-height: 297mm;
+    margin: 0;
+    page-break-after: always;
+    background: #fff;
+    color: #111;
+  }
+
+  .header {
+    position: absolute;
+    top: 0.5in;
+    left: 1in;
+    right: 1in;
+    margin: 0;
+  }
+
+  .footer {
+    position: absolute;
+    bottom: 0.5in;
+    left: 1in;
+    right: 1in;
+    margin: 0;
+  }
+}
+
+@media screen and (max-width: 1000px) {
+  .topbar {
+    position: sticky;
+    top: 0;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: rgba(10, 11, 16, 0.98);
+  }
+
+  .topbar-inner {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .topbar-context {
+    display: none;
+  }
+
+  .brand {
+    font-size: 0.88rem;
+    max-width: 42vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .top-link {
+    padding: 6px 9px;
+    font-size: 0.78rem;
+  }
+
+  .top-nav {
+    gap: 6px;
+    margin-left: auto;
+    width: auto;
+  }
+
+  .layout {
+    display: block;
+    min-height: 0;
+  }
+
+  body.toc-open {
+    overflow: hidden;
+  }
+
+  .sidebar {
+    display: block;
+    min-height: 0;
+    height: calc(100dvh - 68px);
+    position: fixed;
+    top: 68px;
+    left: 0;
+    width: min(88vw, 360px);
+    z-index: 60;
+    border-right: 1px solid var(--border-color);
+    border-bottom: 0;
+    padding: 14px 12px;
+    margin: 0;
+    border-radius: 0 12px 12px 0;
+    background: rgba(20, 27, 34, 0.95);
+    overflow-x: hidden;
+    overflow-y: auto;
+    max-height: none;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.36);
+    transform: translateX(-105%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
+    will-change: transform, opacity;
+  }
+
+  .sidebar h3 {
+    margin: 0 0 8px;
+    padding-bottom: 0;
+  }
+
+  .toc-list {
+    display: grid;
+    gap: 7px;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+
+  .toc-list li {
+    margin: 0;
+  }
+
+  .toc-list a,
+  .toc-link {
+    width: 100%;
+    white-space: normal;
+    border: 1px solid rgba(255, 109, 90, 0.28);
+    background: rgba(255, 109, 90, 0.09);
+    color: #ebe3e1;
+    font-size: 0.88rem;
+    line-height: 1.3;
+    padding: 9px 10px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: 8px;
+  }
+
+  .toc-index {
+    min-width: 28px;
+    text-align: center;
+    padding: 2px 6px;
+    margin-top: 1px;
+  }
+
+  .toc-label {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+  }
+
+  body.toc-open .sidebar {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  body.toc-open .content-wrapper::before {
+    content: "";
+    position: fixed;
+    inset: 68px 0 0;
+    z-index: 50;
+    background: rgba(0, 0, 0, 0.6);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+  }
+
+  .content-wrapper {
+    padding: 12px;
+    overflow-y: visible;
+    min-height: 0;
+    position: relative;
+  }
+
+  .top-link-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 34px;
+    min-width: 38px;
+    padding: 0;
+  }
+
+  .page {
+    min-height: 0;
+    margin-bottom: 14px;
+  }
+
+  .nav-buttons {
+    width: 100%;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}
+
+@media screen and (max-width: 640px) {
+  .topbar-inner {
+    flex-wrap: nowrap;
+    padding: 8px 10px;
+  }
+
+  .top-nav {
+    width: auto;
+    gap: 5px;
+  }
+
+  .top-link {
+    flex: 0 0 auto;
+    text-align: center;
+    padding: 6px 8px;
+    font-size: 0.76rem;
+  }
+
+  .top-link-btn {
+    flex: 0 0 auto;
+    width: 36px;
+    min-width: 36px;
+  }
+
+  .nav-buttons {
+    flex-direction: column;
+  }
+
+  .nav-btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(11, 31, 32, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 109, 90, 0.45);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 109, 90, 0.75);
+}
+
+::selection {
+  background: rgba(255, 109, 90, 0.45);
+  color: #f5fffe;
+}</style>
+</head>
+<body data-handbook="n8n">
+    
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a class="brand" href="/">Developer Handbooks</a>
+            <span class="topbar-context" id="topbar-context" aria-live="polite"></span>
+            <nav class="top-nav" aria-label="Primary navigation">
+                <a href="/fastapi/" class="top-link ">FastAPI</a>
+                <a href="/docker/" class="top-link ">Docker</a>
+                <a href="/n8n/" class="top-link active">n8n</a>
+                <button id="toc-toggle" class="top-link top-link-btn" type="button" aria-expanded="false" aria-controls="toc-sidebar" aria-label="Open table of contents">
+                    <span class="hamburger-icon" aria-hidden="true"><span></span><span></span><span></span></span>
+                </button>
+            </nav>
+        </div>
+    </header>
+    <div class="layout">
+        <nav class="sidebar" id="toc-sidebar">
+            <h3>Table of Contents</h3>
+            <ul class="toc-list">
+<li><button class="toc-link" type="button" data-href="/n8n/chapter_01.html">Chapter 1: What is n8n? (The Mental Model)</button></li>
+<li><button class="toc-link" type="button" data-href="/n8n/chapter_02.html">Chapter 2: Installation &amp; Setup</button></li>
+<li><button class="toc-link" type="button" data-href="/n8n/chapter_03.html">Chapter 3: The Editor UI - Complete Walkthrough</button></li>
+<li><button class="toc-link" type="button" data-href="/n8n/chapter_04.html">Chapter 4: Triggers - Starting a Workflow</button></li>
+<li><button class="toc-link" type="button" data-href="/n8n/chapter_05.html">Chapter 5: Core Nodes Every Developer Must Know</button></li>
+<li><button class="toc-link" type="button" data-href="/n8n/chapter_06.html">Chapter 6: Expressions &amp; the n8n Data Model</button></li>
+<li><button class="toc-link" type="button" data-href="/n8n/chapter_07.html">Chapter 7: Working with the Code Node</button></li>
+<li><button class="toc-link" type="button" data-href="/n8n/chapter_08.html">Chapter 8: Credentials &amp; Authentication</button></li>
+<li><button class="toc-link" type="button" data-href="/n8n/chapter_09.html">Chapter 9: Error Handling &amp; Reliability</button></li>
+<li><button class="toc-link" type="button" data-href="/n8n/chapter_10.html">Chapter 10: Sub-Workflows &amp; Modular Design</button></li>
+<li><button class="toc-link" type="button" data-href="/n8n/chapter_11.html">Chapter 11: Working with Data - Transformations</button></li>
+<li><button class="toc-link" type="button" data-href="/n8n/chapter_12.html">Chapter 12: Most Useful Integrations for Developers</button></li>
+<li><button class="toc-link" type="button" data-href="/n8n/chapter_13.html">Chapter 13: n8n + AI (LangChain Nodes)</button></li>
+<li><button class="toc-link" type="button" data-href="/n8n/chapter_14.html">Chapter 14: Self-Hosting in Production</button></li>
+<li><button class="toc-link" type="button" data-href="/n8n/chapter_15.html">Chapter 15: The n8n CLI &amp; REST API</button></li>
+<li><button class="toc-link" type="button" data-href="/n8n/chapter_16.html">Chapter 16: Building Custom Nodes</button></li>
+<li><button class="toc-link" type="button" data-href="/n8n/chapter_17.html">Chapter 17: Quick Reference Cheat Sheet</button></li>
+</ul>
+        </nav>
+        <main class="content-wrapper">
+            <div class="page" id="chapter-06">
+    <div class="header">Chapter 6: Expressions</div>
+
+    <h2 style="margin-top: 0;">Chapter 6: Expressions &amp; the n8n Data Model</h2>
+
+    <h3>The n8n Item Model</h3>
+    <p>To write expressions, we first have to understand what an "Item" actually is in memory. When a node outputs
+        data-say, fetching a row from Postgres-n8n wraps that data in a standard Item object containing two root keys:
+        <code>json</code> and <code>binary</code>.
+    </p>
+
+    <pre><code class="language-javascript">// What a single Item looks like under the hood:
+{
+  "json": {
+    "user_id": 1234,
+    "email": "dev@company.com",
+    "name": "Jane Developer"
+  },
+  "binary": {
+    "profile_pic": {
+      "mimeType": "image/png",
+      "fileType": "png",
+      "fileName": "avatar.png",
+      "data": "...base64_string..."
+    }
+  }
+}</code></pre>
+
+    <p>Everything we do in n8n visually is just manipulating the <code>json</code> or <code>binary</code> object of
+        these Items.</p>
+
+    <h3>Expression Syntax</h3>
+    <p>Expressions dynamically evaluate JavaScript inside almost any text field in a node. We surround expressions with
+        double curly braces: <code>{{ }}</code>.</p>
+
+    <ul>
+        <li><code>{{ $json.email }}</code> - Grabs the email from the current item.</li>
+        <li><code>{{ $json.user_id + 100 }}</code> - We can perform pure math.</li>
+        <li><code>{{ $json.name.toLowerCase() }}</code> - We can use strict native JS methods.</li>
+        <li><code>{{ $json.address?.city }}</code> - <strong>Crucial:</strong> Use optional chaining (<code>?.</code>)
+            to prevent the entire workflow from crashing if <code>address</code> is null on one of the items.</li>
+    </ul>
+
+    <div class="mistake-box">
+        <strong>Common Mistake:</strong> Do not write <code>{{ $json['first-name'] }}</code> if we can avoid it. n8n's
+        expression editor autocomplete heavily relies on dot notation. Only use bracket notation for keys with spaces or
+        hyphens.
+    </div>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 1</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 6: Expressions</div>
+
+    <h3>Accessing Previous Node Output</h3>
+    <p>Often, we are five nodes deep into a workflow and we need the ID from the very first trigger node. We don't
+        have to pass it manually through every step. We can query any previous node's output directly.</p>
+
+    <pre><code class="language-javascript">// Standard cross-node reference:
+{{ $('Stripe Trigger').item.json.data.object.id }}
+
+// Accessing the exact first item of a previous node (bypasses current item iteration mapping):
+{{ $('Get CRM Users').first().json.email }}
+
+// Accessing ALL items from a previous node as an array:
+{{ $('Database Query').all().map(item => item.json.id) }}</code></pre>
+
+    <h3>Built-in Variables</h3>
+    <p>n8n exposes several global variables inside expressions to give we contextual awareness of the execution
+        environment.</p>
+
+    <table class="reference-table">
+        <thead>
+            <tr>
+                <th>Variable</th>
+                <th>What it does</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>$json</code> / <code>$binary</code></td>
+                <td>The data for the <em>current</em> iteration/item passing through the node.</td>
+            </tr>
+            <tr>
+                <td><code>$input</code></td>
+                <td>The complete array of all items entering the node (<code>$input.all()</code>).</td>
+            </tr>
+            <tr>
+                <td><code>$env("KEY")</code></td>
+                <td>Pulls a value from our <code>.env</code> file (e.g., <code>{{ $env("N8N_HOST") }}</code>).</td>
+            </tr>
+            <tr>
+                <td><code>$workflow.id</code></td>
+                <td>The unique UUID of the current workflow (great for creating automatic error Slack links).</td>
+            </tr>
+            <tr>
+                <td><code>$execution.id</code></td>
+                <td>The ID of this specific run.</td>
+            </tr>
+            <tr>
+                <td><code>$now</code> / <code>$today</code></td>
+                <td>Luxon DateTime objects bound to the server's timezone.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="usage-box">
+        <strong>Security Tip:</strong> n8n strictly blocks <code>$env("N8N_ENCRYPTION_KEY")</code> and other sensitive
+        internal variables from being exposed in expressions to prevent malicious blueprint imports from stealing our
+        keys.
+    </div>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 2</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 6: Expressions</div>
+
+    <h3>JMESPath and Data Searching</h3>
+    <p>When dealing with massive, deeply nested JSON responses (like from the AWS or Jira APIs), mapping arrays manually
+        using JS <code>.filter()</code> or <code>.map()</code> inside an expression gets messy.</p>
+    <p>n8n natively supports <strong>JMESPath</strong> using the <code>$jmespath()</code> function to query and slice
+        JSON elegantly.</p>
+
+    <pre><code class="language-javascript">// Given an array of 500 users attached to $json.users, extract an array of ONLY the names
+// of users who are strictly active:
+
+{{ $jmespath($json, "users[?status=='active'].name") }}</code></pre>
+
+
+    <h3>Luxon: Time Manipulation</h3>
+    <p>Writing <code>new Date().toISOString()</code> works, but manipulating time zones, adding days, and formatting
+        strings in vanilla JS is famously brutal. n8n bundles the <strong>Luxon</strong> library globally.</p>
+
+    <p>Whenever we use <code>$now</code> or <code>$today</code>, we are working with a Luxon DateTime object.</p>
+
+    <pre><code class="language-javascript">// Get the exact time exactly 7 days from right now in UTC format
+{{ $now.plus({ days: 7 }).toUTC().toISO() }}
+
+// Get the last day of the current month formatted nicely for an email
+{{ $today.endOf('month').toFormat('MMMM dd, yyyy') }}
+
+// Parse an ugly API timestamp string and convert it to our timezone
+{{ $now.fromISO($json.created_at).setZone('America/New_York').toFormat('HH:mm') }}</code></pre>
+
+
+    <h3>Handling Null / Missing Fields Safely</h3>
+    <p>If Node A fetches 10 users, and User #4 doesn't have a <code>company</code> block, an expression like
+        <code>{{ $json.company.name }}</code> will crash the entire node with a
+        <code>TypeError: Cannot read properties of undefined</code>.
+    </p>
+
+    <p>Always use modern JS fallback patterns in expressions when dealing with optional API data:</p>
+
+    <pre><code class="language-javascript">// 1. Optional Chaining (Prevents crash, returns undefined)
+{{ $json.company?.name }}
+
+// 2. Nullish Coalescing (Provides a fallback instead of undefined)
+{{ $json.company?.name ?? 'Independent Contractor' }}
+
+// 3. Logical OR (Falls back on empty strings '' as well as null/undefined)
+{{ $json.company?.name || 'Unknown' }}</code></pre>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 3</span>
+    </div>
+</div>
+            <div class="nav-buttons"><a href="/n8n/chapter_05.html" class="nav-btn">← Previous</a><a href="/n8n/chapter_07.html" class="nav-btn">Next →</a></div>
+        </main>
+    </div>
+    <script src="/n8n/script.js" defer></script>
+</body>
+</html>

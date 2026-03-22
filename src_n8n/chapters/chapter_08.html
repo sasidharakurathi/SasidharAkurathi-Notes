@@ -1,0 +1,145 @@
+<div class="page" id="chapter-08">
+    <div class="header">Chapter 8: Credentials &amp; Auth</div>
+
+    <h2 style="margin-top: 0;">Chapter 8: Credentials &amp; Authentication</h2>
+
+    <h3>The Philosophy of Credentials in n8n</h3>
+    <p>Hardcoding an API key into an HTTP node or a Code node is strongly anti-pattern in n8n. If that workflow is
+        exported, or if we rotate the key, we have to hunt down every single node where we pasted that string.</p>
+    <p>n8n isolates authentication into a global <strong>Credential Manager</strong>. We create a credential once, n8n
+        encrypts it in the database, and we simply "reference" it inside our nodes.</p>
+
+    <h3>Credential Types</h3>
+    <p>n8n splits credentials into two broad categories:</p>
+    <ul>
+        <li><strong>App-Specific Credentials:</strong> Built specifically for official integration nodes (e.g., "Stripe
+            API Key", "Slack OAuth2"). These handle the exact headers and formatting the target app expects
+            automatically.</li>
+        <li><strong>Generic Credentials:</strong> Used heavily by the generic HTTP Request node. These include OAuth2,
+            API Header Auth, Basic Auth, and Query Parameter Auth.</li>
+    </ul>
+
+    <h3>Adding Credentials: UI Walkthrough</h3>
+    <p>We can create credentials in two ways:</p>
+    <ol>
+        <li><strong>Global Panel:</strong> Click "Credentials" on the far-left sidebar &rarr; "Add Credential". This is
+            best for setting up our environment before building anything.</li>
+        <li><strong>In-Line:</strong> While viewing a node's configuration panel, change Authentication to "Predefined
+            Credential Type", choose our type (e.g., "Header Auth"), and click "Create New".</li>
+    </ol>
+
+    <div class="mistake-box">
+        <strong>N8N_ENCRYPTION_KEY Importance:</strong> n8n encrypts our saved credentials in Postgres/SQLite using the
+        <code>N8N_ENCRYPTION_KEY</code>. If our server dies and we restore our Postgres database but forget to copy
+        over the exact <code>N8N_ENCRYPTION_KEY</code> from our old <code>.env</code> file, <strong>every single
+            credential is permanently lost</strong> and must be re-entered manually. Treat this key like a
+        cryptocurrency seed phrase.
+    </div>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 1</span>
+    </div>
+</div>
+
+
+<div class="page">
+    <div class="header">Chapter 8: Credentials &amp; Auth</div>
+
+    <h3>Generic Authentication Types</h3>
+
+    <h4>1. API Key Auth</h4>
+    <p>The vast majority of modern SaaS apps use an API Key. Sometimes it goes in a Header, sometimes in the Query URL.
+    </p>
+    <ul>
+        <li><strong>Header Auth:</strong> We specify the Name (e.g., <code>Authorization</code> or
+            <code>X-Api-Key</code>) and the Value (e.g., <code>Bearer sk_live_12345</code>).
+        </li>
+        <li><strong>Query Auth:</strong> We specify the Name (e.g., <code>api_key</code>) and the Value. n8n will
+            automatically append <code>?api_key=12345</code> to the end of every HTTP Request that uses this credential.
+        </li>
+    </ul>
+
+    <h4>2. Basic Auth</h4>
+    <p>Legacy systems often use Basic Auth. We provide a <code>User</code> and <code>Password</code>. Under the hood,
+        n8n automatically base64-encodes them and injects the <code>Authorization: Basic {token}</code> header for us.
+    </p>
+
+    <h4>3. OAuth2 (The Golden Child)</h4>
+    <p>OAuth2 is notoriously difficult to code from scratch (exchanging authorization codes for access tokens, then
+        writing cron jobs to refresh access tokens every 60 minutes). n8n turns OAuth2 into a 1-minute task.</p>
+
+    <p>To set up an OAuth2 Generic API credential:</p>
+    <ol>
+        <li>Create the credential and select "OAuth2 API".</li>
+        <li>Copy the <strong>OAuth Redirect URL</strong> n8n generates for us (e.g.,
+            <code>https://n8n.mycompany.com/rest/oauth2-credential/callback</code>).
+        </li>
+        <li>Paste this exact URL into the external App's developer console (like Google Cloud Platform or Slack App
+            settings).</li>
+        <li>Copy the <code>Client ID</code>, <code>Client Secret</code>, <code>Authorization URL</code>, and
+            <code>Access Token URL</code> from the external app into n8n.
+        </li>
+        <li>Click "Connect". n8n will open a popup, ask us to log in to the external service, and secure the token.
+        </li>
+    </ol>
+    <p>n8n will now handle the token refresh lifecycle in the background automatically forever.</p>
+
+    <div class="usage-box">
+        <strong>Sharing Credentials:</strong> Once a credential is created, it is globally available. If we have 15
+        distinct workflows hitting the Google Sheets API, they all use the single "Google Sheets OAuth2" credential we
+        created. If the connection breaks, we fix it in one place, and all 15 workflows instantly recover.
+    </div>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 2</span>
+    </div>
+</div>
+
+
+<div class="page">
+    <div class="header">Chapter 8: Credentials &amp; Auth</div>
+
+    <h3>Real Example: Private API over HTTP</h3>
+    <p>Assume we have an internal microservice running at <code>http://internal-api:8000</code> that verifies license
+        keys. It requires a Bearer token.</p>
+
+    <ol>
+        <li>Go to <strong>Credentials</strong> &rarr; Add Credential &rarr; Search "Header Auth".</li>
+        <li>Name the credential: <em>Internal API Token</em>.</li>
+        <li>Name: <code>Authorization</code></li>
+        <li>Value: <code>Bearer super_secret_microservice_token_999</code></li>
+        <li>Save.</li>
+        <li>Open our workflow, drop an <strong>HTTP Request</strong> node.</li>
+        <li>Set Authentication &rarr; Predefined Credential Type &rarr; Header Auth.</li>
+        <li>Select "Internal API Token".</li>
+        <li>Set the URL to <code>http://internal-api:8000/verify</code>.</li>
+    </ol>
+    <p>n8n will inject the header beautifully. The actual Bearer token is completely hidden from anyone viewing the
+        workflow canvas, preventing accidental screen-sharing leaks.</p>
+
+
+    <h3>Real Example: Authenticate Google Sheets API</h3>
+    <p>We want to read rows from a Google Sheet. Google enforces strict OAuth2.</p>
+
+    <ol>
+        <li>Go to Google Cloud Console &rarr; Create Project &rarr; Enable Google Sheets API.</li>
+        <li>Go to Credentials &rarr; Create OAuth Client ID (Web Application).</li>
+        <li>Inside n8n, drop a <strong>Google Sheets</strong> node onto the canvas.</li>
+        <li>Change Authentication to <code>OAuth2</code>, click "Create New Credential".</li>
+        <li>n8n will show us the exact OAuth Redirect URL. Copy it and paste it into the Google Cloud Console
+            "Authorized redirect URIs" field.</li>
+        <li>Copy Google's Client ID and Client Secret back into n8n.</li>
+        <li>Click <strong>Connect my Account</strong>. Log in with our Google Workspace account and grant permissions.
+        </li>
+        <li>Select the exact Spreadsheet and Sheet Name in the node.</li>
+    </ol>
+    <p>We can now drag and drop data into rows without writing a single line of Google's notoriously complex OAuth2 JWT
+        refresh logic.</p>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 3</span>
+    </div>
+</div>

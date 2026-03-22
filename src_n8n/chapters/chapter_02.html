@@ -1,0 +1,203 @@
+<div class="page" id="chapter-02">
+    <div class="header">Chapter 2: Installation &amp; Setup</div>
+
+    <h2 style="margin-top: 0;">Chapter 2: Installation &amp; Setup</h2>
+
+    <h3>n8n Cloud vs Self-Hosted</h3>
+    <p>Before writing any workflows, we have to decide where the engine runs. n8n offers a managed SaaS offering (n8n
+        Cloud) and a Self-Hosted option. For developers and engineers, the choice is usually obvious.</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Decision Factor</th>
+                <th>n8n Cloud</th>
+                <th>Self-Hosted (Docker/VPS)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Setup Time</strong></td>
+                <td>20 seconds</td>
+                <td>20 minutes (with Docker Compose)</td>
+            </tr>
+            <tr>
+                <td><strong>Pricing</strong></td>
+                <td>Starts at ~€20/month (capped executions)</td>
+                <td>Free (plus ~$5/mo for our Hetzner/DO VPS)</td>
+            </tr>
+            <tr>
+                <td><strong>Limits</strong></td>
+                <td>Strict limits on execution counts</td>
+                <td><strong>Unlimited.</strong> Run 10 million workflows if our CPU can handle it.</td>
+            </tr>
+            <tr>
+                <td><strong>Data Privacy</strong></td>
+                <td>Passes through n8n servers</td>
+                <td>100% Private. Ideal for internal DB connections or HIPAA/GDPR data.</td>
+            </tr>
+            <tr>
+                <td><strong>Custom Modules</strong></td>
+                <td>Limited</td>
+                <td>Install any <code>npm</code> package we want to use inside the Code node.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>The 3 Ways to Self-Host</h3>
+
+    <div class="plain-english-box">
+        <strong>1. The "Just Let Me See It" Way (npx n8n)</strong><br>
+        If we have Node.js installed, open a terminal and run: <code>npx n8n</code>.<br>
+        It downloads the package, spins up a local SQLite database, and opens the editor on port 5678. <em>Never use
+            this for production.</em> It's just for quickly testing an idea on our laptop.
+    </div>
+
+    <div class="plain-english-box">
+        <strong>2. The "Default Developer" Way (Docker Run)</strong><br>
+        Running n8n in a standalone container.<br>
+        <code>docker run -it --rm --name n8n -p 5678:5678 -v n8n_data:/home/node/.n8n docker.n8n.io/n8nio/n8n</code><br>
+        This is better because it isolates the environment, but it still relies on the built-in SQLite database by
+        default, which creates locking issues if we run lots of workflows at once.
+    </div>
+
+    <div class="plain-english-box">
+        <strong>3. The "Production Standard" Way (Docker Compose)</strong><br>
+        This is how every serious n8n deployment is structured. We use a <code>docker-compose.yml</code> file to spin up
+        n8n <em>alongside</em> PostgreSQL (to handle logs and execution data without locking) and an Nginx or Traefik
+        container to handle HTTPS routing.
+    </div>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 1</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 2: Installation &amp; Setup</div>
+
+    <h3>Environment Variables That Matter</h3>
+    <p>n8n is almost entirely configured via environment variables. When setting up our <code>.env</code> file, we
+        need to understand these five critical keys:</p>
+
+    <ul>
+        <li><code>N8N_HOST</code>: The domain name of our server (e.g., <code>n8n.mycompany.com</code>). Omit the
+            protocol.</li>
+        <li><code>N8N_PORT</code>: Internal port n8n listens on (default <code>5678</code>).</li>
+        <li><code>WEBHOOK_URL</code>: <strong>Crucial.</strong> This tells external services (like Stripe or Slack)
+            where to send data back. It must be our full, public-facing URL: <code>https://n8n.mycompany.com/</code>.
+        </li>
+        <li><code>N8N_ENCRYPTION_KEY</code>: n8n stores credentials (API keys, DB passwords) in the database securely.
+            It uses this key to encrypt them. <strong>Never lose this key.</strong> If we lose it, we lose access to
+            every saved credential in our instance.</li>
+        <li><code>DB_TYPE</code>: Set to <code>postgresdb</code> to rip out the default SQLite and point n8n at a robust
+            database.</li>
+    </ul>
+
+    <div class="mistake-box">
+        <strong>Common Mistake:</strong> If our webhooks generate URLs with <code>localhost:5678</code> instead of our
+        actual domain, it means we forgot to set or incorrectly formatted the <code>WEBHOOK_URL</code> variable.
+    </div>
+
+    <h3>Persistent Data Setup</h3>
+    <p>If we don't bind a volume to our n8n Docker container, our workflows and credentials will vanish the second
+        the server restarts. We must always map a volume to <code>/home/node/.n8n</code>.</p>
+    <p>However, when migrating to Postgres, n8n stores workflows and creds in Postgres instead of flat files. We still
+        need a bound volume for binary files (like downloaded PDFs or images mid-workflow), but the DB handles the
+        critical intelligence.</p>
+
+    <h3>Reverse Proxy &amp; SSL</h3>
+    <p>n8n exposes an HTTP server on port 5678. We cannot expose port 5678 directly to the internet in a professional
+        setup for two reasons:</p>
+    <ol>
+        <li>We need HTTPS (SSL) to encrypt our traffic (especially when sending API keys over the wire).</li>
+        <li>Webhooks sent from external APIs expect standard ports (443).</li>
+    </ol>
+    <p>We solve this with a <strong>Reverse Proxy</strong> like Nginx or Traefik. The proxy listens on port 443, handles
+        the Let's Encrypt SSL certificate automatically, and securely routes the traffic internally to n8n's 5678 port.
+    </p>
+
+    <h3>Running as a Systemd Service?</h3>
+    <p>If we aren't using Docker, some admins prefer installing n8n globally via npm and running it through a Linux
+        <code>systemd</code> service or <code>PM2</code>. While valid, it heavily pollutes the host OS and makes
+        migrating servers a nightmare. Always use Docker's <code>restart: unless-stopped</code> policy instead of
+        relying on OS-level service managers.</p>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 2</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 2: Installation &amp; Setup</div>
+
+    <h3>Real Example: Production Docker Compose Stack</h3>
+    <p>Here is the gold standard for deploying n8n on a fresh VPS. This stack includes n8n, PostgreSQL attached as the
+        main database, and assumes we will use a reverse proxy (like Nginx) sitting in front of port 5678.</p>
+
+    <div class="usage-box">
+        <strong>Developer Tip:</strong> Place this in a directory (e.g., <code>/opt/n8n/</code>), create a
+        <code>.env</code> file next to it with our secrets, and run <code>docker compose up -d</code>.
+    </div>
+
+    <pre><code class="language-yaml"># docker-compose.yml
+version: '3.8'
+
+volumes:
+  n8n_data:
+  postgres_data:
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5678:5678" # Only expose to localhost (proxy handles public traffic)
+    environment:
+      - N8N_HOST=${N8N_HOST}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - NODE_ENV=production
+      - WEBHOOK_URL=https://${N8N_HOST}/
+      - GENERIC_TIMEZONE=America/New_York
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      
+      # Tell n8n to use Postgres instead of SQLite
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${DB_NAME}
+      - DB_POSTGRESDB_USER=${DB_USER}
+      - DB_POSTGRESDB_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy</code></pre>
+
+    <p>By restricting n8n's port mapping to <code>127.0.0.1:5678</code>, we ensure nobody can bypass the Nginx SSL proxy
+        and hit the n8n application directly. All external traffic must go through port 443 via our proxy
+        configuration.</p>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 3</span>
+    </div>
+</div>

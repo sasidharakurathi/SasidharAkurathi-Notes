@@ -1,0 +1,227 @@
+<div class="page" id="chapter-16">
+    <div class="header">Chapter 16: Custom Nodes</div>
+
+    <h2 style="margin-top: 0;">Chapter 16: Building Custom Nodes</h2>
+
+    <h3>When To Build a Custom Node</h3>
+    <p>We've already seen that n8n offers multiple ways to integrate with external systems. So when should we actually
+        write a custom TypeScript node from scratch instead of just using an HTTP Request or a Sub-Workflow?</p>
+
+    <table class="comparison-table">
+        <thead>
+            <tr>
+                <th>Approach</th>
+                <th>Best For</th>
+                <th>Setup Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>HTTP Request Node</strong></td>
+                <td>One-off API calls, internal endpoints.</td>
+                <td>2 minutes</td>
+            </tr>
+            <tr>
+                <td><strong>Sub-Workflow</strong></td>
+                <td>Reusable logic combining multiple API calls.</td>
+                <td>10 minutes</td>
+            </tr>
+            <tr>
+                <td><strong>Custom Node</strong></td>
+                <td>Providing a beautiful UI for non-technical users to access our proprietary internal API.</td>
+                <td>~1-2 days</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="tip-box">
+        <strong>💡 Tip:</strong> If we are the only developers using the n8n canvas, stick to the HTTP Request node. We
+        only build custom nodes when we want to abstract away API complexity (like handling pagination or tricky OAuth
+        handshakes) so our marketing or operations team can drag-and-drop our internal API just like they do with
+        Stripe.
+    </div>
+
+    <h3>Project Structure &amp; Dev Environment</h3>
+    <p>n8n provides a starter template exactly for this purpose. We don't start from a blank folder. Instead, we clone
+        their starter repo which comes pre-configured with TypeScript, ESLint, and the n8n compiler scripts.</p>
+
+    <p>A typical node repository (often named <code>n8n-nodes-mycompany</code>) looks like this:</p>
+    <pre><code class="language-bash">n8n-nodes-mycompany/
+├── package.json
+├── credentials/
+│   └── MyApiApi.credentials.ts    # Defines how users authenticate
+└── nodes/
+    └── MyApi/
+        ├── MyApi.node.ts          # The core logic and UI definitions
+        └── GenericFunctions.ts    # Helper functions for making HTTP calls</code></pre>
+
+    <p>During development, we need a way to run n8n locally while it watches our TypeScript files for changes. We
+        achieve this by linking our local repo using <code>npm link</code>.</p>
+
+    <div class="warning-box">
+        <strong>⚠️ Warning:</strong> Avoid writing nodes in plain JavaScript. n8n relies heavily on TypeScript
+        interfaces (like <code>INodeType</code>) to extract UI definitions during the build step. Without TypeScript,
+        the build process will fail.
+    </div>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 1</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 16: Custom Nodes</div>
+
+    <h3>The INodeType Interface Anatomy</h3>
+    <p>Every node we build must implement the <code>INodeType</code> interface. This class does two things: it defines
+        the <strong>UI properties</strong> (what the node looks like, what inputs it requires), and it defines the
+        <strong>Execute function</strong> (what the node actually does).</p>
+
+    <p>The <code>description</code> object dictates the frontend UI:</p>
+
+    <pre><code class="language-typescript">// nodes/MyApi/MyApi.node.ts
+import { INodeType, INodeTypeDescription } from 'n8n-workflow';
+
+export class MyApi implements INodeType {
+    description: INodeTypeDescription = {
+        displayName: 'My Internal API',
+        name: 'myApi',
+        icon: 'file:myApi.svg', // Local SVG file for the node icon
+        group: ['transform'],
+        version: 1,
+        description: 'Consume our internal microservices',
+        defaults: {
+            name: 'My Internal API',
+        },
+        inputs: ['main'],
+        outputs: ['main'],
+        credentials: [
+            {
+                name: 'myApiApi',
+                required: true,
+            },
+        ],
+        // The properties array defines the actual form fields in the UI
+        properties: [
+            {
+                displayName: 'Operation',
+                name: 'operation',
+                type: 'options',
+                noDataExpression: true,
+                options: [
+                    {
+                        name: 'Get User',
+                        value: 'getUser',
+                    },
+                    {
+                        name: 'Create User',
+                        value: 'createUser',
+                    },
+                ],
+                default: 'getUser',
+            },
+            {
+                displayName: 'User ID',
+                name: 'userId',
+                type: 'string',
+                required: true,
+                displayOptions: {
+                    show: {
+                        operation: ['getUser'], // Only shows if operation == 'getUser'
+                    },
+                },
+                default: '',
+            }
+        ],
+    };
+    
+    // The execute function runs when the node actually fires
+    async execute(this: IExecuteFunctions): Promise&lt;INodeExecutionData[][]&gt; {
+        // Implementation logic here...
+    }
+}</code></pre>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 2</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 16: Custom Nodes</div>
+
+    <h3>Returning Items Correctly</h3>
+    <p>Inside the <code>execute</code> method, we loop over the incoming items, process our API calls, and return the
+        mutated data. We must return an array containing an array of <code>INodeExecutionData</code> objects. This
+        matches n8n's internal data model.</p>
+
+    <p>Here is a real example of the execution logic for our internal API node:</p>
+
+    <pre><code class="language-typescript">async execute(this: IExecuteFunctions): Promise&lt;INodeExecutionData[][]&gt; {
+    const items = this.getInputData();
+    const returnData: INodeExecutionData[] = [];
+
+    // Loop over every item entering the node
+    for (let i = 0; i < items.length; i++) {
+        try {
+            const operation = this.getNodeParameter('operation', i) as string;
+            
+            if (operation === 'getUser') {
+                const userId = this.getNodeParameter('userId', i) as string;
+                
+                // Fetch our credentials to grab the API key
+                const credentials = await this.getCredentials('myApiApi');
+                
+                // We use n8n's built-in this.helpers.request to handle the HTTP call
+                const response = await this.helpers.request({
+                    method: 'GET',
+                    url: `https://api.mycompany.com/users/${userId}`,
+                    headers: {
+                        'Authorization': `Bearer ${credentials.apiKey}`
+                    },
+                    json: true,
+                });
+
+                // Wrap the API response in n8n's expected JSON structure
+                returnData.push({ json: response });
+            }
+        } catch (error) {
+            // Handle error logic: If "Continue on Fail" is set, don't crash
+            if (this.continueOnFail()) {
+                returnData.push({ json: { error: error.message } });
+                continue;
+            }
+            throw error;
+        }
+    }
+
+    return [returnData];
+}</code></pre>
+
+    <div class="usage-box">
+        <strong>Important:</strong> Notice how we loop through <code>items.length</code>. A node might receive 1 item
+        from a Webhook, or 500 items from a Postgres trigger. We must process <em>each item individually</em> in the
+        <code>execute</code> loop to ensure data consistency.
+    </div>
+
+    <h3>Publishing &amp; Community Nodes</h3>
+    <p>Once we have built and tested our node locally, we can publish it as standard Node packages to <code>npm</code>.
+        Community nodes are simply npm packages prefixed with <code>n8n-nodes-</code>.</p>
+
+    <p>To install a community node in our production n8n instance (like Docker), we can go to <strong>Settings &rarr;
+            Community Nodes</strong> in the n8n UI, input the npm package name, and n8n will automatically download and
+        install it into our running instance.</p>
+
+    <div class="warning-box">
+        <strong>⚠️ Warning:</strong> When self-hosting via Docker Compose, installing via the UI works, but destroys
+        immutability. If the container crashes and rebuilds, the node is gone. Make sure to define community nodes
+        directly in our <code>docker-compose.yml</code> or bake them into a custom Dockerfile via
+        <code>RUN npm install -g n8n-nodes-mycompany</code>.
+    </div>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 3</span>
+    </div>
+</div>

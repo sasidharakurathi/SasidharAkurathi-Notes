@@ -19,6 +19,14 @@
     {
       "source": "/chapter_:slug.html",
       "destination": "/fastapi/chapter_:slug"
+    },
+    {
+      "source": "/n8n_chapter_:slug",
+      "destination": "/n8n/chapter_:slug"
+    },
+    {
+      "source": "/n8n_chapter_:slug.html",
+      "destination": "/n8n/chapter_:slug"
     }
   ]
 }

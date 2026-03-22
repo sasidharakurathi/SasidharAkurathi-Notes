@@ -1,0 +1,149 @@
+<div class="page" id="chapter-05">
+    <div class="header">Chapter 5: Core Nodes</div>
+
+    <h2 style="margin-top: 0;">Chapter 5: Core Nodes Every Developer Must Know</h2>
+
+    <h3>The HTTP Request Node: The Swiss Army Knife</h3>
+    <p>If n8n doesn't have an official integration for an app, it doesn't matter. The HTTP Request node is all we need.
+        It gives us full control over raw REST API calls, supporting every standard HTTP method (<code>GET</code>,
+        <code>POST</code>, <code>PUT</code>, <code>PATCH</code>, <code>DELETE</code>).
+    </p>
+
+    <ul>
+        <li><strong>Auth Options:</strong> Built-in support for Basic, Header, Query Parameter, and
+            <strong>OAuth2</strong>. We can configure OAuth2 directly in n8n credentials, and n8n will permanently
+            handle the brutal token refresh lifecycle for us automatically.
+        </li>
+        <li><strong>Pagination Handling:</strong> Gone are the days of writing <code>while (has_next_page)</code> loops.
+            Enable the "Pagination" setting on the node, define the condition (e.g., "Loop until response
+            <code>next_url</code> is empty"), and n8n will automatically stitch all 500 pages of data into a single
+            output Array.
+        </li>
+        <li><strong>Binary File Handling:</strong> Set "Response Format" to <code>File</code>. n8n will stream the
+            PDF/Image into a strict binary format that we can immediately pipe into an AWS S3 or Google Drive node,
+            completely avoiding RAM exhaustion.</li>
+    </ul>
+
+    <div class="usage-box">
+        <strong>Real Example:</strong> Fetching a massive list of paginated users from a CRM API. Set "Pagination" ->
+        "Update Next URL" to expression <code>{{ $response.body.links.next }}</code>. n8n will fire 40 sequential HTTP
+        requests and return 4,000 merged JSON items to the next node instantly.
+    </div>
+
+    <h3>The Code Node (JavaScript &amp; Python)</h3>
+    <p>When the UI nodes aren't enough, we write raw code. The Code node lets us execute custom JavaScript (or Python,
+        if enabled in env variables) <em>against the current execution data</em>.</p>
+
+    <p>We access incoming data using the <code>$input</code> global object:</p>
+
+    <pre><code class="language-javascript">// 1. Getting Data
+// Process all incoming items as an array
+const items = $input.all();
+
+// Process just the very first item
+const firstItem = $input.first();
+
+// 2. Modifying Data
+for (const item of items) {
+  // item.json holds the actual JSON payload
+  item.json.fullName = `${item.json.firstName} ${item.json.lastName}`;
+}
+
+// 3. Returning Data
+// Returning multiple items (fires the next node multiple times)
+return items;
+
+// Returning a single item (fires the next node once)
+return [ items[0] ];</code></pre>
+
+    <div class="mistake-box">
+        <strong>Warning on NPM Packages:</strong> By default, the Code node is sandboxed. We cannot
+        <code>require('axios')</code> or <code>import moment</code>. To use external npm packages, we must explicitly
+        whitelist them in our docker-compose file via the <code>NODE_FUNCTION_ALLOW_EXTERNAL</code> environment
+        variable (e.g., <code>NODE_FUNCTION_ALLOW_EXTERNAL=moment,lodash</code>).
+    </div>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 1</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 5: Core Nodes</div>
+
+    <h3>The Flow Nodes: Controlling Execution</h3>
+    <p>Data manipulation is only half the battle. We need to control <em>where</em> the data goes.</p>
+
+    <h4>The IF Node (Conditional Branching)</h4>
+    <p>The IF node has two outputs: <code>true</code> and <code>false</code>. We define logical conditions (e.g.,
+        String containing "Urgent", Number greater than 100). If an item passes, it goes out the top. If it fails, it
+        goes out the bottom.</p>
+    <p><em>Real Example:</em> Filtering incoming emails. IF subject contains "Invoice", route to the Accounting
+        workflow. Else, route to the General Inbox workflow.</p>
+
+    <h4>The Switch Node (Multi-branch Routing)</h4>
+    <p>When we have more than two outcomes, use Switch. We define rules (e.g., "Status = Pending", "Status = Paid",
+        "Status = Failed"). n8n routes the specific JSON item down the matching wire. It functions identically to a
+        classic <code>switch...case</code> statement.</p>
+
+    <h4>The Merge Node (Combining Streams)</h4>
+    <p>When we have a branched workflow that needs to reunite, or two separate data sources that need to be joined. The
+        Merge node has multiple modes:</p>
+    <ul>
+        <li><strong>Append:</strong> Simply stacks Input 2's array at the bottom of Input 1's array.</li>
+        <li><strong>Combine/Merge (SQL JOIN):</strong> Joins Item 1 from Input A with Item 1 from Input B based on a
+            shared ID key. Incredible for marrying Stripe customer data with local Postgres user data.</li>
+    </ul>
+
+    <h4>The Loop Node (Loop Over Items)</h4>
+    <p>By default, n8n runs nodes sequentially for every item. But sometimes we need to loop over items in batches
+        (e.g., an external API only accepts 50 records per request). The Loop node takes 1,000 items, and outputs them
+        in batches of 50. It creates a circular connection back to itself until the queue is empty.</p>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 2</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 5: Core Nodes</div>
+
+    <h3>The Utility Nodes</h3>
+
+    <h4>The Set Node (Edit Fields)</h4>
+    <p>Instead of writing a 10-line Code node just to change a JSON key name or cast a string to an integer, use the Set
+        node (often called "Edit Fields"). It allows us to forcefully set, rename, keep, or duplicate JSON values. If
+        our webhook receives massive payloads but we only need the <code>user_id</code> and <code>email</code>, we
+        use the Set node to keep only those two fields and discard the rest.</p>
+
+    <h4>The Wait Node (Pausing Workflows)</h4>
+    <p>Automation isn't always instant. The Wait node pauses the entire execution of the workflow. The execution goes to
+        "sleep" in the database, consuming zero CPU.</p>
+    <ul>
+        <li><strong>Time-based:</strong> Wait exactly 3 days, or wait until next Tuesday at 9 AM.</li>
+        <li><strong>Webhook-based:</strong> Pause the workflow <em>indefinitely</em> until a specific callback webhook
+            URL is hit.</li>
+    </ul>
+    <p><em>Real Example:</em> Send an onboarding email. Wait 3 days. Send a follow-up email.</p>
+
+    <h4>The Execute Workflow Node</h4>
+    <p>The ultimate anti-spaghetti tool. Don't build a 200-node monster workflow. The Execute Workflow node allows us
+        to trigger <em>another</em> n8n workflow as a sub-routine, pass our JSON data into it, and wait for it to
+        return processed data.</p>
+    <p><em>Real Example:</em> We have an "Email Parsing Engine" workflow. Instead of duplicating 30 email-processing
+        nodes across 5 different automations, we just drop an Execute Workflow node in all of them, pointing to the
+        single Engine workflow.</p>
+
+    <h4>The Respond to Webhook Node</h4>
+    <p>As mentioned in Chapter 4, this allows us to construct a custom HTTP response for an incoming webhook. We map
+        the node to return a specific JSON payload, HTTP status code (like <code>400 Bad Request</code> or
+        <code>201 Created</code>), and custom HTTP Headers.
+    </p>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 3</span>
+    </div>
+</div>

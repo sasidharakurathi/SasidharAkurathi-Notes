@@ -1,0 +1,139 @@
+<div class="page" id="chapter-13">
+    <div class="header">Chapter 13: n8n + AI (LangChain)</div>
+
+    <h2 style="margin-top: 0;">Chapter 13: n8n + AI (LangChain Nodes)</h2>
+
+    <h3>The AI Agent Node Overview</h3>
+    <p>n8n has integrated <strong>LangChain</strong> directly into the visual canvas. This means we no longer have to
+        write complex Python orchestration scripts to build autonomous agents. We can drag, drop, and wire together an
+        LLM, long-term memory, and interactive tools in under five minutes.</p>
+
+    <h3>The Anatomy of an n8n Agent</h3>
+    <p>To build an AI Agent, we don't just use one node. We assemble a "stack" of specialized nodes attached to a
+        central coordinator called the <strong>AI Agent</strong> node.</p>
+
+    <ul>
+        <li><strong>AI Agent Node:</strong> The brain. It natively understands how to prompt an LLM, parse its response,
+            decide if a tool is needed, execute the tool, and recursively ask the LLM for the next step until the user's
+            prompt is answered.</li>
+        <li><strong>Model Nodes:</strong> We connect an LLM node (like OpenAI, Google Gemini, or Anthropic Claude) into
+            the <em>Model</em> input of the AI Agent. We configure the API key and specific model version (e.g.,
+            <code>gpt-4o</code>) here.
+        </li>
+        <li><strong>Memory Nodes:</strong> We attach these to the <em>Memory</em> input so our agent remembers what was
+            said three messages ago.</li>
+        <li><strong>Tool Nodes:</strong> We attach these to the <em>Tools</em> input to give our LLM hands to interact
+            with the real world (e.g., "Search the web" or "Query Postgres").</li>
+    </ul>
+
+    <h3>Connecting Models</h3>
+    <p>Because n8n uses a standardized interface, swapping the actual brain of our agent takes two seconds. If OpenAI
+        goes down, we literally delete the OpenAI node, drag a Google Gemini node onto the canvas, plug it into the same
+        AI Agent node, and our workflow instantly recovers.</p>
+
+    <div class="usage-box">
+        <strong>Structured Output:</strong> When building data pipelines, we can configure our Model nodes to force
+        strict JSON output. This guarantees that when the LLM parses an invoice, it always returns a perfectly parsable
+        <code>{ "total": 100 }</code> object to the next n8n node, rather than a chatty paragraph.
+    </div>
+
+    <div class="warning-box">
+        <strong>⚠️ Warning:</strong> Every AI Agent execution costs real money. A recursive agent with 3 tools can
+        easily make 8-12 LLM calls per single user message. Always set a <strong>Max Iterations</strong> limit (e.g., 5)
+        on the AI Agent node to prevent runaway API bills.
+    </div>
+
+    <div class="tip-box">
+        <strong>💡 Tip:</strong> Always test AI agents using the <strong>Chat Trigger</strong> node first. It provides
+        an instant chat UI inside the n8n editor — no need to wire up Slack or a frontend just to debug our prompts.
+    </div>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 1</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 13: n8n + AI (LangChain)</div>
+
+    <h3>Giving the Agent Memory</h3>
+    <p>LLMs are inherently stateless. If we say "My name is Alice", and then "What is my name?" in a new request, it
+        won't know. To fix this, we wire a <strong>Chat Memory</strong> node into the AI Agent.</p>
+
+    <ul>
+        <li><strong>Window Buffer Memory:</strong> Keeps exactly the last <em>X</em> messages (e.g., 10). It is highly
+            token-efficient but forgets ancient history.</li>
+        <li><strong>Summary Memory:</strong> Instead of holding raw chat logs, it uses the LLM in the background to
+            constantly distill the entire conversation into a running summary paragraph. It uses fewer tokens than a
+            massive buffer while maintaining context spanning hundreds of turns.</li>
+    </ul>
+
+    <h3>Tool Nodes: Giving the Agent Hands</h3>
+    <p>An LLM is useless if it can't execute actions. We can plug specialized nodes into the Agent's
+        <strong>Tools</strong> input:
+    </p>
+
+    <ul>
+        <li><strong>HTTP Request as Tool:</strong> We give the LLM an API endpoint (e.g., a Weather API) and tell it in
+            the node description: <em>"Use this to find the weather for a given city."</em> The LLM will autonomously
+            construct the API request, pause, wait for n8n to fetch the data, read the JSON response, and formulate an
+            answer.</li>
+        <li><strong>Code Node as Tool:</strong> We can allow the LLM to run sandboxed JavaScript.</li>
+        <li><strong>Sub-Workflow as Tool:</strong> The ultimate abstraction. We build a massive 50-node n8n workflow
+            that queries a database, scrapes a webpage, and formats a PDF. We then give that entire workflow to our AI
+            Agent as a single tool named <em>"Generate Financial Report"</em>.</li>
+    </ul>
+
+    <h3>Building a Basic Agent</h3>
+    <p>To test agents locally, n8n provides a special trigger: the <strong>Chat Trigger</strong> node. It spins up a
+        beautiful, floating chat UI directly inside the n8n editor. We type a message, the trigger fires, the AI Agent
+        processes it, and the response streams right back into our editor chat UI.</p>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 2</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 13: n8n + AI (LangChain)</div>
+
+    <h3>Real Example: Document Processing Pipeline</h3>
+    <p>We receive 50 PDF resumes a day and need to extract the applicant's name, email, and years of experience into
+        Postgres.</p>
+    <ol>
+        <li>Start with a <strong>Webhook</strong> that receives the PDF file as a binary payload.</li>
+        <li>Use the <strong>Extract From File</strong> node to convert the binary PDF into raw text.</li>
+        <li>Pass the extracted text to a <strong>Basic LLM Chain</strong> node (a simplified agent).</li>
+        <li>Configure the LLM node to enforce <em>JSON Output</em> and prompt it:
+            <code>Extract name, email, and years_experience from the following text: {{ $json.text }}</code>.
+        </li>
+        <li>Connect a <strong>Postgres</strong> node. Map <code>{{ $json.name }}</code> and
+            <code>{{ $json.email }}</code> directly into a SQL <code>INSERT</code> statement.
+        </li>
+    </ol>
+    <p>We just built an AI-powered OCR and parsing pipeline without writing a regex string.</p>
+
+
+    <h3>Real Example: Agent with HTTP Tools</h3>
+    <p>We want a Slackbot that can check our Stripe revenue when management talks to it.</p>
+    <ol>
+        <li>Start with a <strong>Slack</strong> node listening for mentions.</li>
+        <li>Connect it to an <strong>AI Agent</strong> node.</li>
+        <li>Attach an <strong>OpenAI Chat Model</strong> to the Agent's Model input.</li>
+        <li>Attach a <strong>Window Buffer Memory</strong> node (backed by Redis to persist across crashes) to the
+            Memory input.</li>
+        <li>Attach an <strong>HTTP Request Tool</strong> node to the Tools input. Configure it to hit
+            <code>api.stripe.com/v1/balance</code>. Give the tool a description: <em>"Call this when asked about
+                revenue, balance, or money."</em>
+        </li>
+        <li>The Agent receives the Slack message. It decides to call the Stripe tool entirely on its own, parses the
+            resulting Stripe JSON balance, converts it to plain English, and sends it back out to Slack.</li>
+    </ol>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 3</span>
+    </div>
+</div>

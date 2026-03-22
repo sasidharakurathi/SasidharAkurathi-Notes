@@ -1,0 +1,170 @@
+<div class="page" id="chapter-15">
+    <div class="header">Chapter 15: CLI &amp; API</div>
+
+    <h2 style="margin-top: 0;">Chapter 15: The n8n CLI &amp; REST API</h2>
+
+    <h3>The n8n CLI</h3>
+    <p>Behind the beautiful Vue.js editor sits a powerful command-line interface. If we are running n8n globally via
+        npm, we use the <code>n8n</code> command directly. If we are running the production Docker setup from Chapter
+        14, we run commands <em>inside</em> the running container.</p>
+
+    <pre><code class="language-bash"># Executing a CLI command inside our running Docker container
+docker exec -it n8n n8n [command]</code></pre>
+
+    <p>The three most critical commands are <code>start</code> (which boots the server), <code>export</code>, and
+        <code>import</code>.</p>
+
+    <h3>Workflows as JSON (Version Control)</h3>
+    <p>In a professional engineering environment, we don't rely solely on Postgres database backups to save our work. We
+        treat workflows as code. An n8n workflow is ultimately just a giant, highly structured JSON array of node
+        definitions and connections.</p>
+
+    <table class="comparison-table">
+        <thead>
+            <tr>
+                <th>CLI Command</th>
+                <th>Operation Details</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>n8n export:workflow --all</code></td>
+                <td>Dumps every single workflow in the database into JSON files in the current directory.</td>
+            </tr>
+            <tr>
+                <td><code>n8n export:credentials --all</code></td>
+                <td>Exports credentials. <em>They are encrypted with the N8N_ENCRYPTION_KEY!</em></td>
+            </tr>
+            <tr>
+                <td><code>n8n import:workflow --input=file.json</code></td>
+                <td>Reads a JSON file from disk and inserts it directly into the running n8n database.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="tip-box">
+        <strong>💡 Tip:</strong> Because workflows are just JSON, we can track them with Git. When a developer makes a
+        change to the "Stripe Sync" workflow in the editor, they should export it to JSON, commit it, and open a Pull
+        Request. This gives us full <code>git diff</code> history of exactly which node parameters were changed.
+    </div>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 1</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 15: CLI &amp; API</div>
+
+    <h3>The n8n Public REST API</h3>
+    <p>n8n doesn't just call <em>other</em> APIs. It exposes its own Public REST API so our backend software can control
+        the n8n application programmatically.</p>
+
+    <p>To enable it, we must first go to <strong>Settings &rarr; n8n API</strong> in the UI and generate an API key.
+        This key belongs in our backend's <code>.env</code> file.</p>
+
+    <div class="warning-box">
+        <strong>⚠️ Warning:</strong> By default, the Public REST API is disabled in self-hosted instances. We must
+        ensure the environment variable <code>N8N_PUBLIC_API_DISABLED=false</code> is set in our
+        <code>docker-compose.yml</code> before the API routes will resolve.
+    </div>
+
+    <p>The API gives us full CRUD (Create, Read, Update, Delete) access over:</p>
+    <ul>
+        <li><strong><code>/api/v1/workflows</code></strong>: List all workflows, read their JSON structure, or create
+            new ones dynamically.</li>
+        <li><strong><code>/api/v1/executions</code></strong>: Query the history logs to see if a specific workflow
+            crashed in the last 10 minutes.</li>
+        <li><strong><code>/api/v1/credentials</code></strong>: Programmatically inject new API keys into n8n without
+            opening the UI.</li>
+    </ul>
+
+    <h3>Triggering Workflows Programmatically</h3>
+    <p>While we can always use a standard <strong>Webhook</strong> node to trigger workflows, n8n also provides a
+        dedicated API endpoint to execute workflows by their internal ID.</p>
+
+    <p>When should we use the standard Webhook node versus the REST API execution endpoint?</p>
+    <ul>
+        <li><strong>Use standard Webhooks when:</strong> An external SaaS (like Shopify or GitHub) needs to blindly
+            throw event data at n8n.</li>
+        <li><strong>Use the REST API when:</strong> Our custom backend (e.g., FastAPI, Express) is deeply orchestrating
+            n8n and needs to trigger a flow securely and specifically using the authenticated API Key.</li>
+    </ul>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 2</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 15: CLI &amp; API</div>
+
+    <h3>Real Example: Shell Script to Git Commit Workflows</h3>
+    <p>We do not want developers manually running docker exec commands every day. We build a simple bash script
+        (<code>backup.sh</code>) to export all workflows, format the JSON beautifully, and push it to GitHub.</p>
+
+    <pre><code class="language-bash">#!/bin/bash
+# backup_workflows.sh
+
+echo "Exporting n8n workflows from Docker container..."
+# Create a dumps folder
+mkdir -p ./n8n_backups
+
+# Tell the n8n container to export all workflows into the mounted volume
+docker exec n8n n8n export:workflow --backup --output=/home/node/.n8n/git_backups/
+
+# Move the files from the docker volume to our local git repo
+cp -r /var/lib/docker/volumes/n8n_data/_data/git_backups/* ./n8n_backups/
+
+echo "Committing to Git..."
+git add ./n8n_backups/
+git commit -m "chore(n8n): Daily automated workflow definition backup"
+git push origin main
+echo "Done!"</code></pre>
+
+    <h3>Real Example: Trigger n8n from FastAPI</h3>
+    <p>Our FastAPI backend handles user registration and creates the Postgres database record. However, we want n8n to
+        handle all the "fluff" — subscribing them to Mailchimp, pinging Slack, and generating a welcome PDF. We use the
+        n8n REST API to trigger the workflow directly from Python.</p>
+
+    <pre><code class="language-python"># app/services/n8n_service.py
+import httpx
+import os
+
+N8N_URL = os.getenv("N8N_URL") # e.g., "https://n8n.mycompany.com"
+N8N_API_KEY = os.getenv("N8N_API_KEY")
+
+async def trigger_onboarding_workflow(user_id: int, email: str):
+    """
+    Triggers the n8n workflow (ID: 42) responsible for Mailchimp and Slack.
+    Uses the official n8n REST API, NOT a standard webhook.
+    """
+    url = f"{N8N_URL}/api/v1/workflows/42/execute"
+    
+    headers = {
+        "X-N8n-Api-Key": N8N_API_KEY,
+        "Accept": "application/json"
+    }
+    
+    # This data will be available in n8n inside the exact trigger node
+    payload = {
+        "data": {
+            "user_id": user_id,
+            "email": email,
+            "source": "fastapi_backend"
+        }
+    }
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, json=payload, headers=headers)
+        response.raise_for_status()
+        
+        return response.json()</code></pre>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 3</span>
+    </div>
+</div>

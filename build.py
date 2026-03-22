@@ -20,8 +20,10 @@ HUB_THEME = {
     "card_shadow": "rgba(2, 8, 18, 0.5)",
     "card_fastapi_hover": "rgba(15, 118, 110, 0.45)",
     "card_docker_hover": "rgba(3, 105, 161, 0.45)",
+    "card_n8n_hover": "rgba(255, 109, 90, 0.45)",
     "chip_fastapi_bg": "rgba(15, 118, 110, 0.12)",
     "chip_docker_bg": "rgba(36, 150, 237, 0.16)",
+    "chip_n8n_bg": "rgba(255, 109, 90, 0.16)",
     "cta": "#bdd8ff",
 }
 
@@ -29,6 +31,7 @@ HUB_THEME = {
 def create_dist_dirs():
     os.makedirs("dist/fastapi", exist_ok=True)
     os.makedirs("dist/docker", exist_ok=True)
+    os.makedirs("dist/n8n", exist_ok=True)
 
 
 def sync_local_preview_dirs():
@@ -37,7 +40,7 @@ def sync_local_preview_dirs():
     if os.path.exists(hub_source):
         shutil.copyfile(hub_source, "index.html")
 
-    for folder in ("fastapi", "docker"):
+    for folder in ("fastapi", "docker", "n8n"):
         source = os.path.join("dist", folder)
         target = folder
 
@@ -113,6 +116,7 @@ def generate_handbook(src_dir, dist_folder, book_title):
 
     active_fastapi = "active" if dist_folder == "fastapi" else ""
     active_docker = "active" if dist_folder == "docker" else ""
+    active_n8n = "active" if dist_folder == "n8n" else ""
 
     topbar_html = f"""
     <header class="topbar">
@@ -122,6 +126,7 @@ def generate_handbook(src_dir, dist_folder, book_title):
             <nav class="top-nav" aria-label="Primary navigation">
                 <a href="/fastapi/" class="top-link {active_fastapi}">FastAPI</a>
                 <a href="/docker/" class="top-link {active_docker}">Docker</a>
+                <a href="/n8n/" class="top-link {active_n8n}">n8n</a>
                 <button id="toc-toggle" class="top-link top-link-btn" type="button" aria-expanded="false" aria-controls="toc-sidebar" aria-label="Open table of contents">
                     <span class="hamburger-icon" aria-hidden="true"><span></span><span></span><span></span></span>
                 </button>
@@ -219,8 +224,10 @@ def build_hub():
             --card-shadow: {HUB_THEME['card_shadow']};
             --card-fastapi-hover: {HUB_THEME['card_fastapi_hover']};
             --card-docker-hover: {HUB_THEME['card_docker_hover']};
+            --card-n8n-hover: {HUB_THEME['card_n8n_hover']};
             --chip-fastapi-bg: {HUB_THEME['chip_fastapi_bg']};
             --chip-docker-bg: {HUB_THEME['chip_docker_bg']};
+            --chip-n8n-bg: {HUB_THEME['chip_n8n_bg']};
             --cta: {HUB_THEME['cta']};
             --bg-spot-teal: {HUB_THEME['bg_spot_teal']};
             --bg-spot-blue: {HUB_THEME['bg_spot_blue']};
@@ -331,6 +338,10 @@ def build_hub():
             border-color: var(--card-docker-hover);
         }
 
+        .n8n:hover {
+            border-color: var(--card-n8n-hover);
+        }
+
         .chip {
             width: fit-content;
             border-radius: 999px;
@@ -343,6 +354,7 @@ def build_hub():
 
         .chip.fastapi { background: var(--chip-fastapi-bg); color: var(--teal); }
         .chip.docker { background: var(--chip-docker-bg); color: var(--blue); }
+        .chip.n8n { background: var(--chip-n8n-bg); color: #ff6d5a; }
 
         .card-head {
             display: flex;
@@ -376,6 +388,12 @@ def build_hub():
 
         .brand-logo.docker {
             background: linear-gradient(145deg, #2ea8ff, #1b79c8);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.28);
+        }
+
+        .brand-logo.n8n {
+            background: linear-gradient(145deg, #ea4262, #ff6d5a);
             color: #ffffff;
             border-color: rgba(255, 255, 255, 0.28);
         }
@@ -460,6 +478,27 @@ def build_hub():
                 </div>
                 <p class="cta">Open handbook -></p>
             </a>
+
+            <a href="/n8n/" class="card n8n">
+                <div>
+                    <span class="chip n8n">Automation</span>
+                    <div class="card-head">
+                        <span class="brand-logo n8n" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="12" cy="12" r="10" fill="currentColor" />
+                                <circle cx="7" cy="12" r="2" fill="#131920"/>
+                                <circle cx="16" cy="8" r="2" fill="#131920"/>
+                                <circle cx="16" cy="16" r="2" fill="#131920"/>
+                                <path d="M 9 12 Q 12 12 12 10 T 14 8" stroke="#131920" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                                <path d="M 9 12 Q 12 12 12 14 T 14 16" stroke="#131920" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                            </svg>
+                        </span>
+                        <h2>n8n Notes</h2>
+                    </div>
+                    <p>Build, self-host, and extend n8n automations. Zero fluff. Real examples.</p>
+                </div>
+                <p class="cta">Open handbook -></p>
+            </a>
         </div>
     </main>
 </body>
@@ -476,6 +515,8 @@ if __name__ == "__main__":
     generate_handbook("src_fastapi", "fastapi", "FastAPI Complete Handbook")
     print("Building Docker Handbook...")
     generate_handbook("src_docker", "docker", "Docker Complete Handbook")
+    print("Building n8n Handbook...")
+    generate_handbook("src_n8n", "n8n", "n8n Complete Handbook")
     print("Building Hub...")
     build_hub()
     print("Syncing local preview folders...")

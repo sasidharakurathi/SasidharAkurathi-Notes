@@ -1,0 +1,203 @@
+<div class="page" id="chapter-01">
+    <div class="header">Chapter 1: What is n8n?</div>
+
+    <h2 style="margin-top: 0;">Chapter 1: What is n8n? (The Mental Model)</h2>
+
+    <p>Automation isn't new. But for a long time, the tools available fell into two frustrating camps: rigid, no-code
+        SaaS platforms where we hit a wall the second we need custom logic, or writing custom microservices from
+        scratch for every minor API integration. <strong>n8n</strong> sits explicitly in the middle.</p>
+
+    <p>n8n is a fair-code, node-based workflow automation tool built <em>for developers</em>. It gives us the visual
+        canvas to map out API flows quickly, but hands us the escape hatch of raw JavaScript and direct HTTP requests
+        when the built-in integrations aren't enough.</p>
+
+    <div class="plain-english-box">
+        <strong>In Plain English:</strong> n8n is basically a visual orchestrator for API calls. Instead of writing a
+        Node.js script that fetches from an API, parses JSON, and POSTs to another API, we drag nodes onto a canvas.
+        But unlike other tools, if a node doesn't exist, we can just write a JavaScript snippet right in the workflow.
+    </div>
+
+    <h3>The Automation Landscape: Zapier vs Make vs n8n</h3>
+
+    <p>To understand n8n's place in the world, let's look at the alternatives.</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Feature</th>
+                <th>Zapier</th>
+                <th>Make (Integromat)</th>
+                <th>n8n</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Target Audience</strong></td>
+                <td>Non-technical business users</td>
+                <td>Power users / "Makers"</td>
+                <td>Developers and Technical users</td>
+            </tr>
+            <tr>
+                <td><strong>Hosting</strong></td>
+                <td>SaaS only</td>
+                <td>SaaS only (Enterprise on-prem is rare/costly)</td>
+                <td>SaaS <strong>or Self-hosted (Free)</strong></td>
+            </tr>
+            <tr>
+                <td><strong>Pricing Model</strong></td>
+                <td>Per task / severely restricted tiers</td>
+                <td>Per operation (cheaper but stacks up fast)</td>
+                <td>Per execution (SaaS) / <strong>Unlimited (Self-hosted)</strong></td>
+            </tr>
+            <tr>
+                <td><strong>Code Execution</strong></td>
+                <td>Basic Python/JS (limited execution time/modules)</td>
+                <td>Very difficult to write raw code</td>
+                <td>First-class JavaScript/TypeScript support</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 1</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 1: What is n8n?</div>
+
+    <h3>Why n8n For Developers?</h3>
+
+    <p>Writing a custom Python or Node script to move data between two services takes an hour. Maintaining it forever
+        takes weeks. We have to handle authentication, rate limiting, cron scheduling, webhook endpoints, error
+        retries, and logging.</p>
+
+    <p>n8n handles the infrastructure of automation so we can focus only on the business logic. Here's what it brings
+        to the table:</p>
+    <ul>
+        <li><strong>Self-hosting:</strong> We can run it on our own VPS (like Hetzner, DigitalOcean) via Docker. Our
+            data
+            never leaves our servers.</li>
+        <li><strong>Code-Friendly:</strong> We get full access to the <code>Code</code> node where we can write raw
+            JavaScript/TypeScript, use npm modules, and manipulate JSON data directly.</li>
+        <li><strong>Transparent Data Flow:</strong> We can see the exact JSON payload moving from one node to another,
+            making debugging incredibly fast compared to "magic" no-code tools.</li>
+    </ul>
+
+    <h3>Core Concepts</h3>
+
+    <p>Before we build our first automation, let's nail down the fundamental vocabulary of n8n.</p>
+
+    <ul>
+        <li><strong>Workflow:</strong> The overall canvas. A collection of nodes connected together to perform a
+            specific task.</li>
+        <li><strong>Node:</strong> An individual step in a workflow. A node can be an app integration (like Slack or
+            Postgres), a core logic node (like IF, Switch, or Code), or an HTTP Request. Every node takes JSON in and
+            spits JSON out.</li>
+        <li><strong>Trigger:</strong> The starting point of a workflow. Workflows don't run until a trigger fires. This
+            can be a Schedule trigger (cron), a Webhook trigger, or an App trigger (e.g., "On new Row in Postgres").
+        </li>
+        <li><strong>Connection:</strong> The wire between nodes. Data in n8n flows sequentially from left to right along
+            these connections.</li>
+        <li><strong>Execution:</strong> A single run of a workflow. If a webhook fires 100 times, that creates 100
+            distinct executions, each with their own logs and data traces.</li>
+    </ul>
+
+    <div class="usage-box">
+        <strong>Developer Tip:</strong> Think of an n8n workflow as a functional pipeline. Each node is a function that
+        receives an array of JSON objects (called Items), transforms them, and returns an array of JSON objects to the
+        next node.
+    </div>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 2</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 1: What is n8n?</div>
+
+    <h3>The n8n Architecture</h3>
+
+    <p>When we deploy n8n (especially via Docker), we aren't just spinning up a single monolithic script. A production
+        n8n setup consists of several distinct components:</p>
+
+    <ol>
+        <li><strong>Editor UI:</strong> The frontend Vue.js application where we design workflows.</li>
+        <li><strong>Backend (Main Process):</strong> The Node.js server that serves the UI, manages the database (by
+            default SQLite, but Postgres in production), and coordinates executions.</li>
+        <li><strong>Webhook Server (Optional but recommended):</strong> A separate process in high-volume environments
+            dedicated <em>only</em> to listening for incoming HTTP webhooks so the main process doesn't get overwhelmed.
+        </li>
+        <li><strong>Workers (Optional but recommended):</strong> In a scaled setup (Queue Mode using Redis), workers are
+            separate containers that pick up and execute workflows, drastically improving performance.</li>
+    </ol>
+
+    <div class="mistake-box">
+        <strong>Common Mistake:</strong> Do NOT use SQLite for a high-volume, production n8n instance. SQLite locks the
+        database during writes, which causes executions to queue up and fail under heavy load. Always back our
+        production n8n with PostgreSQL.
+    </div>
+
+    <h3>The Fair-code License Explained</h3>
+
+    <p>n8n is often called "open source," but technically, it uses a <strong>fair-code</strong> license (specifically
+        the <a href="https://docs.n8n.io/faircode-license/">Sustainable Use License</a>).</p>
+
+    <p><strong>What we CAN do:</strong></p>
+    <ul>
+        <li>Self-host n8n for free for our own internal company use.</li>
+        <li>Modify the source code.</li>
+        <li>Use it to automate processes for our clients as an agency.</li>
+    </ul>
+
+    <p><strong>What we CANNOT do:</strong></p>
+    <ul>
+        <li>We cannot offer n8n as a hosted service to third parties (we can't build "n8n-as-a-service" and sell
+            access to the UI).</li>
+    </ul>
+
+    <p>For 99% of developers building internal tools or client projects, n8n is effectively free and open.</p>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 3</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 1: What is n8n?</div>
+
+    <h3>When to use n8n vs Custom Scripts</h3>
+
+    <p>n8n is powerful, but it isn't a silver bullet for every problem. Here's how we decide whether to map it out in
+        n8n or open our IDE and write Python.</p>
+
+    <p><strong>Use n8n when:</strong></p>
+    <ul>
+        <li>We need to stick APIs together quickly.</li>
+        <li>Visually debugging the data flow is helpful (e.g., complex, deeply nested JSON APIs).</li>
+        <li>We want built-in auth handling (OAuth2 flows are a nightmare to write from scratch; n8n handles token
+            refreshes natively).</li>
+        <li>We need non-technical team members to be able to see or tweak the workflow later.</li>
+    </ul>
+
+    <p><strong>Write a custom script when:</strong></p>
+    <ul>
+        <li>We are doing heavy, CPU-bound processing (e.g., video rendering, massive matrix math, ML model training).
+            n8n is an I/O wrapper, not a compute engine.</li>
+        <li>We need microsecond latency. n8n introduces overhead passing data between nodes.</li>
+        <li>We are managing millions of records in a single run. Passing gigantic datasets through node connections
+            will cause Node.js out-of-memory crashes.</li>
+    </ul>
+
+    <p>Next, we'll dive into the absolute foundational concepts of how data actually moves through n8n-the Item
+        structure.</p>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 4</span>
+    </div>
+</div>

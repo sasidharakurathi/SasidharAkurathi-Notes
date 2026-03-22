@@ -1,0 +1,145 @@
+<div class="page" id="chapter-12">
+    <div class="header">Chapter 12: Integrations</div>
+
+    <h2 style="margin-top: 0;">Chapter 12: Most Useful Integrations for Developers</h2>
+
+    <h3>The Big 5 Core Nodes</h3>
+    <p>Some integrations are so fundamental we use them in almost every workflow. Master these five before looking at
+        anything else:</p>
+    <ul>
+        <li><strong>Webhook:</strong> Our ingress point. It creates an active URL that instantly accepts incoming HTTP
+            <code>GET</code>, <code>POST</code>, or <code>PUT</code> requests from internal systems or SaaS platforms
+            and kicks off a workflow.
+        </li>
+        <li><strong>HTTP Request:</strong> Our egress point. When n8n doesn't have an official node for an app, we
+            construct the raw API call here. It handles pagination, OAuth2, and binary file streaming effortlessly.</li>
+        <li><strong>PostgreSQL / MySQL / MongoDB:</strong> Our state management. By connecting our production or staging
+            databases directly to n8n, we can run complex raw queries (e.g.,
+            <code>UPDATE users SET active = false WHERE id = $1</code>), injecting parameterized data dynamically
+            without writing CRUD endpoints.
+        </li>
+        <li><strong>Redis:</strong> Essential for tracking state across workflows, managing incredibly fast idempotency
+            checks, or buffering high-volume data before writing it to a slow relational database.</li>
+    </ul>
+
+    <div class="warning-box">
+        <strong>⚠️ Warning:</strong> When connecting Postgres/MySQL nodes directly to production databases, always use a
+        read-only credential for query-only workflows. A single typo in a manual SQL expression
+        (<code>DELETE FROM users</code> instead of <code>DELETE FROM users WHERE id = 42</code>) can wipe our entire
+        table.
+    </div>
+
+    <div class="tip-box">
+        <strong>💡 Tip:</strong> If an official n8n integration node doesn't support an action we need (e.g., Stripe's
+        "Search Subscriptions" endpoint), don't wait for n8n to add it. Use the HTTP Request node with our Stripe API
+        key to call the endpoint directly. The HTTP node is always our fallback.
+    </div>
+
+    <h3>The Cloud Office Stack</h3>
+    <p>Automating interactions with non-technical departments usually involves leaning on "Office" SaaS.</p>
+
+    <ul>
+        <li><strong>Google Sheets:</strong> Functions beautifully as a poor man's database. We can append rows instantly
+            via form submissions, read massive sheets to kick off batch processes, or update specific rows by matching a
+            primary key dynamically.</li>
+        <li><strong>Gmail / Outlook:</strong> Not just for sending SMTP alerts. We can configure triggers to poll our
+            support inbox, download email attachments automatically, run them through an OCR node, and insert them into
+            AWS S3.</li>
+    </ul>
+
+    <div class="usage-box">
+        <strong>Credential Isolation:</strong> When connecting to Google Workspace or Office 365, do not use a personal
+        employee service account. Create a dedicated "automationbot@ourcompany.com" address. If an employee leaves,
+        their disabled accounts will instantly crash our critical n8n workflows.
+    </div>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 1</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 12: Integrations</div>
+
+    <h3>Communication Layers</h3>
+    <p>Alerts need to be visible, fast, and interactive.</p>
+    <ul>
+        <li><strong>Slack:</strong> We can post rich-text block messages, funnel errors into
+            <code>#engineering-alerts</code>, or even listen for specific Slack commands to trigger n8n workflows
+            backwards from the chat window.
+        </li>
+        <li><strong>Telegram Bot:</strong> One of the easiest ways to build a complete mobile interface for our
+            workflows. We can construct a BotFather account in 3 minutes, have n8n listen for Telegram commands, and
+            respond to users natively on their phones without building an iOS app.</li>
+    </ul>
+
+    <h3>Project Management &amp; DevTools</h3>
+    <p>We often need business logic to sync across engineering and operations.</p>
+    <ul>
+        <li><strong>GitHub:</strong> We can sync issues, automate PR labeling, or trigger a massive CI/CD testing
+            pipeline in n8n whenever a push event happens on the <code>main</code> branch.</li>
+        <li><strong>Airtable:</strong> A beloved tool for operations teams. We can use n8n to listen for new rows in
+            Airtable and instantly push that data to our real Postgres database, keeping non-technical ops teams and
+            engineering databases perfectly synchronized.</li>
+        <li><strong>Notion:</strong> We can automate the creation of rich architectural docs, update sprint boards when
+            GitHub PRs merge, or dump raw customer feedback logs into searchable databases.</li>
+    </ul>
+
+    <h3>The AI Era (OpenAI)</h3>
+    <p>n8n has fully embraced LLMs. The <strong>OpenAI</strong> nodes (and Anthropic, etc.) allow us to inject
+        intelligence into our pipes without writing complex OpenAI Python SDK wrappers.</p>
+    <p>We can drag an OpenAI node onto the canvas, feed it a block of messy customer feedback text from Zendesk, give it
+        a system prompt ("Extract the sentiment, bug type, and urgency"), and n8n will pass us back clean, structured
+        JSON ready to insert into Jira or Postgres.</p>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 2</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 12: Integrations</div>
+
+    <h3>Real Example: Issue Triaging Pipeline</h3>
+    <p>Our product team uses Notion, our developers use GitHub, and everyone watches Slack. Let's synchronize them.</p>
+
+    <ol>
+        <li><strong>Trigger:</strong> We use the <strong>GitHub Trigger</strong> node to listen for
+            <code>issue_opened</code> events on our target repository.
+        </li>
+        <li>We drop an <strong>OpenAI</strong> node. We pass the raw GitHub issue text to it and prompt it to categorize
+            the issue as "Frontend", "Backend", or "DevOps", outputting strict JSON.</li>
+        <li>We add a <strong>Notion</strong> node. It takes the parsed JSON and creates a beautiful new page in the
+            Product team's "Triage Board" database, tagging it with the correct category.</li>
+        <li>We add a <strong>Slack</strong> node. We construct a message:
+            <code>🚨 New {{ $json.category }} issue: {{ $json.title }}</code> and pipe it into <code>#dev-triage</code>.
+        </li>
+    </ol>
+    <p>A complete cross-platform sync loop built in under 15 minutes.</p>
+
+    <h3>Real Example: Form to Sheets to Email</h3>
+    <p>We are launching a quick beta signup form and don't want to build a whole Postgres user registration API yet.</p>
+
+    <ol>
+        <li><strong>Trigger:</strong> A <strong>Webhook</strong> node listening for <code>POST</code> requests from our
+            Next.js frontend form.</li>
+        <li>We use the <strong>Google Sheets</strong> node set to <code>Append Row</code>. We map the webhook payload's
+            <code>{{ $json.body.email }}</code> and <code>{{ $json.body.name }}</code> into our "Beta List" spreadsheet
+            columns.
+        </li>
+        <li>We use the <strong>Gmail</strong> node to send an immediate welcome email back to the user. We map the
+            recipient address directly to <code>{{ $json.body.email }}</code> from the initial webhook.</li>
+        <li>We run a <strong>Slack</strong> node immediately alongside the Gmail node to ping <code>#sales</code> that a
+            new beta user just signed up.</li>
+    </ol>
+
+    <p>We just built a fully functional marketing backend with exactly zero lines of code, and we can refactor the
+        Google Sheets node to a Postgres node in 30 seconds when it's time to scale.</p>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 3</span>
+    </div>
+</div>

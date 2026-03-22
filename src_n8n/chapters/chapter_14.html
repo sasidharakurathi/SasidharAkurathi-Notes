@@ -1,0 +1,295 @@
+<div class="page" id="chapter-14">
+    <div class="header">Chapter 14: Self-Hosting</div>
+
+    <h2 style="margin-top: 0;">Chapter 14: Self-Hosting in Production</h2>
+
+    <h3>Why This Chapter Exists</h3>
+    <p>Chapter 2 showed us how to get n8n running on a VPS with Docker Compose and Postgres. That setup handles 90% of
+        use
+        cases. But if we are running 50 active workflows processing thousands of executions per hour, we need to go
+        deeper: Queue Mode,
+        Workers, Redis, backups, zero-downtime upgrades, and security hardening.</p>
+
+    <h3>Queue Mode with Redis</h3>
+    <p>By default, n8n runs in "regular" mode — the main process handles everything: the editor UI, webhook
+        listener, <em>and</em> execution engine. Under heavy load, this creates a bottleneck. A massive workflow
+        consuming CPU will freeze the editor UI for everyone.</p>
+
+    <p><strong>Queue Mode</strong> decouples execution from the main process. The main n8n process receives triggers
+        and queues them in <strong>Redis</strong> (using BullMQ under the hood). Separate <strong>Worker</strong>
+        containers pick executions off the queue and process them independently.</p>
+
+    <table class="comparison-table">
+        <thead>
+            <tr>
+                <th>Mode</th>
+                <th>Architecture</th>
+                <th>Best For</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Regular (Default)</strong></td>
+                <td>Single process does everything</td>
+                <td>Small teams, &lt;20 workflows, low volume</td>
+            </tr>
+            <tr>
+                <td><strong>Queue Mode</strong></td>
+                <td>Main + Redis + Workers</td>
+                <td>High volume, 50+ workflows, production SLAs</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="warning-box">
+        <strong>⚠️ Warning:</strong> Queue Mode requires Redis. If Redis crashes or becomes unreachable, <em>no new
+            executions will be processed</em> because the queue broker is offline. Always monitor Redis health alongside
+        n8n.
+    </div>
+
+    <h3>Environment Variables for Queue Mode</h3>
+    <pre><code class="language-bash"># Enable queue mode on the main n8n process
+EXECUTIONS_MODE=queue
+
+# Redis connection (used by both main process and workers)
+QUEUE_BULL_REDIS_HOST=redis
+QUEUE_BULL_REDIS_PORT=6379
+
+# Optional: password-protect Redis
+QUEUE_BULL_REDIS_PASSWORD=our_redis_secret
+
+# Worker concurrency (how many executions a single worker handles simultaneously)
+N8N_CONCURRENCY_PRODUCTION_LIMIT=10</code></pre>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 1</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 14: Self-Hosting</div>
+
+    <h3>Worker Setup</h3>
+    <p>Workers are identical n8n Docker images, but started with the <code>worker</code> command instead of the default
+        <code>start</code>. They connect to the same Postgres database and Redis instance, pull queued executions, and
+        run them autonomously.
+    </p>
+
+    <pre><code class="language-yaml"># docker-compose.yml — Worker service definition
+  n8n-worker:
+    image: docker.n8n.io/n8nio/n8n
+    command: worker  # This is the critical flag
+    restart: unless-stopped
+    environment:
+      - EXECUTIONS_MODE=queue
+      - QUEUE_BULL_REDIS_HOST=redis
+      - QUEUE_BULL_REDIS_PORT=6379
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${DB_NAME}
+      - DB_POSTGRESDB_USER=${DB_USER}
+      - DB_POSTGRESDB_PASSWORD=${DB_PASSWORD}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}  # Must match main process!
+    depends_on:
+      - postgres
+      - redis</code></pre>
+
+    <div class="tip-box">
+        <strong>💡 Tip:</strong> To scale workers horizontally, we simply run
+        <code>docker compose up --scale n8n-worker=3</code>. Three identical worker containers will fight over the Redis
+        queue, tripling our execution throughput instantly.
+    </div>
+
+    <h3>Backup Strategy</h3>
+    <p>Our n8n instance holds two categories of irreplaceable data:</p>
+    <ol>
+        <li><strong>Workflows + Credentials:</strong> Stored in Postgres. We back these up with a standard
+            <code>pg_dump</code> cron job.
+        </li>
+        <li><strong>Binary Files:</strong> Downloaded PDFs, images, and attachments sit on the mounted Docker volume
+            (<code>/home/node/.n8n</code>). We back this up with <code>rsync</code> or an S3 sync.</li>
+    </ol>
+
+    <pre><code class="language-bash"># Nightly Postgres backup cron (add to VPS crontab)
+0 3 * * * docker exec n8n-postgres pg_dump -U n8n_user n8n_db \
+  | gzip > /backups/n8n_$(date +\%Y\%m\%d).sql.gz
+
+# Sync binary volume to S3 (requires AWS CLI configured)
+0 4 * * * aws s3 sync /var/lib/docker/volumes/n8n_data/_data/ \
+  s3://our-backups/n8n-binaries/ --delete</code></pre>
+
+    <div class="warning-box">
+        <strong>⚠️ Warning:</strong> Always back up the <code>N8N_ENCRYPTION_KEY</code> separately (e.g., in a password
+        manager, not in the Postgres dump). Without this key, the credential data in Postgres is AES-encrypted gibberish
+        — we will permanently lose every saved API key.
+    </div>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 2</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 14: Self-Hosting</div>
+
+    <h3>Zero-Downtime Upgrades</h3>
+    <p>Upgrading n8n carelessly can cause minutes of downtime where incoming webhooks are silently dropped. Here is the
+        safe approach:</p>
+    <ol>
+        <li>Pull the new image: <code>docker compose pull</code></li>
+        <li>Stop workers first: <code>docker compose stop n8n-worker</code> (let in-flight executions finish).</li>
+        <li>Back up Postgres (see above).</li>
+        <li>Restart the main process: <code>docker compose up -d n8n</code> (n8n auto-runs DB migrations on boot).</li>
+        <li>Restart workers: <code>docker compose up -d n8n-worker</code>.</li>
+    </ol>
+
+    <div class="tip-box">
+        <strong>💡 Tip:</strong> Pin our n8n version to a specific tag (e.g.,
+        <code>docker.n8n.io/n8nio/n8n:1.74.2</code>) instead of using <code>:latest</code>. This prevents accidental
+        breaking upgrades when Docker pulls a new image during a routine container restart.
+    </div>
+
+    <h3>Securing the Instance</h3>
+    <p>An exposed n8n editor is a catastrophic security hole — anyone on the internet can read our API keys, modify
+        workflows, or trigger executions.</p>
+    <ul>
+        <li><strong>Basic Auth:</strong> Set <code>N8N_BASIC_AUTH_ACTIVE=true</code> with
+            <code>N8N_BASIC_AUTH_USER</code> and <code>N8N_BASIC_AUTH_PASSWORD</code>.
+        </li>
+        <li><strong>IP Whitelisting:</strong> Use Nginx <code>allow</code>/<code>deny</code> directives to restrict
+            editor access to our office or VPN IP. Webhook paths must remain open.</li>
+        <li><strong>Disable Public API:</strong> Set <code>N8N_PUBLIC_API_DISABLED=true</code> unless we explicitly
+            need programmatic REST access to our n8n instance.</li>
+    </ul>
+
+    <pre><code class="language-nginx"># Nginx location block — restrict editor, allow webhooks
+location / {
+    # Only allow our office VPN
+    allow 203.0.113.50/32;
+    deny all;
+    proxy_pass http://127.0.0.1:5678;
+}
+
+location /webhook/ {
+    # Webhooks must be open to the world
+    proxy_pass http://127.0.0.1:5678;
+}
+
+location /webhook-test/ {
+    # Test webhooks — restrict to office only
+    allow 203.0.113.50/32;
+    deny all;
+    proxy_pass http://127.0.0.1:5678;
+}</code></pre>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 3</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 14: Self-Hosting</div>
+
+    <h3>Real Example: Full Production Stack</h3>
+    <p>Here is the complete, battle-tested Docker Compose file for a production n8n deployment with Queue Mode,
+        Redis, PostgreSQL, and Nginx reverse proxy.</p>
+
+    <pre><code class="language-yaml"># docker-compose.yml — Production n8n Stack
+version: '3.8'
+
+volumes:
+  n8n_data:
+  postgres_data:
+  redis_data:
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:1.74.2
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5678:5678"
+    environment:
+      - N8N_HOST=${N8N_HOST}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - NODE_ENV=production
+      - WEBHOOK_URL=https://${N8N_HOST}/
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - GENERIC_TIMEZONE=${TIMEZONE}
+      - EXECUTIONS_MODE=queue
+      - QUEUE_BULL_REDIS_HOST=redis
+      - QUEUE_BULL_REDIS_PORT=6379
+      - QUEUE_BULL_REDIS_PASSWORD=${REDIS_PASSWORD}
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${DB_NAME}
+      - DB_POSTGRESDB_USER=${DB_USER}
+      - DB_POSTGRESDB_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  n8n-worker:
+    image: docker.n8n.io/n8nio/n8n:1.74.2
+    command: worker
+    restart: unless-stopped
+    environment:
+      - EXECUTIONS_MODE=queue
+      - QUEUE_BULL_REDIS_HOST=redis
+      - QUEUE_BULL_REDIS_PORT=6379
+      - QUEUE_BULL_REDIS_PASSWORD=${REDIS_PASSWORD}
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${DB_NAME}
+      - DB_POSTGRESDB_USER=${DB_USER}
+      - DB_POSTGRESDB_PASSWORD=${DB_PASSWORD}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - N8N_CONCURRENCY_PRODUCTION_LIMIT=10
+    depends_on:
+      - postgres
+      - redis</code></pre>
+
+    <div class="plain-english-box">
+        <strong>What this gives us:</strong> A main n8n process serving the editor UI and ingesting webhooks, a Postgres
+        database for persistent storage, a Redis broker for the execution queue, and a dedicated worker that processes
+        jobs in the background. We can scale workers to 5 or 10 containers with a single command. This is the same
+        architecture used by teams running tens of thousands of daily executions.
+    </div>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 4</span>
+    </div>
+</div>

@@ -1,0 +1,141 @@
+<div class="page" id="chapter-10">
+    <div class="header">Chapter 10: Sub-Workflows</div>
+
+    <h2 style="margin-top: 0;">Chapter 10: Sub-Workflows &amp; Modular Design</h2>
+
+    <h3>The Spaghetti Code of Visual Programming</h3>
+    <p>In traditional code, if we write a 2,000-line function, our tech lead will forcefully reject our PR. Yet, in
+        visual programming tools like n8n, developers regularly build massive, scrolling webs of 150 nodes. It's
+        unreadable, un-debuggable, and impossible to maintain.</p>
+    <p>The solution is exactly the same as in traditional programming: <strong>Function extraction</strong>. In n8n, we
+        call this building <strong>Sub-Workflows</strong>.</p>
+
+    <h3>When to Extract a Sub-Workflow</h3>
+    <p>We should immediately break chunks of our canvas into separate sub-workflows when:</p>
+    <ol>
+        <li><strong>Reusability:</strong> We are sending Slack alerts from 5 different workflows. Do not duplicate the
+            Slack nodes. Build one "Slack Wrapper" workflow and call it.</li>
+        <li><strong>Complexity:</strong> The parent workflow's core logic is obscured by dozens of data transformation
+            nodes. Extract the transformation logic to hide the complexity.</li>
+        <li><strong>Isolation:</strong> We want to isolate volatile APIs from our stable core logic.</li>
+    </ol>
+
+    <div class="tip-box">
+        <strong>💡 Tip:</strong> Always use sub-workflows for reusable logic. If we find ourselves copying the same
+        5-node Slack notification sequence into multiple workflows, it's time to extract it into a single
+        <code>[Sub] Send Notification</code> workflow and call it everywhere.
+    </div>
+
+    <div class="warning-box">
+        <strong>⚠️ Warning:</strong> Never create circular sub-workflow calls (Workflow A calls Workflow B, which calls
+        Workflow A). n8n does not detect infinite recursion loops — the executions will run until they exhaust our
+        server's memory.
+    </div>
+
+    <h3>Execute Workflow Trigger vs Webhook</h3>
+    <p>To create a sub-workflow, we start a brand new, empty workflow. But what triggers it?</p>
+
+    <p><strong>1. The Execute Workflow Trigger</strong></p>
+    <p>This is the standard approach. We drop an "Execute Workflow Trigger" node as the starting point. This workflow is
+        now officially an internal sub-routine. It cannot be triggered via HTTP from the outside world; it can only be
+        invoked by <em>another</em> n8n workflow dragging in the <strong>Execute Workflow</strong> node.</p>
+
+    <p><strong>2. The Webhook Trigger</strong></p>
+    <p>If we want our sub-workflow to act as a standalone microservice that both external apps <em>and</em> our internal
+        n8n workflows can hit, we start it with a normal Webhook node. Our parent workflows will then use standard HTTP
+        Request nodes to call it, rather than the native "Execute Workflow" node.</p>
+
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 1</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 10: Sub-Workflows</div>
+
+    <h3>Passing Parameters to Sub-Workflows</h3>
+    <p>If our main workflow fetches a Stripe customer and wants to pass their email to a sub-workflow, how does the data
+        get there?</p>
+
+    <p>When we use the <strong>Execute Workflow</strong> node in the parent, by default, whatever JSON items flow
+        <em>into</em> that node are seamlessly injected as the starting data of the sub-workflow.
+    </p>
+
+    <p>Inside the sub-workflow, the "Execute Workflow Trigger" node outputs those exact items. We can immediately
+        reference <code>{{ $json.email }}</code> just as if we were in the parent.</p>
+
+    <h3>Returning Data from Sub-Workflows</h3>
+    <p>A sub-workflow runs sequentially. Whatever data <strong>the very last executed node</strong> produces is what
+        gets returned back up to the parent workflow.</p>
+    <p>If we want strict control over what is returned, we place a <strong>Set node</strong> at the absolute end of our
+        sub-workflow to meticulously craft the final output JSON. This acts identically to a
+        <code>return { data: ... };</code> statement in JavaScript, ensuring our parent workflow receives clean,
+        predictable objects.
+    </p>
+
+    <h3>Organizing the Chaos: Workspaces, Folders, and Tagging</h3>
+    <p>Once we start breaking one massive workflow into 6 smaller sub-workflows, our n8n dashboard gets incredibly
+        cluttered. Professional n8n developers use strict organization:</p>
+
+    <ul>
+        <li><strong>Naming Conventions:</strong> Prefix parent and child workflows clearly. E.g.,
+            <code>[Main] Process E-Commerce Order</code> vs <code>[Sub] Parse Shopify Payload</code>.
+        </li>
+        <li><strong>Tags:</strong> We must aggressively tag workflows. Tag parent workflows with
+            <code>Production</code>, tag sub-workflows with <code>Component</code>, and tag heavily integration-specific
+            flows with <code>Stripe</code> or <code>Slack</code>.
+        </li>
+        <li><strong>Project Folders:</strong> (In more recent n8n versions) we can group workflows physically into
+            projects. Never leave 50 workflows floating in the root "My Workflows" view.</li>
+    </ul>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 2</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 10: Sub-Workflows</div>
+
+    <h3>Real Example: Reusable Notification Engine</h3>
+    <p>Instead of manually configuring a Slack node and an Email node every time an order processes, we build a generic
+        <em>Notification Engine</em>.
+    </p>
+
+    <ol>
+        <li>Create a new workflow named <code>[Sub] Send Team Notification</code>.</li>
+        <li>Start it with an <strong>Execute Workflow Trigger</strong>.</li>
+        <li>Connect a <strong>Switch</strong> node. In its settings, we route based on an incoming field we'll expect:
+            <code>{{ $json.urgency }}</code>.
+        </li>
+        <li>If <code>urgency == 'high'</code> &rarr; route to a Twilio Node (SMS alert).</li>
+        <li>If <code>urgency == 'medium'</code> &rarr; route to a Slack Node.</li>
+        <li>If <code>urgency == 'low'</code> &rarr; route to an Email Node.</li>
+        <li>Save the workflow.</li>
+    </ol>
+    <p>Now, anywhere in our entire n8n instance, we drop an <strong>Execute Workflow</strong> node, point it at this
+        sub-workflow, and pass it a simple JSON object: <code>{ "urgency": "medium", "message": "New signup!" }</code>.
+        The sub-workflow handles all the routing complexity invisibly.</p>
+
+    <h3>Real Example: E-Commerce Decoupling</h3>
+    <p>Imagine our main workflow receives a Shopify checkout webhook, updates Postgres, generates a PDF invoice, and
+        sends a welcome email. If the PDF generation fails, the whole workflow crashes, and the customer never gets
+        their email!</p>
+    <p>By extracting the PDF generation into a Sub-Workflow, we can:</p>
+    <ol>
+        <li>Wrap the "Execute Workflow (PDF)" node in our parent with <strong>Continue On Fail</strong>.</li>
+        <li>If the PDF sub-workflow crashes, the parent continues smoothly.</li>
+        <li>The parent workflow sends the email anyway, perhaps with a fallback message like "Your invoice will arrive
+            shortly."</li>
+    </ol>
+    <p>This modular separation of concerns ensures that non-critical path failures don't bring down our core business
+        logic.</p>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 3</span>
+    </div>
+</div>

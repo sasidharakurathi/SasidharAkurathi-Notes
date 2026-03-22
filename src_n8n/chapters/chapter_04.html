@@ -1,0 +1,192 @@
+<div class="page" id="chapter-04">
+    <div class="header">Chapter 4: Triggers</div>
+
+    <h2 style="margin-top: 0;">Chapter 4: Triggers - Starting a Workflow</h2>
+
+    <h3>The Manual Trigger</h3>
+    <p>Every new workflow starts with a <strong>When clicking "Execute Workflow"</strong> node. This is the manual
+        trigger. It does absolutely nothing in production. It strictly exists so we can test nodes interactively while
+        building the workflow on the canvas.</p>
+    <p>When we are ready to deploy our logic, we will drop a real trigger onto the canvas and connect it to our
+        first action node.</p>
+
+    <h3>The Webhook Trigger (The Developer's Workhorse)</h3>
+    <p>The Webhook node creates an instant HTTP endpoint on our n8n instance. When a third-party service makes an HTTP
+        request to that URL, the workflow runs.</p>
+
+    <div class="plain-english-box">
+        <strong>Webhook URL Structure:</strong><br>
+        <code>https://{N8N_HOST}/webhook/{path}</code> (Production)<br>
+        <code>https://{N8N_HOST}/webhook-test/{path}</code> (Test)
+    </div>
+
+    <h4>Test vs Production URLs</h4>
+    <p>n8n deeply embeds the concept of "Testing" vs "Production".</p>
+    <ul>
+        <li><strong>Test URL (<code>/webhook-test/</code>):</strong> Only listens when we explicitly click the "Listen
+            for Test Event" button in the UI. Used for building and debugging. The event is captured on our canvas.
+        </li>
+        <li><strong>Production URL (<code>/webhook/</code>):</strong> Always listening in the background, 24/7 (as long
+            as the workflow is "Active"). Does not show up on our canvas-we must view it in the Execution History tab.
+        </li>
+    </ul>
+
+    <h4>Responding to Webhooks</h4>
+    <p>By default, when a service hits our n8n webhook, n8n responds instantly with a <code>200 OK</code> and a generic
+        success message, and <em>then</em> runs the workflow. However, if we are building an API endpoint (e.g., a
+        chatbot integration that requires a specific JSON response format), we can change the node setting
+        <strong>"Respond"</strong> to <strong>"Using 'Respond to Webhook' Node"</strong>. This stalls the HTTP response
+        until n8n reaches a specialized response node later in our workflow, allowing us to return heavily processed
+        data dynamically.
+    </p>
+
+    <div class="warning-box">
+        <strong>⚠️ Warning:</strong> The Production webhook URL (<code>/webhook/</code>) only works when the workflow is
+        set to <strong>Active</strong>. If we forget to toggle the workflow on, external services will receive a
+        <code>404 Not Found</code> and silently fail.
+    </div>
+
+    <table class="comparison-table">
+        <thead>
+            <tr>
+                <th>Trigger Type</th>
+                <th>How It Fires</th>
+                <th>Latency</th>
+                <th>Best For</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Webhook</strong></td>
+                <td>External HTTP request hits n8n URL</td>
+                <td>Instant (~50ms)</td>
+                <td>Real-time events from GitHub, Stripe, Slack</td>
+            </tr>
+            <tr>
+                <td><strong>Schedule (Cron)</strong></td>
+                <td>Internal timer fires at set intervals</td>
+                <td>Depends on interval</td>
+                <td>Batch jobs, daily reports, periodic sync</td>
+            </tr>
+            <tr>
+                <td><strong>App Trigger (Instant)</strong></td>
+                <td>n8n auto-registers webhook with the app</td>
+                <td>Instant</td>
+                <td>Slack messages, GitHub events, Stripe payments</td>
+            </tr>
+            <tr>
+                <td><strong>App Trigger (Polling)</strong></td>
+                <td>n8n checks the app's API periodically</td>
+                <td>Minutes</td>
+                <td>Legacy APIs without webhook support</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 1</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 4: Triggers</div>
+
+    <h3>The Schedule Trigger (Cron)</h3>
+    <p>If we need to batch process data every night at 2 AM, or poll an old legacy API every 15 minutes, we use the
+        Schedule trigger.</p>
+
+    <p>The node offers a simple UI for intervals (e.g., "Every an Hour"), but under the hood, developers can toggle
+        "Pattern" mode to input raw Linux Crontab syntax.</p>
+
+    <pre><code class="language-bash"># Run at 9:00 AM every day
+0 9 * * *
+
+# Run perfectly every 15 minutes
+*/15 * * * *
+
+# Run at 5:00 PM on Fridays only
+0 17 * * 5</code></pre>
+
+    <div class="usage-box">
+        <strong>Developer Tip:</strong> Triple-check our <code>GENERIC_TIMEZONE</code> environment variable. If n8n
+        boots in UTC, our "9 AM" cron job will suddenly trigger at 4 AM EST.
+    </div>
+
+    <h3>App-Specific Triggers</h3>
+    <p>Instead of manually constructing webhook paths and mapping payloads, n8n provides pre-built trigger nodes for
+        major platforms like GitHub, Stripe, Shopify, or Gmail.</p>
+
+    <p>When we drop a "GitHub Trigger" node, n8n asks for our GitHub credentials. When we activate the workflow, n8n
+        automatically calls the GitHub API, creates the exact webhook configuration pointing to its own `/webhook` URL,
+        and formats the incoming data cleanly. We never touch the raw repo settings.</p>
+
+    <h4>Instant vs Polling Triggers</h4>
+    <p>When using App Triggers, we must distinguish between the two structural types:</p>
+    <ul>
+        <li><strong>Instant (Webhooks):</strong> Event happens in the external app &rarr; App POSTs to n8n instantly.
+            Lightning fast. No overhead.</li>
+        <li><strong>Polling (Cron-based):</strong> The external app doesn't support webhooks (or n8n hasn't built them
+            yet). n8n actively asks the app "Got any new data?" every X minutes. </li>
+    </ul>
+
+    <div class="mistake-box">
+        <strong>Performance Warning:</strong> If we set a Polling trigger to check an API every 10 seconds, n8n creates
+        a distinct execution record <em>every 10 seconds</em>, flooding our database. Be extremely conservative with
+        polling intervals (aim for 10-15 minutes).
+    </div>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 2</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 4: Triggers</div>
+
+    <h3>Real Example: Webhook Trigger (GitHub Push Event)</h3>
+    <p>Let's say we have an internal dashboard and we want to log every time a developer pushes code to the
+        <code>main</code> branch. We drop a raw Webhook Node onto the canvas.
+    </p>
+
+    <ol>
+        <li>Set HTTP Method: <code>POST</code></li>
+        <li>Set Path: <code>github-push-event</code></li>
+        <li>Set Authentication: None (or basic, depending on setup)</li>
+        <li>In GitHub Repo Settings &rarr; Webhooks, add our Production n8n URL:
+            <code>https://n8n.mycompany.com/webhook/github-push-event</code>
+        </li>
+        <li>Set Content Type to <code>application/json</code>.</li>
+    </ol>
+    <p>The instant GitHub pushes the payload, our n8n node fires. The payload is accessible in subsequent nodes like
+        this:</p>
+
+    <pre><code class="language-javascript">// Accessing the pushed commit message and author
+const commitMessage = $json.body.commits[0].message;
+const pushedBy = $json.body.pusher.name;
+
+// In a Slack node, we use the expression:
+{{ $json.body.pusher.name }} just pushed: {{ $json.body.commits[0].message }}</code></pre>
+
+    <h3>Real Example: Cron Job (Daily 9 AM Report)</h3>
+    <p>Imagine we need to email a daily Stripe sales report to the CEO every morning. We don't want to build a whole
+        Python microservice with `schedule` loops for this.</p>
+
+    <ol>
+        <li>Add a <strong>Schedule Trigger</strong> node to the canvas.</li>
+        <li>Set Rule: "Every Day"</li>
+        <li>Set Time: "09:00"</li>
+        <li>Add a <strong>Stripe</strong> node. Setup the action: <em>Get All Charges</em> (passing yesterday's
+            timestamp).</li>
+        <li>Add a <strong>Gmail</strong> or <strong>SendGrid</strong> node to email the output.</li>
+    </ol>
+
+    <p>When the workflow is saved and set to "Active", n8n's background process adds this to its internal task queue.
+        Tomorrow at exactly 9:00 AM server time, it pulls the data and sends the email entirely autonomously.</p>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 3</span>
+    </div>
+</div>

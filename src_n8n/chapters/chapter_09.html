@@ -1,0 +1,143 @@
+<div class="page" id="chapter-09">
+    <div class="header">Chapter 9: Error Handling</div>
+
+    <h2 style="margin-top: 0;">Chapter 9: Error Handling &amp; Reliability</h2>
+
+    <h3>The Reality of API Automation</h3>
+    <p>We can build the most elegant workflow in the world, but APIs will inevitably fail. Servers go down, rate limits
+        are hit, malformed JSON gets pushed, and authentication tokens expire. If our automations break silently when
+        this happens, they are liabilities, not assets.</p>
+
+    <h3>Default Error Behavior</h3>
+    <p>By default, if any node in an n8n workflow encounters a hard error (like a <code>500 Internal Server Error</code>
+        from an HTTP node or a syntax error in a Code node), <strong>the entire workflow halts immediately</strong>.</p>
+    <p>The execution is flagged as "Error" in our Execution History tab, and no further nodes along that physical
+        connection path will execute.</p>
+
+    <h3>Node-Level Reliability: Retries</h3>
+    <p>Network hiccups happen. Before we reach for complex error alerting, we should build resilience directly into the
+        node doing the fetching.</p>
+    <p>In the node configuration panel, under the <strong>Settings</strong> tab, we find <strong>Retry On Fail</strong>.
+        When enabled, we define:</p>
+    <ul>
+        <li><strong>Max Tries:</strong> How many times to attempt the execution (e.g., 3 or 5).</li>
+        <li><strong>Wait Between Tries:</strong> The delay before the next attempt.</li>
+    </ul>
+
+    <div class="usage-box">
+        <strong>Exponential Backoff:</strong> When we configure "Wait Between Tries," we can often set an expression.
+        Instead of jumping to manual code, simply enabling "Retry On Fail" with a 5000ms wait handles 90% of transient
+        network timeouts gracefully.
+    </div>
+
+    <h3>Node-Level Handling: Continue On Fail</h3>
+    <p>Sometimes, we <em>expect</em> a node to fail and don't want it to kill the entire pipeline. For example, we might
+        query a CRM for a customer. If they don't exist, the API returns a <code>404</code>, causing an error. But maybe
+        we just want to create the customer if they aren't found.</p>
+    <p>In the node <strong>Settings</strong> tab, toggle <strong>Continue On Fail</strong> to true. The node will output
+        an error JSON object instead of halting, allowing us to route the data using an IF node or Switch node to handle
+        the "Not Found" scenario manually.</p>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 1</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 9: Error Handling</div>
+
+    <h3>The Error Trigger Node (Try/Catch)</h3>
+    <p>We don't have traditional <code>try/catch</code> blocks on the visual canvas. Instead, n8n provides the
+        <strong>Error Trigger</strong> node. This node sits completely disconnected from everything else on our canvas.
+    </p>
+    <p>If any standard trigger in that specific workflow fires and an execution fails down the line, the Error Trigger
+        node instantly catches the error payload. It outputs exact details about what died, when, and why:</p>
+
+    <pre><code class="language-json">{
+  "execution": {
+    "id": "40921",
+    "url": "https://n8n.mycompany.com/workflow/12/executions/40921",
+    "error": {
+      "message": "401 - Invalid API Key",
+      "description": "The service rejected the request."
+    },
+    "lastNodeExecuted": "Fetch Stripe Data"
+  }
+}</code></pre>
+
+    <p>We can wire the output of this Error Trigger directly into a Slack or Email node to instantly notify our
+        engineering channel that this specific workflow just broke.</p>
+
+    <h3>Global Error Workflows</h3>
+    <p>Dropping an Error Trigger node into all 50 of our workflows violates the DRY (Don't Repeat Yourself) principle.
+        If we want to change our alert destination from Slack to Discord, we'd have to edit 50 separate workflows.</p>
+
+    <p>Instead, we create a <strong>Global Error Workflow</strong>:</p>
+    <ol>
+        <li>Create a brand new, separate workflow named "Global Error Handler".</li>
+        <li>Start it with the <strong>Error Trigger</strong> node.</li>
+        <li>Wire it to our Slack/Email notification nodes.</li>
+        <li>Save and activate the workflow.</li>
+        <li>Go to our main n8n settings (or specific workflow's global Settings panel), and set the <strong>Error
+                Workflow</strong> dropdown to "Global Error Handler".</li>
+    </ol>
+    <p>Now, whenever <em>any</em> workflow crashes across our entire n8n instance, it silently passes the execution
+        failure data to the Global Error Handler, which funnels all alerts through a single, centralized pipeline.</p>
+
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 2</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 9: Error Handling</div>
+
+    <h3>Execution Timeout Configuration</h3>
+    <p>What happens if a node doesn't throw a hard error, but rather hangs indefinitely? Suppose an external SFTP server
+        accepts our connection but never responds. The workflow will sit in a "Running" state forever, eating up worker
+        memory.</p>
+    <p>Always click the Gear icon (Workflow Settings) and configure an <strong>Execution Timeout</strong> (e.g., 10
+        minutes). If the execution breaches this limit, n8n forcefully terminates it, triggering our Error Workflow.</p>
+
+    <h3>Idempotency: Designing for Retries</h3>
+    <p>Building reliable systems requires assuming that workflows <em>will</em> be retried. If a workflow charges a
+        credit card, then attempts to send an email, and the email node fails, what happens when we click "Retry Failed
+        Execution"?</p>
+    <p>If we aren't careful, we will charge the customer's card a second time. This is why we design for
+        <strong>idempotency</strong> (running an operation multiple times yields the same result without side effects).
+    </p>
+
+    <div class="plain-english-box">
+        <strong>How to build Idempotency:</strong><br>
+        Before mutating data or moving money, we check a state tracking system (like Postgres or Redis). <br><br>
+        1. Does "Order_123" already exist as "paid" in our DB?<br>
+        2. If YES: Skip the Stripe node, jump straight to sending the email.<br>
+        3. If NO: Route to Stripe, charge card, save "paid" status to DB, send email.<br><br>
+        By designing flows this way, we can safely smash the "Retry" button on a failed execution without double-billing
+        customers.
+    </div>
+
+    <h3>Real Example: Complete Error Alert Pipeline</h3>
+    <p>Here is how we assemble a robust Slack alert system for failing automations:</p>
+
+    <ol>
+        <li>Create the "Global Error Handler" workflow.</li>
+        <li>Add the <strong>Error Trigger</strong> node.</li>
+        <li>Add a <strong>Code</strong> node to format a sleek Slack message string dynamically parsing the error: <br>
+            <code>const error = $input.first().json.execution.error.message;</code><br>
+            <code>const node = $input.first().json.execution.lastNodeExecuted;</code><br>
+            <code>const url = $input.first().json.execution.url;</code>
+        </li>
+        <li>Add a <strong>Slack</strong> node (configured with a Bot Token).</li>
+        <li>Set the Slack Message Text to the output of our code node, throwing up a 🚨 emoji for immediate attention,
+            alongside the direct link to the failed execution trace.</li>
+    </ol>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 3</span>
+    </div>
+</div>

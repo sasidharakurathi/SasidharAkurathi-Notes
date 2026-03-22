@@ -1,0 +1,206 @@
+<div class="page" id="chapter-17">
+    <div class="header">Chapter 17: Reference</div>
+
+    <h2 style="margin-top: 0;">Chapter 17: Quick Reference Cheat Sheet</h2>
+
+    <h3>Important Expressions &amp; Variables</h3>
+    <p>n8n expressions use standard JavaScript inside double curly braces <code>{{ }}</code>. Here is a cheat sheet of
+        the built-in variables we reach for daily.</p>
+
+    <table class="comparison-table">
+        <thead>
+            <tr>
+                <th>Variable / Expression</th>
+                <th>What It Does</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>{{ $json.propertyName }}</code></td>
+                <td>Accesses the current item's JSON property.</td>
+            </tr>
+            <tr>
+                <td><code>{{ $binary.data.fileName }}</code></td>
+                <td>Accesses metadata of an attached binary file (e.g., an uploaded PDF).</td>
+            </tr>
+            <tr>
+                <td><code>{{ $parameter.url }}</code></td>
+                <td>Reads the value we manually typed into the node's 'url' field.</td>
+            </tr>
+            <tr>
+                <td><code>{{ $now }}</code></td>
+                <td>Luxon DateTime object for right now. E.g. <code>{{ $now.toISODate() }}</code></td>
+            </tr>
+            <tr>
+                <td><code>{{ $execution.id }}</code></td>
+                <td>The unique string ID of the current running workflow execution.</td>
+            </tr>
+            <tr>
+                <td><code>{{ $('NodeName').item.json.id }}</code></td>
+                <td>Reaches back in time to get the matching item's JSON from a previous node.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="tip-box">
+        <strong>💡 Tip:</strong> If an expression looks too messy visually on the canvas (e.g., a heavily nested ternary
+        operator <code>{{ $json.age > 18 ? 'Adult' : ($json.age > 12 ? 'Teen' : 'Child') }}</code>), push that logic
+        back into a proper Javascript `Code` node.
+    </div>
+
+    <h3>Trigger Types Recap</h3>
+    <table class="comparison-table">
+        <thead>
+            <tr>
+                <th>Trigger Type</th>
+                <th>How It Fires</th>
+                <th>Best For</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Webhook</strong></td>
+                <td>External HTTP request hits n8n URL</td>
+                <td>Real-time events from GitHub, Stripe, Slack</td>
+            </tr>
+            <tr>
+                <td><strong>Schedule (Cron)</strong></td>
+                <td>Internal timer fires at set intervals</td>
+                <td>Batch jobs, daily reports, periodic sync</td>
+            </tr>
+            <tr>
+                <td><strong>App Trigger (Instant)</strong></td>
+                <td>n8n auto-registers webhook with the app</td>
+                <td>Slack messages, GitHub events, Stripe payments</td>
+            </tr>
+            <tr>
+                <td><strong>App Trigger (Polling)</strong></td>
+                <td>n8n checks the app's API periodically</td>
+                <td>Legacy APIs without webhook support</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 1</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 17: Reference</div>
+
+    <h3>Common Node Patterns</h3>
+    <p>We see these same structural patterns in almost every production workflow:</p>
+    <ul>
+        <li><strong>IF vs Switch:</strong> Use <code>IF</code> when checking a single truthy/falsy condition (e.g., "Is
+            user active?"). Use <code>Switch</code> when checking ENUMs (e.g., Status is "Draft", "Published", or
+            "Archived").</li>
+        <li><strong>Merge (By Key):</strong> The "V-shape" pattern. Two API calls happen in parallel (e.g., Get Users
+            from Shopify, Get Users from Postgres), followed by a Merge node to join them on their <code>email</code>
+            address.</li>
+        <li><strong>Looping (Split in Batches):</strong> Processing 500 records by sending them to a "Split" node
+            configured to size 1, running an HTTP request, then routing the output <em>back</em> into the Split node
+            until it finishes.</li>
+    </ul>
+
+    <h3>Common Errors &amp; Fixes</h3>
+    <p>When our workflows break, it's usually because of these five culprits:</p>
+
+    <table class="comparison-table">
+        <thead>
+            <tr>
+                <th>Error Message</th>
+                <th>Root Cause / Fix</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>"Workflow could not be activated"</strong></td>
+                <td>The App Trigger node failed to register the webhook with the 3rd party (e.g., GitHub). Check if our
+                    API credentials have exact webhook creation permissions.</td>
+            </tr>
+            <tr>
+                <td><strong>"Webhook not registered" (404)</strong></td>
+                <td>We hit the Production webhook URL (<code>/webhook/</code>) but the workflow toggle switch in the UI
+                    is set to Inactive.</td>
+            </tr>
+            <tr>
+                <td><strong>"Execution timed out"</strong></td>
+                <td>A node (usually a massive DB query or hanging HTTP request) exceeded the global
+                    <code>EXECUTIONS_TIMEOUT_MAX=XYZ</code> setting.</td>
+            </tr>
+            <tr>
+                <td><strong>"Credential not found"</strong></td>
+                <td>We imported a raw workflow JSON file into a new server, but didn't import the matching credential
+                    objects (which are exported separately for security).</td>
+            </tr>
+            <tr>
+                <td><strong>"Cannot read property of undefined"</strong></td>
+                <td>We used <code>{{ $json.user.name }}</code> in an expression, but the <code>user</code> object
+                    doesn't exist in this specific item's payload. Always use optional chaining in the Code node
+                    (<code>item.user?.name</code>) if payloads are volatile.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 2</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 17: Reference</div>
+
+    <h3>CLI &amp; Docker Commands Cheat Sheet</h3>
+    <p>Keep these commands handy when managing the n8n infrastructure via SSH.</p>
+
+    <pre><code class="language-bash"># === n8n CLI Commands (run inside container) ===
+
+# Export EVERYTHING (workflows and credentials) to a mounted folder
+docker exec -it n8n n8n export:workflow --all --output=/home/node/.n8n/backup/
+docker exec -it n8n n8n export:credentials --all --output=/home/node/.n8n/backup/
+
+# Import exactly one workflow from a JSON file
+docker exec -it n8n n8n import:workflow --input=/home/node/.n8n/backup/workflow-1.json
+
+# Execute a specific workflow strictly from the command line 
+docker exec -it n8n n8n execute --id=42</code></pre>
+
+    <pre><code class="language-bash"># === Docker Management Commands ===
+
+# View the raw console logs (tail the last 100 lines) of the main process
+docker logs n8n -f --tail 100
+
+# View queue/worker logs specifically
+docker logs n8n-worker -f 
+
+# Gracefully restart the stack without dropping queued jobs immediately
+docker compose restart
+
+# Scale generic workers on the fly (Redis queue mode required)
+docker compose up -d --scale n8n-worker=4</code></pre>
+
+    <div class="warning-box">
+        <strong>⚠️ Warning:</strong> Running <code>docker compose down</code> immediately kills in-flight executions.
+        Always issue a <code>docker compose stop</code> and wait for containers to gracefully exit before tearing down
+        the stack.
+    </div>
+
+    <h3>Useful Community Resources</h3>
+    <ul>
+        <li><strong>n8n Official Docs:</strong> <code>https://docs.n8n.io/</code> (Bookmark the Nodes reference!)</li>
+        <li><strong>n8n Community Forum:</strong> <code>https://community.n8n.io/</code> (The best place to debug weird
+            HTTP Node OAuth2 handshake errors).</li>
+        <li><strong>n8n YouTube Channel:</strong> Great visual breakdowns of new features and advanced AI node
+            architectures.</li>
+        <li><strong>npm Registry:</strong> Search <code>n8n-nodes-</code> to find hundreds of open-source community
+            nodes built by other developers.</li>
+    </ul>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 3</span>
+    </div>
+</div>

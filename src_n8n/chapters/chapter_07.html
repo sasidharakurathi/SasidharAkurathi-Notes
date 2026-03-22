@@ -1,0 +1,182 @@
+<div class="page" id="chapter-07">
+    <div class="header">Chapter 7: The Code Node</div>
+
+    <h2 style="margin-top: 0;">Chapter 7: Working with the Code Node</h2>
+
+    <h3>When to Reach for the Code Node</h3>
+    <p>n8n's visual nodes (like IF, Switch, Set, and Item Lists) cover 90% of automation needs. We should reach for the
+        Code node when:</p>
+    <ul>
+        <li>We need to perform complex data deduplication or aggregation (e.g., reducing an array of invoices by
+            <code>customer_id</code>).
+        </li>
+        <li>We have to heavily reshape deeply nested, proprietary JSON API responses into flat structures.</li>
+        <li>We need to generate cryptographic hashes (like HMAC-SHA256) for a custom webhook signature.</li>
+    </ul>
+    <p>If we find ourselves writing a 10-line ternary operator inside an expression <code>{{ }}</code>, delete it and
+        write clean JavaScript in a Code node instead.</p>
+
+    <h3>JavaScript vs Python Mode</h3>
+    <p>By default, the Code node runs sandboxed <strong>JavaScript (Node.js)</strong>. If we flip the "Mode" toggle to
+        "Python", n8n executes the code using <strong>Pyodide</strong> (Python compiled to WebAssembly).</p>
+
+    <div class="mistake-box">
+        <strong>Developer Warning:</strong> Python mode is highly experimental and executed in the browser/WASM context.
+        We <em>cannot</em> <code>import pandas</code> or <code>requests</code>. Stick to JavaScript unless we are
+        forced to translate a hyper-specific Python standard library snippet.
+    </div>
+
+    <h3>Input Data: <code>$input.all()</code> vs <code>$input.first()</code></h3>
+    <p>Everything hitting our Code node is an array of Items. We access them using the <code>$input</code> global
+        object.</p>
+
+    <ul>
+        <li><code>$input.all()</code> returns the entire array of items. Useful for aggregations, sorting, or looping
+            over every row.</li>
+        <li><code>$input.first()</code> returns only the index <code>0</code> item. Useful if our previous node was
+            guaranteed to only return an array of 1 item (like a Webhook trigger) to avoid writing
+            <code>items[0].json</code> everywhere.
+        </li>
+    </ul>
+
+    <pre><code class="language-javascript">// Getting ALL items (Standard pattern)
+const items = $input.all();
+
+// items is an array of objects structured exactly like:
+// [ { json: { name: "Alice" } }, { json: { name: "Bob" } } ]</code></pre>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 1</span>
+    </div>
+</div>
+
+
+<div class="page">
+    <div class="header">Chapter 7: The Code Node</div>
+
+    <h3>Returning Data: The Cardinal Rule</h3>
+    <p>The Code node <strong>MUST always return an array of objects</strong>, and those objects <strong>MUST have a
+            <code>json</code> key</strong>.</p>
+
+    <p>If we violate this structural rule, n8n will crash the node. We cannot just return a raw string or a raw array
+        of strings.</p>
+
+    <pre><code class="language-javascript">// ❌ BAD: Returning a raw string
+return "Success";
+
+// ❌ BAD: Returning an array of raw objects
+return [{ user: "Alice" }];
+
+// ✅ GOOD: Returning a proper n8n Item format
+return [{ json: { status: "Success", user: "Alice" } }];</code></pre>
+
+    <p>If we are simply iterating over and mutating the <em>existing</em> items (e.g., adding a field), returning the
+        mutated original <code>items</code> array handles this structure for us automatically:</p>
+
+    <pre><code class="language-javascript">const items = $input.all();
+for (const item of items) {
+  item.json.processedAt = new Date();
+}
+return items; // Already correctly structured!</code></pre>
+
+
+    <h3>Accessing Environment Variables</h3>
+    <p>Unlike the expression editor's <code>$env("KEY")</code>, the Code node (in JavaScript mode) allows us to
+        securely access our VPS environment configurations using a direct object:</p>
+
+    <pre><code class="language-javascript">const stripeKey = $env.STRIPE_SECRET_KEY;
+const isProd = $env.NODE_ENV === 'production';</code></pre>
+
+
+    <h3>Error Handling inside the Code Node</h3>
+    <p>Because the Code node runs standard JS, we should wrap risky logic (like native <code>JSON.parse()</code> on
+        webhook data) in <code>try/catch</code> blocks. However, if we <em>want</em> the workflow to fail entirely,
+        deliberately throw an Error.</p>
+
+    <pre><code class="language-javascript">const items = $input.all();
+
+if (items.length === 0) {
+  // Force a crash that will bubble up to n8n's visual Error logger
+  throw new Error("Critical Failure: No items received from previous database query");
+}
+
+return items;</code></pre>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 2</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 7: The Code Node</div>
+
+    <h3>Using External Libraries (NPM)</h3>
+    <p>By default, external libraries are disabled for security. n8n natively exposes native Node <code>crypto</code>,
+        <code>url</code>, and its own bundled <code>luxon</code> for time.
+    </p>
+
+    <p>To use an external NPM library like <code>lodash</code>, we must do two things on our self-hosted instance:</p>
+    <ol>
+        <li>Add it to the environment file: <code>NODE_FUNCTION_ALLOW_EXTERNAL=lodash,moment</code></li>
+        <li>(If using Docker) Build a custom Dockerfile that runs <code>npm install lodash</code> on top of the base
+            image.</li>
+    </ol>
+    <p>Once allowed, we import them securely:</p>
+    <pre><code class="language-javascript">const _ = require('lodash');
+const groups = _.groupBy($input.all(), 'json.departmentId');</code></pre>
+
+
+    <h3>Real Example: Parse &amp; Reshape Complex JSON</h3>
+    <p>Imagine a brutal legacy API returns: <code>{ "data": "Alice|Bob|Charlie", "codes": [1,2,3] }</code>. We need an
+        array of clean objects so the next node can insert them into Postgres.</p>
+
+    <pre><code class="language-javascript">const item = $input.first().json;
+const names = item.data.split('|');
+const output = [];
+
+for (let i = 0; i &lt; names.length; i++) {
+  // Construct the new n8n Item format
+  output.push({
+    json: {
+      fullName: names[i],
+      accessCode: item.codes[i]
+    }
+  });
+}
+
+// Next node fires 3 times (once for Alice, Bob, and Charlie)
+return output; </code></pre>
+
+
+    <h3>Real Example: Deduplicating Items</h3>
+    <p>We fetched 10,000 logs and need to filter out duplicate customer IDs so we don't spam a webhook downstream.</p>
+
+    <pre><code class="language-javascript">const items = $input.all();
+const seenIds = new Set();
+const uniqueItems = [];
+
+for (const item of items) {
+  const id = item.json.customerId;
+  
+  if (!seenIds.has(id)) {
+    seenIds.add(id);
+    uniqueItems.push(item);
+  }
+}
+
+return uniqueItems;</code></pre>
+
+
+    <h3>Debugging Tip: <code>console.log()</code></h3>
+    <p>We can use <code>console.log()</code> inside the Code node to debug loops. However, <strong>it does not display
+            on the n8n visual canvas</strong>. It dumps directly to the Node.js standard output stream.</p>
+    <p>To view our logs, we must SSH into our server and run <code>docker logs -f my_n8n_container</code> while
+        triggering the workflow.</p>
+
+    <div class="footer">
+        <span>n8n Complete Handbook</span>
+        <span>Page 3</span>
+    </div>
+</div>
