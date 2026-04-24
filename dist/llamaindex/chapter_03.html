@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LlamaIndex Complete Handbook</title>
+    <script type="text/javascript">
+        (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, "clarity", "script", "vxhj0j0zwn");
+    </script>
+    <style>:root {
+  --primary: #9d4edd;
+  --primary-strong: #7b2cbf;
+  --bg-main: #08060c;
+  --bg-surface: #100b18;
+  --bg-elevated: #160f24;
+  --text-main: #f4ebfc;
+  --text-muted: #b5a2cc;
+  --code-bg: #140d23;
+  --border-color: #2b1f42;
+  --danger-bg: #2d1421;
+  --warn-bg: #2b2210;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  overflow-x: hidden;
+  background: radial-gradient(circle at 8% 0%, #2a153d, transparent 40%), var(--bg-main);
+}
+
+body {
+  min-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 11pt;
+  color: var(--text-main);
+  background: transparent;
+  margin: 0;
+  display: block;
+}
+
+a,
+button {
+  touch-action: manipulation;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  border-bottom: 1px solid var(--border-color);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  background: rgba(9, 7, 14, 0.86);
+}
+
+.topbar-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  gap: 12px;
+}
+
+.topbar-context {
+  margin-left: auto;
+  margin-right: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(157, 78, 221, 0.28);
+  background: rgba(157, 78, 221, 0.12);
+  color: #eadbfa;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.brand {
+  text-decoration: none;
+  color: #ffffff;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.top-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-wrap: nowrap;
+}
+
+.top-link {
+  text-decoration: none;
+  color: #f1e5fa;
+  border: 1px solid rgba(157, 78, 221, 0.28);
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.top-link:visited {
+  color: #f1e5fa;
+}
+
+.top-link-btn {
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.hamburger-icon {
+  width: 16px;
+  height: 14px;
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.hamburger-icon span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  transform-origin: center;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.top-link-btn.is-open .hamburger-icon span:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.top-link-btn.is-open .hamburger-icon span:nth-child(2) {
+  opacity: 0;
+}
+
+.top-link-btn.is-open .hamburger-icon span:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+.top-link:hover {
+  background: rgba(157, 78, 221, 0.14);
+  color: #ffffff;
+}
+
+.top-link.active {
+  background: rgba(157, 78, 221, 0.22);
+  color: #ffffff;
+}
+
+.top-link.active:visited {
+  color: #ffffff;
+}
+
+.layout {
+  display: flex;
+  width: 100%;
+  min-height: calc(100vh - 57px);
+}
+
+.sidebar {
+  width: 320px;
+  background: linear-gradient(180deg, rgba(16, 11, 24, 0.98), rgba(10, 7, 16, 0.98));
+  border-right: 1px solid var(--border-color);
+  overflow-y: auto;
+  padding: 22px 18px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 57px;
+  height: calc(100vh - 57px);
+}
+
+.sidebar h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: var(--primary);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 10px;
+  letter-spacing: 0.03em;
+}
+
+.content-wrapper {
+  flex-grow: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 20px 38px;
+  background: linear-gradient(180deg, rgba(10, 8, 16, 0.4), rgba(10, 8, 16, 0.9));
+}
+
+.nav-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 36px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border-color);
+  width: min(210mm, 100%);
+}
+
+.nav-btn {
+  background-color: var(--primary);
+  color: #1a0f2b;
+  padding: 10px 18px;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 700;
+  transition: transform 0.18s ease, filter 0.18s ease;
+}
+
+.nav-btn:visited {
+  color: #1a0f2b;
+}
+
+.nav-btn:hover {
+  filter: brightness(0.94);
+  transform: translateY(-1px);
+}
+
+.nav-btn:hover,
+.nav-btn:focus-visible,
+.nav-btn:active,
+.nav-btn:hover:visited,
+.nav-btn:focus-visible:visited,
+.nav-btn:active:visited {
+  color: #1a0f2b;
+}
+
+.nav-btn.disabled {
+  background-color: #2a1f40;
+  color: #9b84be;
+  pointer-events: none;
+}
+
+.nav-btn.disabled:visited {
+  color: #9b84be;
+}
+
+.cover-page + .nav-buttons {
+  justify-content: center;
+  border-top: 0;
+  padding-top: 0;
+  margin-top: 22px;
+}
+
+.cover-page + .nav-buttons .nav-btn {
+  border-radius: 999px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #b36cf2, #8c3edf);
+  color: #ffffff;
+  letter-spacing: 0.02em;
+  box-shadow: 0 10px 24px rgba(127, 45, 199, 0.35);
+}
+
+.cover-page + .nav-buttons .nav-btn:visited {
+  color: #ffffff;
+}
+
+.cover-page + .nav-buttons .nav-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.02);
+  box-shadow: 0 14px 30px rgba(127, 45, 199, 0.42);
+}
+
+.cover-page + .nav-buttons .nav-btn:hover,
+.cover-page + .nav-buttons .nav-btn:focus-visible,
+.cover-page + .nav-buttons .nav-btn:active,
+.cover-page + .nav-buttons .nav-btn:hover:visited,
+.cover-page + .nav-buttons .nav-btn:focus-visible:visited,
+.cover-page + .nav-buttons .nav-btn:active:visited {
+  color: #ffffff;
+}
+
+.page {
+  background: linear-gradient(180deg, #1b122e, #140c21);
+  width: min(210mm, 100%);
+  min-height: 0;
+  margin-bottom: 24px;
+  box-shadow: 0 12px 38px rgba(0, 0, 0, 0.42);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: clamp(16px, 2.8vw, 1in);
+  position: relative;
+  page-break-after: always;
+}
+
+.page > h2:first-of-type {
+  margin-top: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+p,
+li {
+  line-height: 1.65;
+  color: var(--text-main);
+}
+
+a {
+  color: #c38cff;
+  transition: color 0.2s ease;
+}
+
+a:hover,
+a:focus-visible {
+  color: #dab0ff;
+}
+
+a:visited {
+  color: #a85eff;
+}
+
+.cover-page {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.cover-logo {
+  display: block;
+  align-self: center;
+  margin-top: 34px;
+  margin-bottom: 20px;
+}
+
+.cover-title {
+  font-size: clamp(34px, 4.2vw, 58px);
+  margin-bottom: 16px;
+  color: var(--primary);
+}
+
+.cover-subtitle {
+  font-size: clamp(16px, 2.2vw, 24px);
+  color: #d1c4e9;
+  margin-bottom: 34px;
+  font-weight: 500;
+}
+
+.cover-note,
+.cover-date {
+  font-size: 12pt;
+  color: var(--text-muted);
+}
+
+pre {
+  background-color: var(--code-bg);
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--primary);
+  padding: 14px;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 10pt;
+  overflow-x: auto;
+  border-radius: 8px;
+  max-height: 70vh;
+  overflow-y: auto;
+  color: #ede7f6;
+}
+
+code {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 10pt;
+  background-color: rgba(157, 78, 221, 0.12);
+  color: #ede7f6;
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+
+pre code {
+  background-color: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+.code-wrapper {
+  position: relative;
+  margin: 16px 0;
+}
+
+.code-wrapper pre {
+  margin: 0;
+  padding-top: 40px;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(157, 78, 221, 0.5);
+  background: rgba(16, 11, 24, 0.95);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.copy-btn:hover {
+  transform: translateY(-1px);
+  background: rgba(24, 18, 36, 0.98);
+  border-color: rgba(157, 78, 221, 0.8);
+}
+
+.copy-btn.copied {
+  background: rgba(157, 78, 221, 0.22);
+  color: #ffffff;
+}
+
+.plain-english-box {
+  background-color: rgba(157, 78, 221, 0.12);
+  border: 1px solid rgba(157, 78, 221, 0.45);
+  padding: 15px;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+.plain-english-box strong {
+  color: #dcb3ff;
+}
+
+.mistake-box {
+  background-color: var(--danger-bg);
+  border-left: 4px solid #ff5d73;
+  padding: 15px;
+  margin: 20px 0;
+  border-radius: 6px;
+}
+
+.usage-box {
+  background-color: var(--warn-bg);
+  border-left: 4px solid #ffc04d;
+  padding: 15px;
+  margin: 20px 0;
+  border-radius: 6px;
+}
+
+.header,
+.footer {
+  color: var(--text-muted);
+  position: static;
+  border-color: var(--border-color);
+}
+
+.header {
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 10px;
+  padding-bottom: 5px;
+  font-size: 9pt;
+  text-align: right;
+}
+
+.footer {
+  border-top: 1px solid var(--border-color);
+  margin-top: 14px;
+  padding-top: 5px;
+  font-size: 9pt;
+  display: flex;
+  justify-content: space-between;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 25px 0;
+}
+
+th,
+td {
+  border: 1px solid var(--border-color);
+  padding: 12px;
+  text-align: left;
+}
+
+th {
+  background-color: rgba(157, 78, 221, 0.1);
+  color: #ede7f6;
+}
+
+.toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.toc-list li {
+  margin-bottom: 8px;
+}
+
+.toc-list a,
+.toc-link {
+  appearance: none;
+  border: 0;
+  width: 100%;
+  text-align: left;
+  text-decoration: none;
+  background: transparent;
+  color: #d1c4e9;
+  font: inherit;
+  font-size: 0.98rem;
+  line-height: 1.45;
+  letter-spacing: 0.005em;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  overflow-wrap: anywhere;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 8px;
+}
+
+.toc-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2ch;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(157, 78, 221, 0.16);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.toc-label {
+  min-width: 0;
+}
+
+.toc-list a:hover,
+.toc-list a:focus-visible,
+.toc-link:hover,
+.toc-link:focus-visible {
+  background: rgba(157, 78, 221, 0.14);
+  color: #ffffff;
+  border-color: rgba(157, 78, 221, 0.34);
+}
+
+.toc-list a.active,
+.toc-link.active {
+  background: linear-gradient(90deg, rgba(157, 78, 221, 0.22), rgba(157, 78, 221, 0.08));
+  color: #ebfffc;
+  border-color: rgba(157, 78, 221, 0.45);
+}
+
+.toc-list a:visited {
+  color: #a39bb8;
+}
+
+.toc-section {
+  font-weight: 700;
+  font-size: 10pt;
+  color: var(--primary);
+  letter-spacing: 0.5px;
+  margin-top: 12px;
+  padding-top: 8px;
+}
+
+.toc-list .page-num {
+  color: var(--text-muted);
+  margin-left: 8px;
+}
+
+.link-status {
+  position: fixed;
+  left: 12px;
+  bottom: 10px;
+  z-index: 1200;
+  max-width: min(460px, calc(100vw - 24px));
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(157, 78, 221, 0.5);
+  background: rgba(16, 11, 24, 0.95);
+  color: #ffffff;
+  font-size: 9.5pt;
+  line-height: 1.2;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.link-status.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@page {
+  size: A4;
+  margin: 0;
+}
+
+@media print {
+  body {
+    background: #fff;
+    color: #111;
+    display: block;
+  }
+
+  .topbar {
+    display: none;
+  }
+
+  .layout {
+    min-height: 0;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .page {
+    box-shadow: none;
+    border: 0;
+    border-radius: 0;
+    width: 100%;
+    min-height: 297mm;
+    margin: 0;
+    page-break-after: always;
+    background: #fff;
+    color: #111;
+  }
+
+  .header {
+    position: absolute;
+    top: 0.5in;
+    left: 1in;
+    right: 1in;
+    margin: 0;
+  }
+
+  .footer {
+    position: absolute;
+    bottom: 0.5in;
+    left: 1in;
+    right: 1in;
+    margin: 0;
+  }
+}
+
+@media screen and (max-width: 1000px) {
+  .topbar {
+    position: sticky;
+    top: 0;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: rgba(10, 7, 16, 0.98);
+  }
+
+  .topbar-inner {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .topbar-context {
+    display: none;
+  }
+
+  .brand {
+    font-size: 0.88rem;
+    max-width: 42vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .top-link {
+    padding: 6px 9px;
+    font-size: 0.78rem;
+  }
+
+  .top-nav {
+    gap: 6px;
+    margin-left: auto;
+    width: auto;
+  }
+
+  .layout {
+    display: block;
+    min-height: 0;
+  }
+
+  body.toc-open {
+    overflow: hidden;
+  }
+
+  .sidebar {
+    display: block;
+    min-height: 0;
+    height: calc(100dvh - 68px);
+    position: fixed;
+    top: 68px;
+    left: 0;
+    width: min(88vw, 360px);
+    z-index: 60;
+    border-right: 1px solid var(--border-color);
+    border-bottom: 0;
+    padding: 14px 12px;
+    margin: 0;
+    border-radius: 0 12px 12px 0;
+    background: rgba(16, 11, 24, 0.95);
+    overflow-x: hidden;
+    overflow-y: auto;
+    max-height: none;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.36);
+    transform: translateX(-105%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
+    will-change: transform, opacity;
+  }
+
+  .sidebar h3 {
+    margin: 0 0 8px;
+    padding-bottom: 0;
+  }
+
+  .toc-list {
+    display: grid;
+    gap: 7px;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+
+  .toc-list li {
+    margin: 0;
+  }
+
+  .toc-list a,
+  .toc-link {
+    width: 100%;
+    white-space: normal;
+    border: 1px solid rgba(157, 78, 221, 0.28);
+    background: rgba(157, 78, 221, 0.09);
+    color: #ede7f6;
+    font-size: 0.88rem;
+    line-height: 1.3;
+    padding: 9px 10px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: 8px;
+  }
+
+  .toc-index {
+    min-width: 28px;
+    text-align: center;
+    padding: 2px 6px;
+    margin-top: 1px;
+  }
+
+  .toc-label {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+  }
+
+  body.toc-open .sidebar {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  body.toc-open .content-wrapper::before {
+    content: "";
+    position: fixed;
+    inset: 68px 0 0;
+    z-index: 50;
+    background: rgba(0, 0, 0, 0.6);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+  }
+
+  .content-wrapper {
+    padding: 12px;
+    overflow-y: visible;
+    min-height: 0;
+    position: relative;
+  }
+
+  .top-link-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 34px;
+    min-width: 38px;
+    padding: 0;
+  }
+
+  .page {
+    min-height: 0;
+    margin-bottom: 14px;
+  }
+
+  .nav-buttons {
+    width: 100%;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}
+
+@media screen and (max-width: 640px) {
+  .topbar-inner {
+    flex-wrap: nowrap;
+    padding: 8px 10px;
+  }
+
+  .top-nav {
+    width: auto;
+    gap: 5px;
+  }
+
+  .top-link {
+    flex: 0 0 auto;
+    text-align: center;
+    padding: 6px 8px;
+    font-size: 0.76rem;
+  }
+
+  .top-link-btn {
+    flex: 0 0 auto;
+    width: 36px;
+    min-width: 36px;
+  }
+
+  .nav-buttons {
+    flex-direction: column;
+  }
+
+  .nav-btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(11, 31, 32, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(157, 78, 221, 0.45);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(157, 78, 221, 0.75);
+}
+
+::selection {
+  background: rgba(157, 78, 221, 0.45);
+  color: #f5fffe;
+}
+</style>
+</head>
+<body data-handbook="llamaindex">
+    
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a class="brand" href="/">Developer Handbooks</a>
+            <span class="topbar-context" id="topbar-context" aria-live="polite"></span>
+            <nav class="top-nav" aria-label="Primary navigation">
+                <a href="/fastapi/" class="top-link ">FastAPI</a>
+                <a href="/docker/" class="top-link ">Docker</a>
+                <a href="/n8n/" class="top-link ">n8n</a>
+                <a href="/llamaindex/" class="top-link active">LlamaIndex</a>
+                <button id="toc-toggle" class="top-link top-link-btn" type="button" aria-expanded="false" aria-controls="toc-sidebar" aria-label="Open table of contents">
+                    <span class="hamburger-icon" aria-hidden="true"><span></span><span></span><span></span></span>
+                </button>
+            </nav>
+        </div>
+    </header>
+    <div class="layout">
+        <nav class="sidebar" id="toc-sidebar">
+            <h3>Table of Contents</h3>
+            <ul class="toc-list">
+<li><button class="toc-link" type="button" data-href="/llamaindex/chapter_01.html">CHAPTER 1 - LlamaIndex Architecture (Core Mental Model)</button></li>
+<li><button class="toc-link" type="button" data-href="/llamaindex/chapter_02.html">CHAPTER 2 - Documents vs Nodes vs Chunking (Where Most Systems Fail)</button></li>
+<li><button class="toc-link" type="button" data-href="/llamaindex/chapter_03.html">CHAPTER 3 - Index Types Deep Dive (Vector vs Summary vs Tree)</button></li>
+<li><button class="toc-link" type="button" data-href="/llamaindex/chapter_04.html">CHAPTER 4 - StorageContext & Persistence (Stateful LlamaIndex Systems)</button></li>
+<li><button class="toc-link" type="button" data-href="/llamaindex/chapter_05.html">CHAPTER 5 - Query Engine vs Retriever (Critical Distinction)</button></li>
+</ul>
+        </nav>
+        <main class="content-wrapper">
+            <div class="page" id="chapter-03">
+    <div class="header">Chapter 3: Index Types Deep Dive</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 3 - Index Types Deep Dive (Vector vs Summary vs Tree)</h2>
+
+    <h3>What is an Index??</h3>
+    <p>We have already used:</p>
+    <pre><code class="language-python">VectorStoreIndex</code></pre>
+    <p>But what is it really?<br>
+        An Index = a strategy for organizing nodes so they can be retrieved efficiently for a query.</p>
+
+    <div class="plain-english-box">
+        <strong>Core point:</strong><br>
+        Retriever quality ≠ just embeddings<br>
+        Retriever quality = Index + Embeddings + Chunking
+    </div>
+
+    <h3>The 3 Core Index Types</h3>
+    <p>We'll focus on:</p>
+    <ol>
+        <li><code>VectorStoreIndex</code> → (default, most used)</li>
+        <li><code>SummaryIndex</code> → (global understanding)</li>
+        <li><code>TreeIndex</code> → (hierarchical reasoning)</li>
+    </ol>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Index Type</th>
+                <th>Use Case</th>
+                <th>Retrieval Method</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>VectorStoreIndex</code></td>
+                <td>Semantic search (similarity)</td>
+                <td>Vector similarity search</td>
+            </tr>
+            <tr>
+                <td><code>SummaryIndex</code></td>
+                <td>Retrieval via summarization</td>
+                <td>LLM-based summarization</td>
+            </tr>
+            <tr>
+                <td><code>TreeIndex</code></td>
+                <td>Hierarchical reasoning and retrieval</td>
+                <td>Tree traversal + LLM reasoning</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <span>LlamaIndex Complete Handbook</span>
+        <span>Page 11</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 3: Index Types Deep Dive</div>
+
+    <h3>1. VectorStoreIndex (Default Index)</h3>
+    <h4>What it does</h4>
+    <ul>
+        <li>It stores embeddings of nodes in a vector database (in-memory or external).</li>
+        <li>And it uses similarity search to retrieve relevant nodes based on the query embedding.</li>
+    </ul>
+
+    <h4>How VectorStoreIndex works internally</h4>
+    <pre><code class="language-text">Query → embedding → vector search → top-k nodes → LLM</code></pre>
+
+    <h4>When to use VectorStoreIndex?</h4>
+    <ul>
+        <li>Q&A systems</li>
+        <li>Search engines</li>
+        <li>RAG pipelines</li>
+        <li>ATS / document retrieval</li>
+    </ul>
+
+    <h4>Cons of VectorStoreIndex</h4>
+    <ul>
+        <li>No global understanding, it only retrieves based on local similarity.</li>
+        <li>Purely similarity-based, so it can miss relevant info if the query is not well-formed or if the embedding
+            model is not good.</li>
+    </ul>
+
+    <h4>Implementation of VectorStoreIndex</h4>
+    <ul>
+        <li>We have already implemented it in Topic 1 and 2.
+            <pre><code class="language-python">from llama_index.core import VectorStoreIndex
+
+index = VectorStoreIndex(
+    nodes,
+    embed_model=embed_model
+)</code></pre>
+        </li>
+
+        <li>Advanced Control
+            <pre><code class="language-python">query_engine = index.as_query_engine(
+    similarity_top_k=3  # control retrieval depth
+)</code></pre>
+        </li>
+        <li>This allows us to retrieve the top 3 most similar nodes for any query.</li>
+    </ul>
+
+    <div class="footer">
+        <span>LlamaIndex Complete Handbook</span>
+        <span>Page 12</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 3: Index Types Deep Dive</div>
+
+    <h3>2. SummaryIndex (Underrated but Powerful)</h3>
+    <h4>What it does</h4>
+    <ul>
+        <li>It builds a summary representation of all nodes using an LLM.</li>
+        <li>During retrieval, it uses the LLM to match the query against the summary instead of individual nodes.</li>
+        <li>This allows it to have a more global understanding of the content, rather than relying solely on local
+            similarity.</li>
+    </ul>
+
+    <h4>How SummaryIndex works internally</h4>
+    <pre><code class="language-text">All nodes → summarized → LLM answers from summary</code></pre>
+
+    <h4>When to use SummaryIndex?</h4>
+    <ul>
+        <li>"Give me an overview"</li>
+        <li>"Summarize this document"</li>
+        <li>Reports, dashboards</li>
+    </ul>
+
+    <h4>Cons of SummaryIndex</h4>
+    <ul>
+        <li>Loses fine-grained details since it relies on a summary representation.</li>
+        <li>Can be less accurate for specific queries that require detailed information.</li>
+        <li>Not good for precise Q&A or retrieval tasks that need exact matches.</li>
+    </ul>
+
+    <h4>Implementation of SummaryIndex</h4>
+    <pre><code class="language-python">from llama_index.core import SummaryIndex
+
+summary_index = SummaryIndex(nodes)
+
+query_engine = summary_index.as_query_engine(llm=llm)
+
+response = query_engine.query("Summarize Sasidhar's experience")
+print(response)</code></pre>
+
+    <div class="footer">
+        <span>LlamaIndex Complete Handbook</span>
+        <span>Page 13</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 3: Index Types Deep Dive</div>
+
+    <h3>3. TreeIndex (Hierarchical Reasoning)</h3>
+    <h4>What it does</h4>
+    <ul>
+        <li>It builds a tree structure of nodes based on their relationships (e.g., parent-child).</li>
+        <li>Each level summarizes the nodes below it, creating a hierarchy of information.</li>
+        <li>During retrieval, it traverses the tree to find relevant nodes and can perform reasoning across the
+            hierarchy.</li>
+    </ul>
+
+    <h4>How TreeIndex works internally</h4>
+    <pre><code class="language-text">Leaf nodes → grouped → summarized → higher nodes → final answer</code></pre>
+
+    <h4>When to use TreeIndex?</h4>
+    <ul>
+        <li>Large documents</li>
+        <li>Complex reasoning</li>
+        <li>Multi-step summarization</li>
+    </ul>
+
+    <h4>Cons of TreeIndex</h4>
+    <ul>
+        <li>More complex to build and maintain.</li>
+        <li>Can be slower for retrieval due to tree traversal and multiple LLM calls.</li>
+        <li>More expensive (more LLM calls).</li>
+    </ul>
+
+    <h4>Implementation of TreeIndex</h4>
+    <pre><code class="language-python">from llama_index.core import TreeIndex
+
+tree_index = TreeIndex(nodes, llm=llm)
+
+query_engine = tree_index.as_query_engine(llm=llm)
+
+response = query_engine.query("Explain Sasidhar's overall profile")
+print(response)</code></pre>
+
+    <div class="footer">
+        <span>LlamaIndex Complete Handbook</span>
+        <span>Page 14</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 3: Index Types Deep Dive</div>
+
+    <h3>Side by Side Comparison of Index Types</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Feature</th>
+                <th>Vector</th>
+                <th>Summary</th>
+                <th>Tree</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Retrieval</td>
+                <td>✅ Yes</td>
+                <td>❌ No</td>
+                <td>⚠️ Indirect</td>
+            </tr>
+            <tr>
+                <td>Global understanding</td>
+                <td>❌ No</td>
+                <td>✅ Yes</td>
+                <td>✅ Yes</td>
+            </tr>
+            <tr>
+                <td>Precision</td>
+                <td>✅ High</td>
+                <td>❌ Low</td>
+                <td>✅ Medium</td>
+            </tr>
+            <tr>
+                <td>Speed</td>
+                <td>⚡ Fast</td>
+                <td>⚡ Fast</td>
+                <td>🐢 Slow</td>
+            </tr>
+            <tr>
+                <td>Use case</td>
+                <td>RAG</td>
+                <td>Overview</td>
+                <td>Deep reasoning</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Implementation of Index in Real Time Systems:</h3>
+    <p>In real time systems, we never rely on just one index type. We often combine them for better performance.</p>
+
+    <p>Example:</p>
+    <ul>
+        <li><code>VectorIndex</code> → fetch relevant chunks</li>
+        <li><code>TreeIndex</code> → reason over them</li>
+        <li><code>SummaryIndex</code> → generate report</li>
+    </ul>
+
+    <p>This becomes <strong>multi-index routing</strong> (we will learn it in later modules).</p>
+
+    <h3>Troubleshooting Common Index Issues</h3>
+    <p><strong>1. Why is SummaryIndex giving vague answers?</strong><br>
+        Because it relies on a summary representation, it can miss fine-grained details.<br>
+        <strong>Fix:</strong>
+    </p>
+    <ul>
+        <li>Use <code>VectorIndex</code> for precise Q&A.</li>
+    </ul>
+
+    <p><strong>2. TreeIndex is slow</strong><br>
+        <code>TreeIndex</code> can be slower due to multiple LLM calls during traversal.<br>
+        So we need to use it only when necessary (complex reasoning).
+    </p>
+
+    <p><strong>3. VectorIndex misses context</strong><br>
+        Because it relies on local similarity, it can miss relevant info if the query is not well-formed or if the
+        embedding model is not good.<br>
+        <strong>Fix:</strong> (We will learn these techniques in later modules)
+    </p>
+    <ul>
+        <li>Hybrid retrieval</li>
+        <li>Reranking</li>
+        <li>Recursive retrieval</li>
+    </ul>
+
+    <h3>Task: To understand index</h3>
+    <p>Take the previous project from Topic 1 and modify it to use <code>SummaryIndex</code> instead of
+        <code>VectorStoreIndex</code>.
+    </p>
+    <ul>
+        <li>Check how the retrieved nodes and final answer changes with this new index type.</li>
+        <li>Then, try to implement <code>TreeIndex</code> and compare the results of all three index types side by side.
+        </li>
+        <li>Here is the
+            <code><a href="https://github.com/sasidharakurathi/LlamaIndex-Learning/blob/main/practice/Module%201/Topic%203/task.py" target="_blank">task.py</a></code>reference.
+        </li>
+    </ul>
+
+    <div class="footer">
+        <span>LlamaIndex Complete Handbook</span>
+        <span>Page 15</span>
+    </div>
+</div>
+            <div class="nav-buttons"><a href="/llamaindex/chapter_02.html" class="nav-btn">← Previous</a><a href="/llamaindex/chapter_04.html" class="nav-btn">Next →</a></div>
+        </main>
+    </div>
+    <script src="/llamaindex/script.js" defer></script>
+</body>
+</html>

@@ -964,6 +964,7 @@ th {
                 <a href="/fastapi/" class="top-link ">FastAPI</a>
                 <a href="/docker/" class="top-link ">Docker</a>
                 <a href="/n8n/" class="top-link active">n8n</a>
+                <a href="/llamaindex/" class="top-link ">LlamaIndex</a>
                 <button id="toc-toggle" class="top-link top-link-btn" type="button" aria-expanded="false" aria-controls="toc-sidebar" aria-label="Open table of contents">
                     <span class="hamburger-icon" aria-hidden="true"><span></span><span></span><span></span></span>
                 </button>

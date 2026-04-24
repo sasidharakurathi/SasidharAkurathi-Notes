@@ -29,9 +29,11 @@
             --card-fastapi-hover: rgba(15, 118, 110, 0.45);
             --card-docker-hover: rgba(3, 105, 161, 0.45);
             --card-n8n-hover: rgba(255, 109, 90, 0.45);
+            --card-llamaindex-hover: rgba(157, 78, 221, 0.45);
             --chip-fastapi-bg: rgba(15, 118, 110, 0.12);
             --chip-docker-bg: rgba(36, 150, 237, 0.16);
             --chip-n8n-bg: rgba(255, 109, 90, 0.16);
+            --chip-llamaindex-bg: rgba(157, 78, 221, 0.16);
             --cta: #bdd8ff;
             --bg-spot-teal: radial-gradient(circle at 8% 10%, rgba(16, 191, 174, 0.24), transparent 36%);
             --bg-spot-blue: radial-gradient(circle at 92% 90%, rgba(36, 150, 237, 0.28), transparent 40%);
@@ -125,6 +127,10 @@
             border-color: var(--card-n8n-hover);
         }
 
+        .llamaindex:hover {
+            border-color: var(--card-llamaindex-hover);
+        }
+
         .chip {
             width: fit-content;
             border-radius: 999px;
@@ -138,6 +144,7 @@
         .chip.fastapi { background: var(--chip-fastapi-bg); color: var(--teal); }
         .chip.docker { background: var(--chip-docker-bg); color: var(--blue); }
         .chip.n8n { background: var(--chip-n8n-bg); color: #ff6d5a; }
+        .chip.llamaindex { background: var(--chip-llamaindex-bg); color: #b36cf2; }
 
         .card-head {
             display: flex;
@@ -177,6 +184,12 @@
 
         .brand-logo.n8n {
             background: linear-gradient(145deg, #ea4262, #ff6d5a);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.28);
+        }
+
+        .brand-logo.llamaindex {
+            background: linear-gradient(145deg, #b36cf2, #9d4edd);
             color: #ffffff;
             border-color: rgba(255, 255, 255, 0.28);
         }
@@ -279,6 +292,23 @@
                         <h2>n8n Notes</h2>
                     </div>
                     <p>Build, self-host, and extend n8n automations. Zero fluff. Real examples.</p>
+                </div>
+                <p class="cta">Open handbook -></p>
+            </a>
+
+            <a href="/llamaindex/" class="card llamaindex">
+                <div>
+                    <span class="chip llamaindex">AI / RAG</span>
+                    <div class="card-head">
+                        <span class="brand-logo llamaindex" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="12" cy="12" r="11" fill="currentColor" fill-opacity="0.1"/>
+                                <path d="M10 16V13C10 11.5 11.5 10.5 11.5 9C11.5 7.5 13 6 13 6C13 6 14.5 8 14.5 9C14.5 10 16 11 16 12C16 12 15.5 13.5 14 14V16H12.5V14.5C12 14.5 11.5 16 11.5 16H10Z" fill="currentColor" />
+                            </svg>
+                        </span>
+                        <h2>LlamaIndex Notes</h2>
+                    </div>
+                    <p>Build RAG applications, setup vector stores, retrieve relevant data, and create agents.</p>
                 </div>
                 <p class="cta">Open handbook -></p>
             </a>

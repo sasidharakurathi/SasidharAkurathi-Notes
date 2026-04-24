@@ -24,6 +24,8 @@ HUB_THEME = {
     "chip_fastapi_bg": "rgba(15, 118, 110, 0.12)",
     "chip_docker_bg": "rgba(36, 150, 237, 0.16)",
     "chip_n8n_bg": "rgba(255, 109, 90, 0.16)",
+    "card_llamaindex_hover": "rgba(157, 78, 221, 0.45)",
+    "chip_llamaindex_bg": "rgba(157, 78, 221, 0.16)",
     "cta": "#bdd8ff",
 }
 
@@ -32,6 +34,7 @@ def create_dist_dirs():
     os.makedirs("dist/fastapi", exist_ok=True)
     os.makedirs("dist/docker", exist_ok=True)
     os.makedirs("dist/n8n", exist_ok=True)
+    os.makedirs("dist/llamaindex", exist_ok=True)
 
 
 def sync_local_preview_dirs():
@@ -40,7 +43,7 @@ def sync_local_preview_dirs():
     if os.path.exists(hub_source):
         shutil.copyfile(hub_source, "index.html")
 
-    for folder in ("fastapi", "docker", "n8n"):
+    for folder in ("fastapi", "docker", "n8n", "llamaindex"):
         source = os.path.join("dist", folder)
         target = folder
 
@@ -117,6 +120,7 @@ def generate_handbook(src_dir, dist_folder, book_title):
     active_fastapi = "active" if dist_folder == "fastapi" else ""
     active_docker = "active" if dist_folder == "docker" else ""
     active_n8n = "active" if dist_folder == "n8n" else ""
+    active_llamaindex = "active" if dist_folder == "llamaindex" else ""
 
     topbar_html = f"""
     <header class="topbar">
@@ -127,6 +131,7 @@ def generate_handbook(src_dir, dist_folder, book_title):
                 <a href="/fastapi/" class="top-link {active_fastapi}">FastAPI</a>
                 <a href="/docker/" class="top-link {active_docker}">Docker</a>
                 <a href="/n8n/" class="top-link {active_n8n}">n8n</a>
+                <a href="/llamaindex/" class="top-link {active_llamaindex}">LlamaIndex</a>
                 <button id="toc-toggle" class="top-link top-link-btn" type="button" aria-expanded="false" aria-controls="toc-sidebar" aria-label="Open table of contents">
                     <span class="hamburger-icon" aria-hidden="true"><span></span><span></span><span></span></span>
                 </button>
@@ -225,9 +230,11 @@ def build_hub():
             --card-fastapi-hover: {HUB_THEME['card_fastapi_hover']};
             --card-docker-hover: {HUB_THEME['card_docker_hover']};
             --card-n8n-hover: {HUB_THEME['card_n8n_hover']};
+            --card-llamaindex-hover: {HUB_THEME['card_llamaindex_hover']};
             --chip-fastapi-bg: {HUB_THEME['chip_fastapi_bg']};
             --chip-docker-bg: {HUB_THEME['chip_docker_bg']};
             --chip-n8n-bg: {HUB_THEME['chip_n8n_bg']};
+            --chip-llamaindex-bg: {HUB_THEME['chip_llamaindex_bg']};
             --cta: {HUB_THEME['cta']};
             --bg-spot-teal: {HUB_THEME['bg_spot_teal']};
             --bg-spot-blue: {HUB_THEME['bg_spot_blue']};
@@ -342,6 +349,10 @@ def build_hub():
             border-color: var(--card-n8n-hover);
         }
 
+        .llamaindex:hover {
+            border-color: var(--card-llamaindex-hover);
+        }
+
         .chip {
             width: fit-content;
             border-radius: 999px;
@@ -355,6 +366,7 @@ def build_hub():
         .chip.fastapi { background: var(--chip-fastapi-bg); color: var(--teal); }
         .chip.docker { background: var(--chip-docker-bg); color: var(--blue); }
         .chip.n8n { background: var(--chip-n8n-bg); color: #ff6d5a; }
+        .chip.llamaindex { background: var(--chip-llamaindex-bg); color: #b36cf2; }
 
         .card-head {
             display: flex;
@@ -394,6 +406,12 @@ def build_hub():
 
         .brand-logo.n8n {
             background: linear-gradient(145deg, #ea4262, #ff6d5a);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.28);
+        }
+
+        .brand-logo.llamaindex {
+            background: linear-gradient(145deg, #b36cf2, #9d4edd);
             color: #ffffff;
             border-color: rgba(255, 255, 255, 0.28);
         }
@@ -499,6 +517,23 @@ def build_hub():
                 </div>
                 <p class="cta">Open handbook -></p>
             </a>
+
+            <a href="/llamaindex/" class="card llamaindex">
+                <div>
+                    <span class="chip llamaindex">AI / RAG</span>
+                    <div class="card-head">
+                        <span class="brand-logo llamaindex" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="12" cy="12" r="11" fill="currentColor" fill-opacity="0.1"/>
+                                <path d="M10 16V13C10 11.5 11.5 10.5 11.5 9C11.5 7.5 13 6 13 6C13 6 14.5 8 14.5 9C14.5 10 16 11 16 12C16 12 15.5 13.5 14 14V16H12.5V14.5C12 14.5 11.5 16 11.5 16H10Z" fill="currentColor" />
+                            </svg>
+                        </span>
+                        <h2>LlamaIndex Notes</h2>
+                    </div>
+                    <p>Build RAG applications, setup vector stores, retrieve relevant data, and create agents.</p>
+                </div>
+                <p class="cta">Open handbook -></p>
+            </a>
         </div>
     </main>
 </body>
@@ -517,6 +552,8 @@ if __name__ == "__main__":
     generate_handbook("src_docker", "docker", "Docker Complete Handbook")
     print("Building n8n Handbook...")
     generate_handbook("src_n8n", "n8n", "n8n Complete Handbook")
+    print("Building LlamaIndex Handbook...")
+    generate_handbook("src_llamaindex", "llamaindex", "LlamaIndex Complete Handbook")
     print("Building Hub...")
     build_hub()
     print("Syncing local preview folders...")

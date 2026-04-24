@@ -1,0 +1,238 @@
+<div class="page" id="chapter-05">
+    <div class="header">Chapter 5: Query Engine vs Retriever</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 5 - Query Engine vs Retriever (Critical Distinction)</h2>
+
+    <h3>What's the Confusion?</h3>
+    <p>Most of the devs think:</p>
+    <pre><code class="language-text">Query → Index → Answer</code></pre>
+    <div class="mistake-box">
+        <strong>Wrong!!</strong>
+    </div>
+
+    <h3>Core Insight</h3>
+    <ul>
+        <li><strong>Retriever</strong> finds relevant data</li>
+        <li><strong>Query Engine</strong> orchestrates the full answer generation</li>
+    </ul>
+
+    <h3>Actual Model</h3>
+    <pre><code class="language-text">User Query
+   ↓
+Retriever → returns nodes (raw data)
+   ↓
+Query Engine → uses LLM to synthesize answer</code></pre>
+
+    <h3>1. Retriever (Data Fetching Layer)</h3>
+    <h4>What it does</h4>
+    <ul>
+        <li>It takes the user query</li>
+        <li>And retrieves relevant nodes from the index.</li>
+        <li>Returns them</li>
+    </ul>
+    <p>That's it. No LLM involved. No answer generation. Just data fetching.</p>
+
+    <h4>Example:</h4>
+    <pre><code class="language-python">retriever = index.as_retriever(similarity_top_k=3)
+
+nodes = retriever.retrieve("What has Sasidhar built?")
+
+for node in nodes:
+    print(node.text)</code></pre>
+
+    <h4>Output:</h4>
+    <pre><code class="language-text">"Sasidhar built an ATS system..."
+"He developed a backend AI system..."</code></pre>
+
+    <div class="footer">
+        <span>LlamaIndex Complete Handbook</span>
+        <span>Page 19</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 5: Query Engine vs Retriever</div>
+
+    <h3>2. Query Engine (Orchestration Layer)</h3>
+    <h4>What it does</h4>
+    <ul>
+        <li>It calls retriever to get relevant nodes</li>
+        <li>Sends those nodes to the LLM along with the user query</li>
+        <li>Generates the final answer by synthesizing the retrieved nodes and the query.</li>
+    </ul>
+
+    <h4>Example:</h4>
+    <pre><code class="language-python">query_engine = index.as_query_engine(llm=llm)
+
+response = query_engine.query("What has Sasidhar built?")
+print(response)</code></pre>
+
+    <h4>Internal Flow:</h4>
+    <pre><code class="language-text">1. retrieve nodes
+2. build prompt:
+   "Context: &lt;nodes&gt; + Query"
+3. send to LLM
+4. synthesize response</code></pre>
+
+    <h3>Side-by-Side Comparison</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Feature</th>
+                <th>Retriever</th>
+                <th>Query Engine</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Uses LLM</td>
+                <td>❌ No</td>
+                <td>✅ Yes</td>
+            </tr>
+            <tr>
+                <td>Output</td>
+                <td>Nodes</td>
+                <td>Final answer</td>
+            </tr>
+            <tr>
+                <td>Control</td>
+                <td>High</td>
+                <td>Abstracted</td>
+            </tr>
+            <tr>
+                <td>Use case</td>
+                <td>Debugging, pipelines</td>
+                <td>End-user queries</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <span>LlamaIndex Complete Handbook</span>
+        <span>Page 20</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 5: Query Engine vs Retriever</div>
+
+    <h3>Why is this distinction important?</h3>
+    <p>If our system fails:</p>
+    <div class="plain-english-box">
+        <strong>We MUST isolate:</strong><br>
+        Is it retrieval problem OR LLM problem?
+    </div>
+
+    <h3>Debugging Strategy:</h3>
+
+    <h4>Step 1: Check Retriever</h4>
+    <pre><code class="language-python">nodes = retriever.retrieve(query)</code></pre>
+    <p>Are nodes correct and relevant?</p>
+    <ul>
+        <li>If yes → problem is in LLM.</li>
+        <li>If no → it's a retrieval problem (chunking, embedding, index issue).</li>
+    </ul>
+
+    <h4>Step 2: Check Query Engine</h4>
+    <p>If nodes are correct but answer is wrong, then problem is in prompt / synthesis.</p>
+    <ul>
+        <li>Check how nodes are being fed into the prompt.</li>
+        <li>Check if LLM is understanding the context.</li>
+    </ul>
+
+    <h3>Let's see how Controlled Pipeline is practically implemented</h3>
+    <p>We now separate both explicitly. Check the following steps in
+        <code><a href="https://github.com/sasidharakurathi/LlamaIndex-Learning/blob/main/practice/Module%201/Topic%205/main.py" target="_blank">practice/Module 1/Topic 5/main.py</a></code>.
+    </p>
+
+    <h4>Step 1: Retriever: </h4> <a
+        href="https://github.com/sasidharakurathi/LlamaIndex-Learning/blob/main/practice/Module%201/Topic%205/main.py#L50"
+        target="_blank">main.py
+        line 50-51</a>
+    <ul>
+        <li>We create a retriever from the index using <code>index.as_retriever()</code>.</li>
+        <li>This gives us direct access to the retrieval layer, allowing us to fetch nodes without involving the LLM.
+        </li>
+    </ul>
+
+    <h4>Step 2: Manual Pipeline (Important): </h4> <a
+        href="https://github.com/sasidharakurathi/LlamaIndex-Learning/blob/main/practice/Module%201/Topic%205/main.py#L53"
+        target="_blank">main.py
+        line 53-68</a>
+    <ul>
+        <li>We manually call <code>retriever.retrieve(query)</code> to get the relevant nodes.</li>
+        <li>Then we build a custom prompt by combining the retrieved nodes with the user query.</li>
+        <li>Finally, we send this prompt to the LLM to get the final answer.</li>
+    </ul>
+
+    <div class="usage-box">
+        <strong>Why This is Powerful?</strong><br>
+        Now we can:
+        <ul>
+            <li>customize prompts</li>
+            <li>add reranking</li>
+            <li>inject memory</li>
+            <li>control everything</li>
+        </ul>
+        This is how real production systems are built. We don't rely on black-box query engines. We have full control
+        over the retrieval and synthesis process.
+    </div>
+
+    <div class="footer">
+        <span>LlamaIndex Complete Handbook</span>
+        <span>Page 21</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 5: Query Engine vs Retriever</div>
+
+    <h3>Troubleshooting Common Query Engine Issues</h3>
+
+    <p><strong>1. "Answer is wrong but nodes are correct"</strong><br>
+        This means the retriever is working but the LLM is not synthesizing the answer correctly.<br>
+        <strong>Fix:</strong>
+    </p>
+    <ul>
+        <li>better prompt engineering</li>
+        <li>use a more powerful LLM</li>
+        <li>response mode (we'll learn in next modules)</li>
+    </ul>
+
+    <p><strong>2. Retriever returns irrelevant nodes</strong><br>
+        Cause:</p>
+    <ul>
+        <li>embeddings</li>
+        <li>chunking</li>
+        <li>top_k too small</li>
+    </ul>
+    <p><strong>Fix:</strong></p>
+    <ul>
+        <li>improve chunking</li>
+        <li>use better embedding model</li>
+        <li>increase <code>similarity_top_k</code> to fetch more nodes</li>
+    </ul>
+
+    <p><strong>3. Query engine hides too much</strong><br>
+        Yes, query engines are great for simplicity, but they can hide the retrieval process, making it harder to debug
+        when things go wrong.</p>
+    <p><strong>For Production:</strong></p>
+    <ul>
+        <li>we often bypass it and build custom pipelines for better control and observability.</li>
+    </ul>
+
+    <h3>Advanced Insight</h3>
+    <pre><code class="language-text">Retriever = Recall problem
+Query Engine = Reasoning problem</code></pre>
+
+    <p><strong>We optimize them differently:</strong></p>
+    <ul>
+        <li>For <strong>retriever</strong> → we optimize chunking, embeddings, index structure.</li>
+        <li>For <strong>query engine</strong> → we optimize prompts, LLM choice, response synthesis.</li>
+    </ul>
+
+    <div class="footer">
+        <span>LlamaIndex Complete Handbook</span>
+        <span>Page 22</span>
+    </div>
+</div>

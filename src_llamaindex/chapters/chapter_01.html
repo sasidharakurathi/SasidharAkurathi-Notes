@@ -1,0 +1,232 @@
+<div class="page" id="chapter-01">
+    <div class="header">Chapter 1: Architecture</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 1 - LlamaIndex Architecture (Core Mental Model)</h2>
+
+    <p>→ LlamaIndex is a data orchestration layer between our data and the LLM.<br>
+        → It solves <strong>"How do I efficiently retrieve the right context and feed it to an LLM?"</strong></p>
+
+    <h3>The Problem It Solves</h3>
+    <h4>Generally Raw LLM has following Limitations:</h4>
+    <ul>
+        <li>Have limited context windows</li>
+        <li>Cannot search our database/files natively</li>
+        <li>Most importantly Hallucinate without grounding (without base knowledge)</li>
+    </ul>
+
+    <h3>The Core Pipeline of LlamaIndex</h3>
+    <pre><code class="language-text">Raw Data → Documents → Nodes → Index → Retriever → Query Engine → LLM → Response</code></pre>
+    <br>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Layer</th>
+                <th>Role</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Data Layer</td>
+                <td>Documents / Nodes</td>
+            </tr>
+            <tr>
+                <td>Storage Layer</td>
+                <td>Index</td>
+            </tr>
+            <tr>
+                <td>Retrieval Layer</td>
+                <td>Retriever</td>
+            </tr>
+            <tr>
+                <td>Orchestration Layer</td>
+                <td>Query Engine</td>
+            </tr>
+            <tr>
+                <td>Intelligence Layer</td>
+                <td>LLM</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <span>LlamaIndex Complete Handbook</span>
+        <span>Page 1</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 1: Architecture</div>
+
+    <p><strong>1. Documents</strong><br>
+        Raw inputs (PDFs, DB rows, APIs, text files etc)</p>
+    <pre><code class="language-python">Document(text="Sasidhar is a backend AI engineer...")</code></pre>
+
+    <p><strong>2. Nodes (Imp concept)</strong><br>
+        Documents are split into Nodes.<br>
+        A Node is a collection of:</p>
+    <ul>
+        <li>chunk of text</li>
+        <li>metadata</li>
+        <li>embedding</li>
+    </ul>
+
+    <div class="plain-english-box">
+        <strong>Why chunk of text??</strong><br>
+        - LLMs can't process huge text (due to limited input tokens).<br>
+        - So the retrieval of data works at the chunk level rather than the document level.
+    </div>
+
+    <p><strong>3. Index</strong><br>
+        An Index is a data structure which represents the nodes in a structured way for retrieval.<br>
+        In simple words, <strong>Index</strong> = how data is organized for retrieval.</p>
+    <ul>
+        <li><code>VectorStoreIndex</code> → It's used for semantic search</li>
+        <li><code>TreeIndex</code> → It's used for hierarchical reasoning</li>
+    </ul>
+
+    <p><strong>4. Retriever</strong><br>
+        Retriever decides <strong>Which nodes are relevant to the query?</strong><br>
+        Basically, it does following things:</p>
+    <ul>
+        <li>Similarity search</li>
+        <li>Filtering</li>
+        <li>Ranking</li>
+    </ul>
+
+    <div class="footer">
+        <span>LlamaIndex Complete Handbook</span>
+        <span>Page 2</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 1: Architecture</div>
+
+    <p><strong>5. Query Engine</strong><br>
+        Query Engine is an orchestrator.</p>
+    <ol>
+        <li>It takes the user query.</li>
+        <li>Then Calls retriever.</li>
+        <li>Gets relevant nodes.</li>
+        <li>Sends those nodes to LLM.</li>
+        <li>Synthesizes the response from LLM.</li>
+        <li>Returns the final answer to user.</li>
+    </ol>
+
+    <div class="usage-box">
+        <strong>Note:</strong> This is the core step in production based RAG system.
+    </div>
+
+    <p><strong>6. LLM</strong><br>
+        LLM generates the final answer based on the <strong>user query</strong> and the <strong>retrieved
+            context</strong> (aka nodes).<br>
+        <em>Note: In this complete learning roadmap, we will be using Gemini as our LLM.</em>
+    </p>
+
+    <h3>Let's see how it works via practical implementation</h3>
+    <p>Let's try to build the smallest correct architecture of LlamaIndex.</p>
+
+    <ol>
+        <li>Make sure to create a Python environment. (This course uses Python 3.11.9)</li>
+        <li>Then Go to
+            <code><a href="https://github.com/sasidharakurathi/LlamaIndex-Learning/tree/main/practice/Module%201/Topic%201" target="_blank">practice/Module 1/Topic 1/</a></code>
+        </li>
+        <li>Open <code>.env.example</code> and replace <code>YOUR_GEMINI_API_KEY</code> with your gemini api key.</li>
+        <li>Rename <code>.env.example</code> to <code>.env</code></li>
+        <li>Install all requirements:
+            <pre><code class="language-bash">pip install -r requirements.txt</code></pre>
+        </li>
+        <li>Execute the <code>main.py</code>:
+            <pre><code class="language-bash">python main.py</code></pre>
+        </li>
+    </ol>
+
+    <div class="footer">
+        <span>LlamaIndex Complete Handbook</span>
+        <span>Page 3</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 1: Architecture</div>
+
+    <h3>Here is the code flow and output explanation</h3>
+
+    <h4>Step 0: Load and setup GEMINI_API_KEY</h4>
+    <ul>
+        <li>We are loading the <code>.env</code> file using <code>python-dotenv</code></li>
+    </ul>
+
+    <h4>Step 1: Configure LLM (Gemini)</h4>
+    <ul>
+        <li>Initialize the <code>GoogleGenAI</code> model.</li>
+        <li>→ We are using <code>gemini-2.5-flash</code> as our LLM.</li>
+    </ul>
+
+    <h4>Step 2: Embedding Model (Local)</h4>
+    <ul>
+        <li>We are using <code>HuggingFaceEmbedding</code> with <code>BAAI/bge-small-en</code> model.</li>
+        <li>→ It Converts text into a vector (list of numbers) that retriever can compare.</li>
+        <li>→ By setting <code>device="cpu"</code>, we run the <code>Embedding Model</code> on processor / cpu.</li>
+    </ul>
+
+    <h4>Step 3: Create Documents</h4>
+    <ul>
+        <li>Wrap our raw strings into LlamaIndex <code>Document</code> objects.</li>
+        <li>→ This prepares the data to be processed into the data orchestration layer.</li>
+    </ul>
+
+    <h4>Step 4: Create Index</h4>
+    <ul>
+        <li><code>VectorStoreIndex.from_documents</code> builds our searchable data structure.</li>
+        <li>→ It takes documents → splits them into Nodes → generates embeddings for each node → stores them in memory.
+        </li>
+    </ul>
+
+    <div class="footer">
+        <span>LlamaIndex Complete Handbook</span>
+        <span>Page 4</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 1: Architecture</div>
+
+    <h4>Step 5: Query Engine</h4>
+    <ul>
+        <li>Convert the index into a <code>query_engine</code>.</li>
+        <li>→ This is the <strong>orchestrator</strong> that ties the retrieval (index) and the LLM together.</li>
+    </ul>
+
+    <h4>Step 6: Ask</h4>
+    <ul>
+        <li>Send the query: <em>"What has Sasidhar built?"</em></li>
+        <li>→ The engine retrieves the most similar nodes and sends them to LLM (Gemini) to extract the final answer.
+        </li>
+    </ul>
+
+    <h4>Step 7: Debugging (Retrieval Check)</h4>
+    <ul>
+        <li>Using <code>index.as_retriever()</code> to see the raw "retrieval layer".</li>
+        <li>→ This allows us to inspect the <strong>Nodes</strong>, their <strong>Similarity Scores</strong> (how
+            relevant the retriever thinks it is), and the <strong>Text content</strong>.</li>
+        <li>→ <strong>Crucial for UI/UX:</strong> Helps us verify if the correct context was even found before blaming
+            the LLM for a wrong answer.</li>
+    </ul>
+
+    <h4>Step 8: Output (Example)</h4>
+    <pre><code class="language-text">Response(response='Sasidhar has built an ATS system that includes resume parsing and an LLM.',...)
+
+--- Node 1 ---
+Score: 0.878144731169124
+Text: Sasidhar is an AI engineer specializing in backend systems.
+
+--- Node 2 ---
+Score: 0.7303317940960742
+Text: He built an ATS system with resume parsing and LLM.</code></pre>
+    <div class="footer">
+        <span>LlamaIndex Complete Handbook</span>
+        <span>Page 5</span>
+    </div>
+</div>

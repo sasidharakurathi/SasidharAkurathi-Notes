@@ -1,0 +1,303 @@
+<div class="page" id="chapter-03">
+    <div class="header">Chapter 3: Index Types Deep Dive</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 3 - Index Types Deep Dive (Vector vs Summary vs Tree)</h2>
+
+    <h3>What is an Index??</h3>
+    <p>We have already used:</p>
+    <pre><code class="language-python">VectorStoreIndex</code></pre>
+    <p>But what is it really?<br>
+        An Index = a strategy for organizing nodes so they can be retrieved efficiently for a query.</p>
+
+    <div class="plain-english-box">
+        <strong>Core point:</strong><br>
+        Retriever quality ≠ just embeddings<br>
+        Retriever quality = Index + Embeddings + Chunking
+    </div>
+
+    <h3>The 3 Core Index Types</h3>
+    <p>We'll focus on:</p>
+    <ol>
+        <li><code>VectorStoreIndex</code> → (default, most used)</li>
+        <li><code>SummaryIndex</code> → (global understanding)</li>
+        <li><code>TreeIndex</code> → (hierarchical reasoning)</li>
+    </ol>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Index Type</th>
+                <th>Use Case</th>
+                <th>Retrieval Method</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>VectorStoreIndex</code></td>
+                <td>Semantic search (similarity)</td>
+                <td>Vector similarity search</td>
+            </tr>
+            <tr>
+                <td><code>SummaryIndex</code></td>
+                <td>Retrieval via summarization</td>
+                <td>LLM-based summarization</td>
+            </tr>
+            <tr>
+                <td><code>TreeIndex</code></td>
+                <td>Hierarchical reasoning and retrieval</td>
+                <td>Tree traversal + LLM reasoning</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <span>LlamaIndex Complete Handbook</span>
+        <span>Page 11</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 3: Index Types Deep Dive</div>
+
+    <h3>1. VectorStoreIndex (Default Index)</h3>
+    <h4>What it does</h4>
+    <ul>
+        <li>It stores embeddings of nodes in a vector database (in-memory or external).</li>
+        <li>And it uses similarity search to retrieve relevant nodes based on the query embedding.</li>
+    </ul>
+
+    <h4>How VectorStoreIndex works internally</h4>
+    <pre><code class="language-text">Query → embedding → vector search → top-k nodes → LLM</code></pre>
+
+    <h4>When to use VectorStoreIndex?</h4>
+    <ul>
+        <li>Q&A systems</li>
+        <li>Search engines</li>
+        <li>RAG pipelines</li>
+        <li>ATS / document retrieval</li>
+    </ul>
+
+    <h4>Cons of VectorStoreIndex</h4>
+    <ul>
+        <li>No global understanding, it only retrieves based on local similarity.</li>
+        <li>Purely similarity-based, so it can miss relevant info if the query is not well-formed or if the embedding
+            model is not good.</li>
+    </ul>
+
+    <h4>Implementation of VectorStoreIndex</h4>
+    <ul>
+        <li>We have already implemented it in Topic 1 and 2.
+            <pre><code class="language-python">from llama_index.core import VectorStoreIndex
+
+index = VectorStoreIndex(
+    nodes,
+    embed_model=embed_model
+)</code></pre>
+        </li>
+
+        <li>Advanced Control
+            <pre><code class="language-python">query_engine = index.as_query_engine(
+    similarity_top_k=3  # control retrieval depth
+)</code></pre>
+        </li>
+        <li>This allows us to retrieve the top 3 most similar nodes for any query.</li>
+    </ul>
+
+    <div class="footer">
+        <span>LlamaIndex Complete Handbook</span>
+        <span>Page 12</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 3: Index Types Deep Dive</div>
+
+    <h3>2. SummaryIndex (Underrated but Powerful)</h3>
+    <h4>What it does</h4>
+    <ul>
+        <li>It builds a summary representation of all nodes using an LLM.</li>
+        <li>During retrieval, it uses the LLM to match the query against the summary instead of individual nodes.</li>
+        <li>This allows it to have a more global understanding of the content, rather than relying solely on local
+            similarity.</li>
+    </ul>
+
+    <h4>How SummaryIndex works internally</h4>
+    <pre><code class="language-text">All nodes → summarized → LLM answers from summary</code></pre>
+
+    <h4>When to use SummaryIndex?</h4>
+    <ul>
+        <li>"Give me an overview"</li>
+        <li>"Summarize this document"</li>
+        <li>Reports, dashboards</li>
+    </ul>
+
+    <h4>Cons of SummaryIndex</h4>
+    <ul>
+        <li>Loses fine-grained details since it relies on a summary representation.</li>
+        <li>Can be less accurate for specific queries that require detailed information.</li>
+        <li>Not good for precise Q&A or retrieval tasks that need exact matches.</li>
+    </ul>
+
+    <h4>Implementation of SummaryIndex</h4>
+    <pre><code class="language-python">from llama_index.core import SummaryIndex
+
+summary_index = SummaryIndex(nodes)
+
+query_engine = summary_index.as_query_engine(llm=llm)
+
+response = query_engine.query("Summarize Sasidhar's experience")
+print(response)</code></pre>
+
+    <div class="footer">
+        <span>LlamaIndex Complete Handbook</span>
+        <span>Page 13</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 3: Index Types Deep Dive</div>
+
+    <h3>3. TreeIndex (Hierarchical Reasoning)</h3>
+    <h4>What it does</h4>
+    <ul>
+        <li>It builds a tree structure of nodes based on their relationships (e.g., parent-child).</li>
+        <li>Each level summarizes the nodes below it, creating a hierarchy of information.</li>
+        <li>During retrieval, it traverses the tree to find relevant nodes and can perform reasoning across the
+            hierarchy.</li>
+    </ul>
+
+    <h4>How TreeIndex works internally</h4>
+    <pre><code class="language-text">Leaf nodes → grouped → summarized → higher nodes → final answer</code></pre>
+
+    <h4>When to use TreeIndex?</h4>
+    <ul>
+        <li>Large documents</li>
+        <li>Complex reasoning</li>
+        <li>Multi-step summarization</li>
+    </ul>
+
+    <h4>Cons of TreeIndex</h4>
+    <ul>
+        <li>More complex to build and maintain.</li>
+        <li>Can be slower for retrieval due to tree traversal and multiple LLM calls.</li>
+        <li>More expensive (more LLM calls).</li>
+    </ul>
+
+    <h4>Implementation of TreeIndex</h4>
+    <pre><code class="language-python">from llama_index.core import TreeIndex
+
+tree_index = TreeIndex(nodes, llm=llm)
+
+query_engine = tree_index.as_query_engine(llm=llm)
+
+response = query_engine.query("Explain Sasidhar's overall profile")
+print(response)</code></pre>
+
+    <div class="footer">
+        <span>LlamaIndex Complete Handbook</span>
+        <span>Page 14</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 3: Index Types Deep Dive</div>
+
+    <h3>Side by Side Comparison of Index Types</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Feature</th>
+                <th>Vector</th>
+                <th>Summary</th>
+                <th>Tree</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Retrieval</td>
+                <td>✅ Yes</td>
+                <td>❌ No</td>
+                <td>⚠️ Indirect</td>
+            </tr>
+            <tr>
+                <td>Global understanding</td>
+                <td>❌ No</td>
+                <td>✅ Yes</td>
+                <td>✅ Yes</td>
+            </tr>
+            <tr>
+                <td>Precision</td>
+                <td>✅ High</td>
+                <td>❌ Low</td>
+                <td>✅ Medium</td>
+            </tr>
+            <tr>
+                <td>Speed</td>
+                <td>⚡ Fast</td>
+                <td>⚡ Fast</td>
+                <td>🐢 Slow</td>
+            </tr>
+            <tr>
+                <td>Use case</td>
+                <td>RAG</td>
+                <td>Overview</td>
+                <td>Deep reasoning</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Implementation of Index in Real Time Systems:</h3>
+    <p>In real time systems, we never rely on just one index type. We often combine them for better performance.</p>
+
+    <p>Example:</p>
+    <ul>
+        <li><code>VectorIndex</code> → fetch relevant chunks</li>
+        <li><code>TreeIndex</code> → reason over them</li>
+        <li><code>SummaryIndex</code> → generate report</li>
+    </ul>
+
+    <p>This becomes <strong>multi-index routing</strong> (we will learn it in later modules).</p>
+
+    <h3>Troubleshooting Common Index Issues</h3>
+    <p><strong>1. Why is SummaryIndex giving vague answers?</strong><br>
+        Because it relies on a summary representation, it can miss fine-grained details.<br>
+        <strong>Fix:</strong>
+    </p>
+    <ul>
+        <li>Use <code>VectorIndex</code> for precise Q&A.</li>
+    </ul>
+
+    <p><strong>2. TreeIndex is slow</strong><br>
+        <code>TreeIndex</code> can be slower due to multiple LLM calls during traversal.<br>
+        So we need to use it only when necessary (complex reasoning).
+    </p>
+
+    <p><strong>3. VectorIndex misses context</strong><br>
+        Because it relies on local similarity, it can miss relevant info if the query is not well-formed or if the
+        embedding model is not good.<br>
+        <strong>Fix:</strong> (We will learn these techniques in later modules)
+    </p>
+    <ul>
+        <li>Hybrid retrieval</li>
+        <li>Reranking</li>
+        <li>Recursive retrieval</li>
+    </ul>
+
+    <h3>Task: To understand index</h3>
+    <p>Take the previous project from Topic 1 and modify it to use <code>SummaryIndex</code> instead of
+        <code>VectorStoreIndex</code>.
+    </p>
+    <ul>
+        <li>Check how the retrieved nodes and final answer changes with this new index type.</li>
+        <li>Then, try to implement <code>TreeIndex</code> and compare the results of all three index types side by side.
+        </li>
+        <li>Here is the
+            <code><a href="https://github.com/sasidharakurathi/LlamaIndex-Learning/blob/main/practice/Module%201/Topic%203/task.py" target="_blank">task.py</a></code>reference.
+        </li>
+    </ul>
+
+    <div class="footer">
+        <span>LlamaIndex Complete Handbook</span>
+        <span>Page 15</span>
+    </div>
+</div>

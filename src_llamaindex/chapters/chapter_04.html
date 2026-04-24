@@ -1,0 +1,184 @@
+<div class="page" id="chapter-04">
+    <div class="header">Chapter 4: StorageContext & Persistence</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 4 - StorageContext & Persistence (Stateful LlamaIndex Systems)</h2>
+
+    <p>Right now, every time we run our script, embeddings are generated from scratch, and the index is built from
+        scratch. This increases startup latency.</p>
+    <pre><code class="language-text">Documents → Nodes → Embeddings → Index → Query</code></pre>
+    <p>In real-world applications, we need to <strong>persist</strong> our index so that we can reuse it across multiple
+        runs and maintain state.<br>
+        Without persistence, our system is NOT production-ready.</p>
+
+    <h3>What is StorageContext?</h3>
+    <p><code>StorageContext</code> is an abstraction layer in LlamaIndex that manages where our index data lives and how
+        it's stored. It allows us to plug in different storage backends (in-memory, disk, cloud) without changing our
+        core logic.</p>
+
+    <p>It handles:</p>
+    <ul>
+        <li>Vector store (embeddings)</li>
+        <li>Document store</li>
+        <li>Index metadata</li>
+    </ul>
+
+    <div class="plain-english-box">
+        <strong>Mind Model:</strong><br>
+        <code>Nodes → Stored in → StorageContext → Backed by → Disk / DB / Cloud</code>
+    </div>
+
+    <h3>Components Inside StorageContext</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Component</th>
+                <th>Role</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>docstore</code></td>
+                <td>stores nodes</td>
+            </tr>
+            <tr>
+                <td><code>vector_store</code></td>
+                <td>stores embeddings</td>
+            </tr>
+            <tr>
+                <td><code>index_store</code></td>
+                <td>stores index structure</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <span>LlamaIndex Complete Handbook</span>
+        <span>Page 16</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 4: StorageContext & Persistence</div>
+
+    <h3>Let's see the practical implementation of Local Persistence</h3>
+    <p>We'll use:</p>
+    <ul>
+        <li>Local disk (free)</li>
+        <li>Default storage (simple and clean)</li>
+    </ul>
+
+    <ol>
+        <li>Go to
+            <code><a href="https://github.com/sasidharakurathi/LlamaIndex-Learning/tree/main/practice/Module%201/Topic%204" target="_blank">practice/Module 1/Topic 4/</a></code>
+        </li>
+        <li>Open <code>.env.example</code> and replace <code>YOUR_GEMINI_API_KEY</code> with your gemini api key</li>
+        <li>Rename <code>.env.example</code> to <code>.env</code></li>
+        <li>Install all requirements
+            <pre><code class="language-bash">pip install -r requirements.txt</code></pre>
+        </li>
+        <li>Execute the <code>main.py</code>
+            <pre><code class="language-bash">python main.py</code></pre>
+        </li>
+    </ol>
+
+    <h4>Step 1: Create StorageContext</h4>
+    <pre><code class="language-python">index.storage_context.persist(persist_dir=PERSIST_DIR)</code></pre>
+
+    <h4>Step 2: Load StorageContext</h4>
+    <pre><code class="language-python">from llama_index.core import StorageContext
+from llama_index.core import load_index_from_storage
+
+storage_context = StorageContext.from_defaults(
+    persist_dir="./storage"
+)
+
+index = load_index_from_storage(storage_context)</code></pre>
+
+    <p>Check <a
+            href="https://github.com/sasidharakurathi/LlamaIndex-Learning/blob/main/practice/Module%201/Topic%204/main.py"
+            target="_blank">main.py</a>
+        for complete code.</p>
+
+    <div class="usage-box">
+        <strong>This is the production design pattern:</strong><br>
+        Now we have:
+        <ul>
+            <li>No re-embedding</li>
+            <li>No re-indexing</li>
+            <li>Instant startup</li>
+        </ul>
+    </div>
+
+    <div class="footer">
+        <span>LlamaIndex Complete Handbook</span>
+        <span>Page 17</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 4: StorageContext & Persistence</div>
+
+    <h3>Troubleshooting Common Persistence Issues</h3>
+
+    <p><strong>1. Why My changes aren't reflected?</strong><br>
+        Because we are loading old persisted index.<br>
+        <strong>Fix:</strong>
+    </p>
+    <ul>
+        <li>Make sure to clear the storage directory if you want to start fresh.
+            <pre><code class="language-bash">rm -rf storage/ # Linux/Mac
+rd /s /q storage # Windows</code></pre>
+        </li>
+        <li>Then rebuild the index and persist it again.</li>
+    </ul>
+
+    <div class="mistake-box">
+        <strong>2. Embedding model mismatch</strong><br>
+        If we change the embedding model but reuse the old persisted index, the retrieval will be poor because the
+        embeddings won't match the new model's vector space. And the results will break silently without any
+        error.<br><br>
+        <strong>Note:</strong> <code>Same embedding model MUST be used for loading</code>
+    </div>
+
+    <p><strong>3. Corrupted storage / weird errors</strong><br>
+        This happens if the storage files get corrupted or if there are permission issues or if version mismatch of
+        LlamaIndex.<br>
+        <strong>Fix:</strong>
+    </p>
+    <ul>
+        <li>delete storage</li>
+        <li>rebuild</li>
+    </ul>
+
+    <h3>Advanced Insight (Other types of storage)</h3>
+    <p>In real systems, we don't just use disk:</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Storage</th>
+                <th>Use case</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Local disk</td>
+                <td>dev / small apps</td>
+            </tr>
+            <tr>
+                <td>ChromaDB</td>
+                <td>local + scalable</td>
+            </tr>
+            <tr>
+                <td>Pinecone / Weaviate</td>
+                <td>production cloud</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p><em>Note: We'll learn ChromaDB in next modules.</em></p>
+
+    <div class="footer">
+        <span>LlamaIndex Complete Handbook</span>
+        <span>Page 18</span>
+    </div>
+</div>

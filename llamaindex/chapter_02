@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LlamaIndex Complete Handbook</title>
+    <script type="text/javascript">
+        (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, "clarity", "script", "vxhj0j0zwn");
+    </script>
+    <style>:root {
+  --primary: #9d4edd;
+  --primary-strong: #7b2cbf;
+  --bg-main: #08060c;
+  --bg-surface: #100b18;
+  --bg-elevated: #160f24;
+  --text-main: #f4ebfc;
+  --text-muted: #b5a2cc;
+  --code-bg: #140d23;
+  --border-color: #2b1f42;
+  --danger-bg: #2d1421;
+  --warn-bg: #2b2210;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  overflow-x: hidden;
+  background: radial-gradient(circle at 8% 0%, #2a153d, transparent 40%), var(--bg-main);
+}
+
+body {
+  min-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 11pt;
+  color: var(--text-main);
+  background: transparent;
+  margin: 0;
+  display: block;
+}
+
+a,
+button {
+  touch-action: manipulation;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  border-bottom: 1px solid var(--border-color);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  background: rgba(9, 7, 14, 0.86);
+}
+
+.topbar-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  gap: 12px;
+}
+
+.topbar-context {
+  margin-left: auto;
+  margin-right: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(157, 78, 221, 0.28);
+  background: rgba(157, 78, 221, 0.12);
+  color: #eadbfa;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.brand {
+  text-decoration: none;
+  color: #ffffff;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.top-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-wrap: nowrap;
+}
+
+.top-link {
+  text-decoration: none;
+  color: #f1e5fa;
+  border: 1px solid rgba(157, 78, 221, 0.28);
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.top-link:visited {
+  color: #f1e5fa;
+}
+
+.top-link-btn {
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.hamburger-icon {
+  width: 16px;
+  height: 14px;
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.hamburger-icon span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  transform-origin: center;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.top-link-btn.is-open .hamburger-icon span:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.top-link-btn.is-open .hamburger-icon span:nth-child(2) {
+  opacity: 0;
+}
+
+.top-link-btn.is-open .hamburger-icon span:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+.top-link:hover {
+  background: rgba(157, 78, 221, 0.14);
+  color: #ffffff;
+}
+
+.top-link.active {
+  background: rgba(157, 78, 221, 0.22);
+  color: #ffffff;
+}
+
+.top-link.active:visited {
+  color: #ffffff;
+}
+
+.layout {
+  display: flex;
+  width: 100%;
+  min-height: calc(100vh - 57px);
+}
+
+.sidebar {
+  width: 320px;
+  background: linear-gradient(180deg, rgba(16, 11, 24, 0.98), rgba(10, 7, 16, 0.98));
+  border-right: 1px solid var(--border-color);
+  overflow-y: auto;
+  padding: 22px 18px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 57px;
+  height: calc(100vh - 57px);
+}
+
+.sidebar h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: var(--primary);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 10px;
+  letter-spacing: 0.03em;
+}
+
+.content-wrapper {
+  flex-grow: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 20px 38px;
+  background: linear-gradient(180deg, rgba(10, 8, 16, 0.4), rgba(10, 8, 16, 0.9));
+}
+
+.nav-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 36px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border-color);
+  width: min(210mm, 100%);
+}
+
+.nav-btn {
+  background-color: var(--primary);
+  color: #1a0f2b;
+  padding: 10px 18px;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 700;
+  transition: transform 0.18s ease, filter 0.18s ease;
+}
+
+.nav-btn:visited {
+  color: #1a0f2b;
+}
+
+.nav-btn:hover {
+  filter: brightness(0.94);
+  transform: translateY(-1px);
+}
+
+.nav-btn:hover,
+.nav-btn:focus-visible,
+.nav-btn:active,
+.nav-btn:hover:visited,
+.nav-btn:focus-visible:visited,
+.nav-btn:active:visited {
+  color: #1a0f2b;
+}
+
+.nav-btn.disabled {
+  background-color: #2a1f40;
+  color: #9b84be;
+  pointer-events: none;
+}
+
+.nav-btn.disabled:visited {
+  color: #9b84be;
+}
+
+.cover-page + .nav-buttons {
+  justify-content: center;
+  border-top: 0;
+  padding-top: 0;
+  margin-top: 22px;
+}
+
+.cover-page + .nav-buttons .nav-btn {
+  border-radius: 999px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #b36cf2, #8c3edf);
+  color: #ffffff;
+  letter-spacing: 0.02em;
+  box-shadow: 0 10px 24px rgba(127, 45, 199, 0.35);
+}
+
+.cover-page + .nav-buttons .nav-btn:visited {
+  color: #ffffff;
+}
+
+.cover-page + .nav-buttons .nav-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.02);
+  box-shadow: 0 14px 30px rgba(127, 45, 199, 0.42);
+}
+
+.cover-page + .nav-buttons .nav-btn:hover,
+.cover-page + .nav-buttons .nav-btn:focus-visible,
+.cover-page + .nav-buttons .nav-btn:active,
+.cover-page + .nav-buttons .nav-btn:hover:visited,
+.cover-page + .nav-buttons .nav-btn:focus-visible:visited,
+.cover-page + .nav-buttons .nav-btn:active:visited {
+  color: #ffffff;
+}
+
+.page {
+  background: linear-gradient(180deg, #1b122e, #140c21);
+  width: min(210mm, 100%);
+  min-height: 0;
+  margin-bottom: 24px;
+  box-shadow: 0 12px 38px rgba(0, 0, 0, 0.42);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: clamp(16px, 2.8vw, 1in);
+  position: relative;
+  page-break-after: always;
+}
+
+.page > h2:first-of-type {
+  margin-top: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+p,
+li {
+  line-height: 1.65;
+  color: var(--text-main);
+}
+
+a {
+  color: #c38cff;
+  transition: color 0.2s ease;
+}
+
+a:hover,
+a:focus-visible {
+  color: #dab0ff;
+}
+
+a:visited {
+  color: #a85eff;
+}
+
+.cover-page {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.cover-logo {
+  display: block;
+  align-self: center;
+  margin-top: 34px;
+  margin-bottom: 20px;
+}
+
+.cover-title {
+  font-size: clamp(34px, 4.2vw, 58px);
+  margin-bottom: 16px;
+  color: var(--primary);
+}
+
+.cover-subtitle {
+  font-size: clamp(16px, 2.2vw, 24px);
+  color: #d1c4e9;
+  margin-bottom: 34px;
+  font-weight: 500;
+}
+
+.cover-note,
+.cover-date {
+  font-size: 12pt;
+  color: var(--text-muted);
+}
+
+pre {
+  background-color: var(--code-bg);
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--primary);
+  padding: 14px;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 10pt;
+  overflow-x: auto;
+  border-radius: 8px;
+  max-height: 70vh;
+  overflow-y: auto;
+  color: #ede7f6;
+}
+
+code {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 10pt;
+  background-color: rgba(157, 78, 221, 0.12);
+  color: #ede7f6;
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+
+pre code {
+  background-color: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+.code-wrapper {
+  position: relative;
+  margin: 16px 0;
+}
+
+.code-wrapper pre {
+  margin: 0;
+  padding-top: 40px;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(157, 78, 221, 0.5);
+  background: rgba(16, 11, 24, 0.95);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.copy-btn:hover {
+  transform: translateY(-1px);
+  background: rgba(24, 18, 36, 0.98);
+  border-color: rgba(157, 78, 221, 0.8);
+}
+
+.copy-btn.copied {
+  background: rgba(157, 78, 221, 0.22);
+  color: #ffffff;
+}
+
+.plain-english-box {
+  background-color: rgba(157, 78, 221, 0.12);
+  border: 1px solid rgba(157, 78, 221, 0.45);
+  padding: 15px;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+.plain-english-box strong {
+  color: #dcb3ff;
+}
+
+.mistake-box {
+  background-color: var(--danger-bg);
+  border-left: 4px solid #ff5d73;
+  padding: 15px;
+  margin: 20px 0;
+  border-radius: 6px;
+}
+
+.usage-box {
+  background-color: var(--warn-bg);
+  border-left: 4px solid #ffc04d;
+  padding: 15px;
+  margin: 20px 0;
+  border-radius: 6px;
+}
+
+.header,
+.footer {
+  color: var(--text-muted);
+  position: static;
+  border-color: var(--border-color);
+}
+
+.header {
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 10px;
+  padding-bottom: 5px;
+  font-size: 9pt;
+  text-align: right;
+}
+
+.footer {
+  border-top: 1px solid var(--border-color);
+  margin-top: 14px;
+  padding-top: 5px;
+  font-size: 9pt;
+  display: flex;
+  justify-content: space-between;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 25px 0;
+}
+
+th,
+td {
+  border: 1px solid var(--border-color);
+  padding: 12px;
+  text-align: left;
+}
+
+th {
+  background-color: rgba(157, 78, 221, 0.1);
+  color: #ede7f6;
+}
+
+.toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.toc-list li {
+  margin-bottom: 8px;
+}
+
+.toc-list a,
+.toc-link {
+  appearance: none;
+  border: 0;
+  width: 100%;
+  text-align: left;
+  text-decoration: none;
+  background: transparent;
+  color: #d1c4e9;
+  font: inherit;
+  font-size: 0.98rem;
+  line-height: 1.45;
+  letter-spacing: 0.005em;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  overflow-wrap: anywhere;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 8px;
+}
+
+.toc-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2ch;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(157, 78, 221, 0.16);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.toc-label {
+  min-width: 0;
+}
+
+.toc-list a:hover,
+.toc-list a:focus-visible,
+.toc-link:hover,
+.toc-link:focus-visible {
+  background: rgba(157, 78, 221, 0.14);
+  color: #ffffff;
+  border-color: rgba(157, 78, 221, 0.34);
+}
+
+.toc-list a.active,
+.toc-link.active {
+  background: linear-gradient(90deg, rgba(157, 78, 221, 0.22), rgba(157, 78, 221, 0.08));
+  color: #ebfffc;
+  border-color: rgba(157, 78, 221, 0.45);
+}
+
+.toc-list a:visited {
+  color: #a39bb8;
+}
+
+.toc-section {
+  font-weight: 700;
+  font-size: 10pt;
+  color: var(--primary);
+  letter-spacing: 0.5px;
+  margin-top: 12px;
+  padding-top: 8px;
+}
+
+.toc-list .page-num {
+  color: var(--text-muted);
+  margin-left: 8px;
+}
+
+.link-status {
+  position: fixed;
+  left: 12px;
+  bottom: 10px;
+  z-index: 1200;
+  max-width: min(460px, calc(100vw - 24px));
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(157, 78, 221, 0.5);
+  background: rgba(16, 11, 24, 0.95);
+  color: #ffffff;
+  font-size: 9.5pt;
+  line-height: 1.2;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.link-status.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@page {
+  size: A4;
+  margin: 0;
+}
+
+@media print {
+  body {
+    background: #fff;
+    color: #111;
+    display: block;
+  }
+
+  .topbar {
+    display: none;
+  }
+
+  .layout {
+    min-height: 0;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .page {
+    box-shadow: none;
+    border: 0;
+    border-radius: 0;
+    width: 100%;
+    min-height: 297mm;
+    margin: 0;
+    page-break-after: always;
+    background: #fff;
+    color: #111;
+  }
+
+  .header {
+    position: absolute;
+    top: 0.5in;
+    left: 1in;
+    right: 1in;
+    margin: 0;
+  }
+
+  .footer {
+    position: absolute;
+    bottom: 0.5in;
+    left: 1in;
+    right: 1in;
+    margin: 0;
+  }
+}
+
+@media screen and (max-width: 1000px) {
+  .topbar {
+    position: sticky;
+    top: 0;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: rgba(10, 7, 16, 0.98);
+  }
+
+  .topbar-inner {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .topbar-context {
+    display: none;
+  }
+
+  .brand {
+    font-size: 0.88rem;
+    max-width: 42vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .top-link {
+    padding: 6px 9px;
+    font-size: 0.78rem;
+  }
+
+  .top-nav {
+    gap: 6px;
+    margin-left: auto;
+    width: auto;
+  }
+
+  .layout {
+    display: block;
+    min-height: 0;
+  }
+
+  body.toc-open {
+    overflow: hidden;
+  }
+
+  .sidebar {
+    display: block;
+    min-height: 0;
+    height: calc(100dvh - 68px);
+    position: fixed;
+    top: 68px;
+    left: 0;
+    width: min(88vw, 360px);
+    z-index: 60;
+    border-right: 1px solid var(--border-color);
+    border-bottom: 0;
+    padding: 14px 12px;
+    margin: 0;
+    border-radius: 0 12px 12px 0;
+    background: rgba(16, 11, 24, 0.95);
+    overflow-x: hidden;
+    overflow-y: auto;
+    max-height: none;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.36);
+    transform: translateX(-105%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
+    will-change: transform, opacity;
+  }
+
+  .sidebar h3 {
+    margin: 0 0 8px;
+    padding-bottom: 0;
+  }
+
+  .toc-list {
+    display: grid;
+    gap: 7px;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+
+  .toc-list li {
+    margin: 0;
+  }
+
+  .toc-list a,
+  .toc-link {
+    width: 100%;
+    white-space: normal;
+    border: 1px solid rgba(157, 78, 221, 0.28);
+    background: rgba(157, 78, 221, 0.09);
+    color: #ede7f6;
+    font-size: 0.88rem;
+    line-height: 1.3;
+    padding: 9px 10px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: 8px;
+  }
+
+  .toc-index {
+    min-width: 28px;
+    text-align: center;
+    padding: 2px 6px;
+    margin-top: 1px;
+  }
+
+  .toc-label {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+  }
+
+  body.toc-open .sidebar {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  body.toc-open .content-wrapper::before {
+    content: "";
+    position: fixed;
+    inset: 68px 0 0;
+    z-index: 50;
+    background: rgba(0, 0, 0, 0.6);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+  }
+
+  .content-wrapper {
+    padding: 12px;
+    overflow-y: visible;
+    min-height: 0;
+    position: relative;
+  }
+
+  .top-link-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 34px;
+    min-width: 38px;
+    padding: 0;
+  }
+
+  .page {
+    min-height: 0;
+    margin-bottom: 14px;
+  }
+
+  .nav-buttons {
+    width: 100%;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}
+
+@media screen and (max-width: 640px) {
+  .topbar-inner {
+    flex-wrap: nowrap;
+    padding: 8px 10px;
+  }
+
+  .top-nav {
+    width: auto;
+    gap: 5px;
+  }
+
+  .top-link {
+    flex: 0 0 auto;
+    text-align: center;
+    padding: 6px 8px;
+    font-size: 0.76rem;
+  }
+
+  .top-link-btn {
+    flex: 0 0 auto;
+    width: 36px;
+    min-width: 36px;
+  }
+
+  .nav-buttons {
+    flex-direction: column;
+  }
+
+  .nav-btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(11, 31, 32, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(157, 78, 221, 0.45);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(157, 78, 221, 0.75);
+}
+
+::selection {
+  background: rgba(157, 78, 221, 0.45);
+  color: #f5fffe;
+}
+</style>
+</head>
+<body data-handbook="llamaindex">
+    
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a class="brand" href="/">Developer Handbooks</a>
+            <span class="topbar-context" id="topbar-context" aria-live="polite"></span>
+            <nav class="top-nav" aria-label="Primary navigation">
+                <a href="/fastapi/" class="top-link ">FastAPI</a>
+                <a href="/docker/" class="top-link ">Docker</a>
+                <a href="/n8n/" class="top-link ">n8n</a>
+                <a href="/llamaindex/" class="top-link active">LlamaIndex</a>
+                <button id="toc-toggle" class="top-link top-link-btn" type="button" aria-expanded="false" aria-controls="toc-sidebar" aria-label="Open table of contents">
+                    <span class="hamburger-icon" aria-hidden="true"><span></span><span></span><span></span></span>
+                </button>
+            </nav>
+        </div>
+    </header>
+    <div class="layout">
+        <nav class="sidebar" id="toc-sidebar">
+            <h3>Table of Contents</h3>
+            <ul class="toc-list">
+<li><button class="toc-link" type="button" data-href="/llamaindex/chapter_01.html">CHAPTER 1 - LlamaIndex Architecture (Core Mental Model)</button></li>
+<li><button class="toc-link" type="button" data-href="/llamaindex/chapter_02.html">CHAPTER 2 - Documents vs Nodes vs Chunking (Where Most Systems Fail)</button></li>
+<li><button class="toc-link" type="button" data-href="/llamaindex/chapter_03.html">CHAPTER 3 - Index Types Deep Dive (Vector vs Summary vs Tree)</button></li>
+<li><button class="toc-link" type="button" data-href="/llamaindex/chapter_04.html">CHAPTER 4 - StorageContext & Persistence (Stateful LlamaIndex Systems)</button></li>
+<li><button class="toc-link" type="button" data-href="/llamaindex/chapter_05.html">CHAPTER 5 - Query Engine vs Retriever (Critical Distinction)</button></li>
+</ul>
+        </nav>
+        <main class="content-wrapper">
+            <div class="page" id="chapter-02">
+    <div class="header">Chapter 2: Documents vs Nodes</div>
+
+    <h2 style="margin-top: 0;">CHAPTER 2 - Documents vs Nodes vs Chunking (Where Most Systems Fail)</h2>
+
+    <h3>1. Documents (Input Layer - Temporary)</h3>
+    <pre><code class="language-python">Document(text="Sasidhar built an ATS system...")</code></pre>
+    <ul>
+        <li>This is the raw input layer.</li>
+        <li>It can be anything (PDF, text, DB rows, API response etc).</li>
+        <li>These exist only during ingestion.</li>
+        <li>They are not used for retrieval or LLM input directly.</li>
+    </ul>
+
+    <div class="plain-english-box">
+        <strong>In simple terms:</strong> Documents are just a source to generate Nodes.
+    </div>
+
+    <h3>2. Nodes (The Real Unit of Intelligence)</h3>
+    <p>As we discussed before, a node is a collection of <strong>chunk of text</strong> + <strong>metadata</strong> +
+        <strong>embedding</strong>.
+    </p>
+
+    <p>Example representation of a Node:</p>
+    <pre><code class="language-text">Node:
+- text: "Sasidhar built an ATS system..."
+- metadata: {}
+- embedding: [vector]</code></pre>
+
+    <h4>Why Nodes Exist?</h4>
+    <p>Because LLMs can't process huge text (due to limited input tokens), we need to break down documents into smaller
+        chunks of text (nodes) for efficient retrieval and feeding into the LLM.</p>
+    <ul>
+        <li>Smaller chunks → Better retrieval → Better LLM performance</li>
+    </ul>
+
+    <div class="footer">
+        <span>LlamaIndex Complete Handbook</span>
+        <span>Page 6</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 2: Documents vs Nodes</div>
+
+    <h3>3. Chunking (THE MOST IMPORTANT STEP IN RAG)</h3>
+    <p>Chunking is the process of breaking down documents into smaller, manageable pieces (nodes).<br>
+        Chunking decides whether your system is smart or useless.</p>
+
+    <div class="mistake-box">
+        <strong>Example of Bad Chunking:</strong><br>
+        <code>[Whole resume in one chunk]</code> or
+        <code>[Too small chunks like single sentences or single words]</code><br><br>
+        <strong>Problems:</strong>
+        <ul>
+            <li>Poor retrieval</li>
+            <li>Irrelevant context</li>
+            <li>Hallucinations</li>
+        </ul>
+    </div>
+
+    <div class="usage-box">
+        <strong>Example of Good Chunking:</strong><br>
+        <code>"Sasidhar built an ATS system with resume parsing and RAG."</code><br><br>
+        <strong>Benefits:</strong>
+        <ul>
+            <li>Self-contained meaning</li>
+            <li>Context preserved</li>
+            <li>Embedding is meaningful</li>
+        </ul>
+    </div>
+
+    <h3>What LlamaIndex Does by Default</h3>
+    <p>When we run:</p>
+    <pre><code class="language-python">VectorStoreIndex.from_documents(documents)</code></pre>
+    <p>It internally does this pipeline:</p>
+    <pre><code class="language-text">Documents → NodeParser → Nodes → Embeddings → Index</code></pre>
+
+    <div class="footer">
+        <span>LlamaIndex Complete Handbook</span>
+        <span>Page 7</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 2: Documents vs Nodes</div>
+
+    <h3>Let's see how we can control our chunking via practical implementation</h3>
+    <p>Now we take control. No more defaults.</p>
+    <ol>
+        <li>Go to
+            <code><a href="https://github.com/sasidharakurathi/LlamaIndex-Learning/tree/main/practice/Module%201/Topic%202" target="_blank">practice/Module 1/Topic 2/</a></code>
+        </li>
+        <li>Open <code>.env.example</code> and replace <code>YOUR_GEMINI_API_KEY</code> with your gemini api key.</li>
+        <li>Rename <code>.env.example</code> to <code>.env</code></li>
+        <li>Install all requirements:
+            <pre><code class="language-bash">pip install -r requirements.txt</code></pre>
+        </li>
+        <li>Execute the <code>main.py</code>:
+            <pre><code class="language-bash">python main.py</code></pre>
+        </li>
+    </ol>
+
+    <h3>Here is the code flow and output explanation</h3>
+
+    <h4>Step 1: Use a Node Parser (Explicit Chunking)</h4>
+    <ul>
+        <li>We use <code>SentenceSplitter</code> to define exactly how our text should be broken down.</li>
+        <li><code>chunk_size=100</code>: This limits each chunk to 100 tokens.</li>
+        <li><code>chunk_overlap=20</code>: This keeps 20 tokens of context from the previous chunk.</li>
+        <li>→ <strong>Why?</strong> Overlap ensures that if a sentence is split, the meaning is preserved in both
+            chunks.</li>
+    </ul>
+
+    <h4>Step 2: Convert Documents → Nodes</h4>
+    <ul>
+        <li>We manually execute <code>node_parser.get_nodes_from_documents(documents)</code>.</li>
+        <li>→ This transforms our single large <code>Document</code> into a list of small <code>Node</code> objects.
+        </li>
+        <li>→ This allows us to inspect and verify our chunks before they even get indexed.</li>
+    </ul>
+
+    <h4>Step 3: Build Index from Nodes</h4>
+    <ul>
+        <li>Instead of using <code>from_documents</code>, we pass the <code>nodes</code> list directly into
+            <code>VectorStoreIndex</code>.
+        </li>
+        <li>→ Since we already parsed the nodes, LlamaIndex skips the default parsing and uses our custom chunks.</li>
+        <li>→ This is how we take <strong>100% control</strong> over the retrieval unit.</li>
+    </ul>
+
+    <div class="footer">
+        <span>LlamaIndex Complete Handbook</span>
+        <span>Page 8</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 2: Documents vs Nodes</div>
+
+    <h4>Step 4: Output (Example)</h4>
+    <pre><code class="language-text">Loading weights: 100%|████████████████████████████| 199/199 [00:00<00:00, 11383.89it/s]
+
+--- Node 1 ---
+Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem...
+
+--- Node 2 ---
+It was popularised in the 1960s with the release of Letraset sheets containing...
+
+--- Node 3 ---
+The point of using Lorem Ipsum is that it has a more-or-less normal distribution...
+
+--- Node 4 ---
+Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots...
+
+--- Node 5 ---
+Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of "de Finibus Bonorum et...
+
+--- Node 6 ---
+There are many variations of passages of Lorem Ipsum available, but the majority...
+
+--- Node 7 ---
+It uses a dictionary of over 200 Latin words, combined with a handful of model...</code></pre>
+
+    <div class="footer">
+        <span>LlamaIndex Complete Handbook</span>
+        <span>Page 9</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="header">Chapter 2: Documents vs Nodes</div>
+
+    <h3>Troubleshooting Common Chunking Issues</h3>
+
+    <p><strong>1. My answers are irrelevant</strong><br>
+        90% of the time, it's a chunking issue. Check if the nodes are meaningful and self-contained.<br>
+        <strong>Fix:</strong>
+    </p>
+    <ul>
+        <li>Increase chunk size</li>
+        <li>Add more overlap</li>
+    </ul>
+
+    <p><strong>2. Retriever misses important info</strong><br>
+        If your chunks are too small or too large, the retriever might miss the relevant context.<br>
+        <strong>Fix:</strong>
+    </p>
+    <ul>
+        <li>Increase overlap</li>
+        <li>Use semantic chunking (later topic)</li>
+    </ul>
+
+    <p><strong>3. Too many irrelevant nodes retrieved</strong><br>
+        If our chunks are too large, they might contain a lot of irrelevant information, leading to noisy retrieval.<br>
+        <strong>Fix:</strong>
+    </p>
+    <ul>
+        <li>Decrease chunk size</li>
+    </ul>
+
+    <h3>Advanced Insight (Chunking Strategies)</h3>
+    <p>Different data requires different chunking approaches:</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Data Type</th>
+                <th>Strategy</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Resume</td>
+                <td>section-based chunking</td>
+            </tr>
+            <tr>
+                <td>Code</td>
+                <td>function-level chunking</td>
+            </tr>
+            <tr>
+                <td>Docs</td>
+                <td>paragraph-based</td>
+            </tr>
+            <tr>
+                <td>Chat logs</td>
+                <td>conversation windows</td>
+            </tr>
+            <tr>
+                <td>Web data</td>
+                <td>semantic chunking</td>
+            </tr>
+            <tr>
+                <td>Markdown</td>
+                <td>heading-based chunking</td>
+            </tr>
+            <tr>
+                <td>FAQs</td>
+                <td>Q&A pair chunking</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="usage-box">
+        <strong>Note:</strong> We will build custom chunkers later in the learning roadmap.
+    </div>
+
+    <h3>Task: To understand chunking better</h3>
+    <p>Take the previous project from Topic 1 and:</p>
+
+    <p><strong>1. Replace:</strong></p>
+    <pre><code class="language-python">VectorStoreIndex.from_documents(...)</code></pre>
+    <p><strong>With:</strong></p>
+    <ul>
+        <li>SentenceSplitter</li>
+        <li>Manual node creation</li>
+    </ul>
+
+    <p><strong>2. Experiment with:</strong></p>
+    <pre><code class="language-python">chunk_size = 50
+chunk_size = 150
+chunk_size = 300</code></pre>
+
+    <p><strong>3. Observe how the retrieved nodes and final answer changes with different chunking strategies.</strong>
+    </p>
+
+    <p><em>Note: Make sure to use long documents like your resume or a long article to see the impact of chunking.</em>
+    </p>
+
+    <div class="footer">
+        <span>LlamaIndex Complete Handbook</span>
+        <span>Page 10</span>
+    </div>
+</div>
+            <div class="nav-buttons"><a href="/llamaindex/chapter_01.html" class="nav-btn">← Previous</a><a href="/llamaindex/chapter_03.html" class="nav-btn">Next →</a></div>
+        </main>
+    </div>
+    <script src="/llamaindex/script.js" defer></script>
+</body>
+</html>

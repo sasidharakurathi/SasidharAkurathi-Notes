@@ -27,6 +27,14 @@
     {
       "source": "/n8n_chapter_:slug.html",
       "destination": "/n8n/chapter_:slug"
+    },
+    {
+      "source": "/llamaindex_chapter_:slug",
+      "destination": "/llamaindex/chapter_:slug"
+    },
+    {
+      "source": "/llamaindex_chapter_:slug.html",
+      "destination": "/llamaindex/chapter_:slug"
     }
   ]
 }
