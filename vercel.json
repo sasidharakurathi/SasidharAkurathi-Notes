@@ -3,18 +3,6 @@
   "outputDirectory": "dist",
   "cleanUrls": true,
   "trailingSlash": false,
-  "redirects": [
-    {
-      "source": "/claude_certified_architect_prep/index",
-      "destination": "/claude_index",
-      "permanent": false
-    },
-    {
-      "source": "/claude_certified_architect_prep/tracker",
-      "destination": "/tracker",
-      "permanent": false
-    }
-  ],
   "rewrites": [
     {
       "source": "/docker_chapter_:slug",
