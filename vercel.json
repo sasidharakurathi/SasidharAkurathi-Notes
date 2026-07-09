@@ -3,6 +3,18 @@
   "outputDirectory": "dist",
   "cleanUrls": true,
   "trailingSlash": false,
+  "redirects": [
+    {
+      "source": "/claude_certified_architect_prep/index",
+      "destination": "/claude_index",
+      "permanent": false
+    },
+    {
+      "source": "/claude_certified_architect_prep/tracker",
+      "destination": "/tracker",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/docker_chapter_:slug",
@@ -37,19 +49,11 @@
       "destination": "/llamaindex/chapter_:slug"
     },
     {
-      "source": "/claude_:slug",
-      "destination": "/claude_certified_architect_prep/:slug"
-    },
-    {
-      "source": "/claude_:slug.html",
-      "destination": "/claude_certified_architect_prep/:slug"
+      "source": "/claude_index",
+      "destination": "/claude_certified_architect_prep/index"
     },
     {
       "source": "/tracker",
-      "destination": "/claude_certified_architect_prep/tracker"
-    },
-    {
-      "source": "/tracker.html",
       "destination": "/claude_certified_architect_prep/tracker"
     }
   ]

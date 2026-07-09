@@ -558,7 +558,7 @@ def build_hub():
                 <p class="cta">Open handbook -></p>
             </a>
 
-            <a href="/claude_certified_architect_prep/" class="card ccap">
+            <a href="/claude_index" class="card ccap">
                 <div>
                     <span class="chip ccap">Certification</span>
                     <div class="card-head">
