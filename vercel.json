@@ -35,6 +35,14 @@
     {
       "source": "/llamaindex_chapter_:slug.html",
       "destination": "/llamaindex/chapter_:slug"
+    },
+    {
+      "source": "/claude_:slug",
+      "destination": "/claude_certified_architect_prep/:slug"
+    },
+    {
+      "source": "/claude_:slug.html",
+      "destination": "/claude_certified_architect_prep/:slug"
     }
   ]
 }
