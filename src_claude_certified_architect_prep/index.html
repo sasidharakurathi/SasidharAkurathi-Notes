@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CCAR-F Study Guide</title>
+<style>
+  :root {
+    --bg: #eef2f5;
+    --surface: #ffffff;
+    --surface-2: #e4eaee;
+    --grid-line: #c9d6dc;
+    --ink: #16283a;
+    --ink-muted: #55707f;
+    --accent: #1f7a8c;
+    --accent-ink: #ffffff;
+    --success: #3f8f5f;
+    --success-bg: #e3f1e8;
+    --warning: #b5791f;
+    --warning-bg: #f6ecd9;
+    --critical: #b1392f;
+    --critical-bg: #f6e2df;
+    --border: #c3d0d6;
+    --shadow: 0 1px 2px rgba(22,40,58,0.06), 0 8px 24px -12px rgba(22,40,58,0.18);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1b26; --surface: #16283a; --surface-2: #1c3247;
+      --grid-line: rgba(129,178,199,0.16); --ink: #e7eef3; --ink-muted: #93b0c0;
+      --accent: #5fd0e6; --accent-ink: #0f1b26;
+      --success: #6fcf97; --success-bg: #16311f;
+      --warning: #e3ab55; --warning-bg: #362a12;
+      --critical: #e2695c; --critical-bg: #38201d;
+      --border: #2b415580;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 28px -12px rgba(0,0,0,0.55);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1b26; --surface: #16283a; --surface-2: #1c3247;
+    --grid-line: rgba(129,178,199,0.16); --ink: #e7eef3; --ink-muted: #93b0c0;
+    --accent: #5fd0e6; --accent-ink: #0f1b26;
+    --success: #6fcf97; --success-bg: #16311f;
+    --warning: #e3ab55; --warning-bg: #362a12;
+    --critical: #e2695c; --critical-bg: #38201d;
+    --border: #2b415580;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 28px -12px rgba(0,0,0,0.55);
+    color-scheme: dark;
+  }
+  :root[data-theme="light"] {
+    --bg: #eef2f5; --surface: #ffffff; --surface-2: #e4eaee;
+    --grid-line: #c9d6dc; --ink: #16283a; --ink-muted: #55707f;
+    --accent: #1f7a8c; --accent-ink: #ffffff;
+    --success: #3f8f5f; --success-bg: #e3f1e8;
+    --warning: #b5791f; --warning-bg: #f6ecd9;
+    --critical: #b1392f; --critical-bg: #f6e2df;
+    --border: #c3d0d6;
+    --shadow: 0 1px 2px rgba(22,40,58,0.06), 0 8px 24px -12px rgba(22,40,58,0.18);
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+    line-height: 1.6;
+    font-size: 16px;
+  }
+  .display { font-family: Bahnschrift, "Arial Narrow", "Segoe UI Semibold", sans-serif; font-stretch: condensed; }
+  .mono { font-family: "Cascadia Code", Consolas, "SF Mono", ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; }
+  a { color: var(--accent); }
+  code { font-family: "Cascadia Code", Consolas, "SF Mono", ui-monospace, Menlo, monospace; background: var(--surface-2); padding: 1px 5px; border-radius: 3px; font-size: 0.88em; }
+
+  .shell { display: flex; min-height: 100vh; }
+
+  .sidebar {
+    width: 268px;
+    flex-shrink: 0;
+    background: var(--surface-2);
+    border-right: 1px solid var(--border);
+    padding: 22px 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .brand {
+    padding: 0 8px 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .brand .eyebrow { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+  .brand h1 { font-family: Bahnschrift, "Arial Narrow", sans-serif; font-stretch: condensed; font-size: 19px; margin: 3px 0 0; line-height: 1.25; text-wrap: balance; }
+
+  nav.navlist { display: flex; flex-direction: column; gap: 2px; }
+  .nav-group-label {
+    font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink-muted); padding: 14px 8px 6px;
+  }
+  .nav-btn {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    width: 100%; text-align: left; background: none; border: none; cursor: pointer;
+    color: var(--ink); font-family: inherit; font-size: 14px; padding: 8px 8px;
+    border-radius: 3px; border-left: 3px solid transparent;
+  }
+  .nav-btn:hover { background: var(--surface); }
+  .nav-btn.active { background: var(--surface); border-left-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .nav-btn .wt { font-size: 10.5px; color: var(--ink-muted); font-family: "Cascadia Code", Consolas, monospace; }
+  .nav-btn.active .wt { color: var(--accent); }
+
+  .sidebar-footer { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--border); }
+  .tracker-link {
+    display: block; text-align: center; font-family: Bahnschrift, "Arial Narrow", sans-serif;
+    font-stretch: condensed; letter-spacing: 0.05em; text-transform: uppercase; font-size: 11.5px;
+    background: var(--accent); color: var(--accent-ink); padding: 9px 10px; border-radius: 3px;
+    text-decoration: none; margin-bottom: 10px;
+  }
+  .sidebar-footer p { font-size: 11px; color: var(--ink-muted); padding: 0 4px; margin: 0; }
+
+  .menu-toggle {
+    display: none;
+    position: fixed; top: 12px; left: 12px; z-index: 40;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+    width: 40px; height: 40px; cursor: pointer; font-size: 18px; color: var(--ink);
+    box-shadow: var(--shadow);
+  }
+
+  main.content {
+    flex: 1;
+    min-width: 0;
+    padding: 40px clamp(20px, 5vw, 64px) 80px;
+    background: var(--bg);
+  }
+  .page { max-width: 780px; margin: 0 auto; display: none; }
+  .page.active { display: block; }
+
+  .page-eyebrow { font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); font-weight: 600; margin-bottom: 6px; }
+  .page h1 { font-family: Bahnschrift, "Arial Narrow", sans-serif; font-stretch: condensed; font-size: clamp(28px, 4vw, 38px); margin: 0 0 10px; text-wrap: balance; }
+  .lede { font-size: 17px; color: var(--ink-muted); max-width: 64ch; margin-bottom: 8px; }
+  .weight-badge {
+    display: inline-flex; align-items: baseline; gap: 6px; margin: 10px 0 22px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
+    padding: 5px 14px; font-family: "Cascadia Code", Consolas, monospace; font-size: 13px; color: var(--ink-muted);
+  }
+  .weight-badge b { color: var(--accent); font-size: 15px; }
+
+  h2.sec {
+    font-family: Bahnschrift, "Arial Narrow", sans-serif; font-stretch: condensed;
+    font-size: 18px; margin: 36px 0 6px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: baseline; gap: 10px;
+  }
+  h2.sec .num { color: var(--accent); font-family: "Cascadia Code", Consolas, monospace; font-size: 13.5px; }
+  h3 { font-family: Bahnschrift, "Arial Narrow", sans-serif; font-stretch: condensed; font-size: 16px; margin: 22px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul, ol { margin: 0 0 14px; padding-left: 22px; }
+  li { margin-bottom: 6px; }
+  strong { color: var(--ink); }
+
+  .table-wrap { overflow-x: auto; margin: 14px 0 20px; border: 1px solid var(--border); border-radius: 4px; }
+  table { border-collapse: collapse; width: 100%; background: var(--surface); font-size: 13.5px; }
+  table caption { caption-side: top; text-align: left; padding: 8px 12px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); background: var(--surface-2); }
+  th, td { text-align: left; padding: 9px 13px; border-bottom: 1px solid var(--grid-line); vertical-align: top; }
+  th { background: var(--surface-2); font-family: Bahnschrift, "Arial Narrow", sans-serif; font-stretch: condensed; font-size: 12px; letter-spacing: .03em; text-transform: uppercase; color: var(--ink-muted); }
+  tr:last-child td { border-bottom: none; }
+
+  .callout { border: 1px solid var(--border); border-left-width: 4px; border-radius: 4px; padding: 12px 16px; margin: 14px 0; background: var(--surface); font-size: 14.5px; }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout .ctag { display:block; font-family: Bahnschrift, "Arial Narrow", sans-serif; font-stretch: condensed; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 5px; }
+  .callout.note { border-left-color: var(--accent); }
+  .callout.note .ctag { color: var(--accent); }
+  .callout.trap { border-left-color: var(--warning); background: var(--warning-bg); }
+  .callout.trap .ctag { color: var(--warning); }
+  .callout.why { border-left-color: var(--critical); background: var(--critical-bg); }
+  .callout.why .ctag { color: var(--critical); }
+  .callout.fix { border-left-color: var(--success); background: var(--success-bg); }
+  .callout.fix .ctag { color: var(--success); }
+  .callout.correction { border-left-color: var(--warning); background: var(--warning-bg); }
+  .callout.correction .ctag { color: var(--warning); }
+
+  .selfcheck { border: 1px solid var(--border); border-radius: 4px; padding: 16px 18px; margin-top: 26px; background: var(--surface); }
+  .selfcheck h3 { margin-top: 0; }
+  .selfcheck ul { list-style: none; padding: 0; margin: 0; }
+  .selfcheck li { display: flex; gap: 8px; font-size: 14px; padding: 4px 0; }
+  .selfcheck li::before { content: "▢"; color: var(--accent); flex-shrink: 0; }
+  .track-nudge { margin-top: 14px; font-size: 13px; color: var(--ink-muted); }
+
+  .ap-card { border: 1px solid var(--border); border-radius: 5px; background: var(--surface); margin-bottom: 16px; overflow: hidden; }
+  .ap-head { display: flex; align-items: center; gap: 12px; padding: 13px 16px; background: var(--surface-2); }
+  .ap-num { font-family: "Cascadia Code", Consolas, monospace; font-size: 13px; color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .ap-badge { font-size: 10px; letter-spacing: .06em; padding: 2px 8px; border-radius: 999px; margin-left: auto; font-family: "Cascadia Code", Consolas, monospace; }
+  .ap-badge.confirmed { background: var(--success-bg); color: var(--success); }
+  .ap-badge.supp { background: var(--surface); color: var(--ink-muted); border: 1px solid var(--border); }
+  .ap-head h3 { margin: 0; font-size: 15px; }
+  .ap-body { padding: 14px 16px 16px; }
+
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px,1fr)); gap: 12px; margin: 18px 0 8px; }
+  .dcard { display: block; text-decoration: none; color: var(--ink); border: 1px solid var(--border); border-radius: 5px; padding: 14px 16px; background: var(--surface); transition: border-color .15s ease; }
+  .dcard:hover { border-color: var(--accent); }
+  .dcard .dcode { font-family: "Cascadia Code", Consolas, monospace; font-size: 12px; color: var(--ink-muted); }
+  .dcard .dname { font-family: Bahnschrift, "Arial Narrow", sans-serif; font-stretch: condensed; font-size: 15px; margin: 4px 0 8px; }
+  .dcard .dbar { height: 5px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+  .dcard .dbar > span { display: block; height: 100%; background: var(--accent); }
+  .dcard .dpct { font-size: 11.5px; color: var(--ink-muted); margin-top: 4px; font-family: "Cascadia Code", Consolas, monospace; }
+
+  .quiz-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 6px; position: sticky; top: 0; background: var(--bg); padding: 10px 0; z-index: 5; }
+  .filter-btn { font-family: "Cascadia Code", Consolas, monospace; font-size: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--ink-muted); padding: 6px 11px; border-radius: 999px; cursor: pointer; }
+  .filter-btn.active, .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .quiz-score { margin-left: auto; font-family: "Cascadia Code", Consolas, monospace; font-size: 13px; color: var(--ink-muted); }
+  .quiz-score b { color: var(--accent); }
+  .quiz-reset { font-family: "Cascadia Code", Consolas, monospace; font-size: 11.5px; border: 1px solid var(--critical); color: var(--critical); background: none; border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+
+  .qcard { border: 1px solid var(--border); border-radius: 5px; background: var(--surface); padding: 16px 18px; margin-bottom: 12px; }
+  .qcard .qnum { font-family: "Cascadia Code", Consolas, monospace; font-size: 12px; color: var(--accent); margin: 0 0 4px; }
+  .qcard.official .qnum { color: var(--warning); }
+  .qcard .qtext { font-size: 15px; margin-bottom: 12px; }
+  .opts { display: flex; flex-direction: column; gap: 7px; margin-bottom: 4px; }
+  .opts button {
+    text-align: left; font-family: Georgia, serif; font-size: 14px; color: var(--ink);
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px;
+    padding: 9px 12px; cursor: pointer; display: flex; gap: 8px;
+  }
+  .opts button .lt { font-family: "Cascadia Code", Consolas, monospace; color: var(--ink-muted); flex-shrink: 0; }
+  .opts button:hover:not(:disabled) { border-color: var(--accent); }
+  .qcard.answered .opts button { cursor: default; }
+  .qcard.answered .opts button.correct { background: var(--success-bg); border-color: var(--success); }
+  .qcard.answered .opts button.correct .lt { color: var(--success); }
+  .qcard.answered .opts button.wrong { background: var(--critical-bg); border-color: var(--critical); }
+  .qcard.answered .opts button.wrong .lt { color: var(--critical); }
+  .explain { display: none; margin-top: 10px; padding: 10px 13px; border-left: 3px solid var(--accent); background: var(--surface-2); font-size: 13.5px; border-radius: 0 4px 4px 0; }
+  .qcard.answered .explain { display: block; }
+
+  .gloss-search { width: 100%; max-width: 340px; padding: 9px 13px; border: 1px solid var(--border); border-radius: 999px; font-family: inherit; font-size: 14px; background: var(--surface); color: var(--ink); margin-bottom: 18px; }
+  .gloss-search:focus-visible { outline: 2px solid var(--accent); }
+  .term-card { border-bottom: 1px solid var(--grid-line); padding: 12px 0; }
+  .term-card dt { font-family: Bahnschrift, "Arial Narrow", sans-serif; font-stretch: condensed; font-size: 15px; color: var(--accent); }
+  .term-card dd { margin: 4px 0 0; font-size: 14px; color: var(--ink); }
+  dl { margin: 0; }
+
+  .top-note { display:flex; gap: 10px; align-items:flex-start; font-size: 13.5px; color: var(--ink-muted); border: 1px dashed var(--border); border-radius: 5px; padding: 10px 14px; margin-bottom: 26px; }
+  .official-badge { display:inline-block; background: var(--success-bg); color: var(--success); font-family: "Cascadia Code", Consolas, monospace; font-size: 10.5px; padding: 2px 8px; border-radius: 999px; margin-left: 6px; vertical-align: middle; }
+
+  ::selection { background: var(--accent); color: var(--accent-ink); }
+  button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+  @media (max-width: 880px) {
+    .menu-toggle { display: block; }
+    .sidebar {
+      position: fixed; left: 0; top: 0; z-index: 30; transform: translateX(-105%);
+      transition: transform .2s ease; box-shadow: var(--shadow);
+    }
+    .sidebar.open { transform: translateX(0); }
+    main.content { padding-top: 68px; }
+    .quiz-toolbar { top: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <button class="menu-toggle" id="menu-toggle" aria-label="Toggle navigation">☰</button>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="eyebrow">Study Guide · CCAR-F</div>
+      <h1>Claude Certified<br>Architect — Foundations</h1>
+    </div>
+    <nav class="navlist" id="navlist">
+      <button class="nav-btn" data-target="overview">Overview</button>
+      <div class="nav-group-label">Domains</div>
+      <button class="nav-btn" data-target="d1">Agentic Architecture <span class="wt">27%</span></button>
+      <button class="nav-btn" data-target="d2">Tool Design &amp; MCP <span class="wt">18%</span></button>
+      <button class="nav-btn" data-target="d3">Claude Code Config <span class="wt">20%</span></button>
+      <button class="nav-btn" data-target="d4">Prompting &amp; Output <span class="wt">20%</span></button>
+      <button class="nav-btn" data-target="d5">Context &amp; Reliability <span class="wt">15%</span></button>
+      <div class="nav-group-label">Review</div>
+      <button class="nav-btn" data-target="anti">Anti-Patterns</button>
+      <button class="nav-btn" data-target="quiz">Practice Exam</button>
+      <button class="nav-btn" data-target="gloss">Glossary</button>
+    </nav>
+    <div class="sidebar-footer">
+      <a class="tracker-link" href="tracker.html">Open progress tracker →</a>
+      <p>Rewritten against the official Exam Guide PDF (v1.0, July 2026). Markdown files in this folder are the source of truth.</p>
+    </div>
+  </aside>
+
+  <main class="content" id="content">
+
+    <!-- OVERVIEW -->
+    <section class="page active" id="page-overview">
+      <div class="page-eyebrow">Start here</div>
+      <h1>Exam Overview <span class="official-badge">OFFICIAL SOURCE</span></h1>
+      <p class="lede">Built directly from the official Exam Guide (v1.0, effective July 2026, exam code CCAR-F).</p>
+
+      <div class="top-note">✅ This page is now sourced from the official Anthropic Exam Guide PDF, not third-party estimates. Two corrections from earlier drafts: prompt-caching mechanics and a separate "Structured Outputs" API feature are <strong>explicitly out of scope</strong> — see §6 below.</div>
+
+      <h2 class="sec"><span class="num">01</span> What it validates</h2>
+      <p>Per the official guide: the exam validates that a practitioner can <strong>"make informed decisions about tradeoffs when implementing real-world solutions with Claude."</strong> Questions are grounded in realistic scenarios drawn from actual customer use cases. Target candidate: a solution architect with <strong>6+ months</strong> of hands-on experience with Claude APIs, the Agent SDK, Claude Code, and MCP.</p>
+
+      <h2 class="sec"><span class="num">02</span> Format — confirmed</h2>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Attribute</th><th>Value</th></tr>
+          <tr><td>Exam code</td><td><code>CCAR-F</code></td></tr>
+          <tr><td>Questions</td><td>60</td></tr>
+          <tr><td>Item format</td><td><strong>Multiple-choice AND multiple-response</strong> — some items require selecting more than one answer; each item states how many</td></tr>
+          <tr><td>Exam structure</td><td><strong>4 scenarios presented, drawn at random from a bank of 6</strong></td></tr>
+          <tr><td>Time limit</td><td>120 minutes</td></tr>
+          <tr><td>Passing score</td><td>720 / 1,000 (scaled, criterion-referenced — not curved)</td></tr>
+          <tr><td>Delivery</td><td>Proctored — online or Pearson VUE test center</td></tr>
+          <tr><td>Cost</td><td>$125 USD per attempt</td></tr>
+          <tr><td>Validity</td><td>12 months from award</td></tr>
+        </table>
+      </div>
+
+      <h2 class="sec"><span class="num">03</span> The 5 domains</h2>
+      <div class="card-grid">
+        <a class="dcard" href="#d1" data-nav="d1"><div class="dcode">DOMAIN 1</div><div class="dname">Agentic Architecture &amp; Orchestration</div><div class="dbar"><span style="width:27%"></span></div><div class="dpct">27% of exam</div></a>
+        <a class="dcard" href="#d3" data-nav="d3"><div class="dcode">DOMAIN 3</div><div class="dname">Claude Code Configuration &amp; Workflows</div><div class="dbar"><span style="width:20%"></span></div><div class="dpct">20% of exam</div></a>
+        <a class="dcard" href="#d4" data-nav="d4"><div class="dcode">DOMAIN 4</div><div class="dname">Prompt Engineering &amp; Structured Output</div><div class="dbar"><span style="width:20%"></span></div><div class="dpct">20% of exam</div></a>
+        <a class="dcard" href="#d2" data-nav="d2"><div class="dcode">DOMAIN 2</div><div class="dname">Tool Design &amp; MCP Integration</div><div class="dbar"><span style="width:18%"></span></div><div class="dpct">18% of exam</div></a>
+        <a class="dcard" href="#d5" data-nav="d5"><div class="dcode">DOMAIN 5</div><div class="dname">Context Management &amp; Reliability</div><div class="dbar"><span style="width:15%"></span></div><div class="dpct">15% of exam</div></a>
+      </div>
+
+      <h2 class="sec"><span class="num">04</span> The 6 scenarios (4 appear per sitting)</h2>
+      <ol>
+        <li><strong>Customer Support Resolution Agent</strong> — Agent SDK agent, custom MCP tools (<code>get_customer</code>, <code>lookup_order</code>, <code>process_refund</code>, <code>escalate_to_human</code>), 80%+ first-contact resolution target. <em>Primary domains: 1, 2, 5</em></li>
+        <li><strong>Code Generation with Claude Code</strong> — custom slash commands, CLAUDE.md, plan mode vs. direct execution. <em>Primary domains: 3, 5</em></li>
+        <li><strong>Multi-Agent Research System</strong> — coordinator + search/analysis/synthesis/report subagents. <em>Primary domains: 1, 2, 5</em></li>
+        <li><strong>Developer Productivity with Claude</strong> — built-in tools (Read/Write/Bash/Grep/Glob) + MCP servers. <em>Primary domains: 2, 3, 1</em></li>
+        <li><strong>Claude Code for Continuous Integration</strong> — automated review, test generation, minimizing false positives. <em>Primary domains: 3, 4</em></li>
+        <li><strong>Structured Data Extraction</strong> — JSON-schema validation, edge cases, downstream integration. <em>Primary domains: 4, 5</em></li>
+      </ol>
+
+      <h2 class="sec"><span class="num">05</span> Registration, retakes, recertification</h2>
+      <p>Handled through <strong>Anthropic Partner Academy + Pearson VUE</strong>. Register → create a Pearson VUE account → schedule online proctoring or a test center → cancel/reschedule 24h+ ahead penalty-free.</p>
+      <p><strong>Retake policy:</strong> waiting periods increase per attempt — 14 days after the 1st fail, 30 after the 2nd, 90 after the 3rd. Max 4 attempts per rolling 12 months; $125 applies every attempt.</p>
+      <p><strong>Recertification:</strong> credential lasts 12 months. On-time renewal = free, non-proctored assessment. Lapsed = full proctored retake at full fee.</p>
+
+      <h2 class="sec"><span class="num">06</span> Out-of-scope topics — don't over-study these</h2>
+      <div class="callout correction"><span class="ctag">Confirmed out of scope</span><p>Fine-tuning/training custom models · API auth/billing/account management · deep language/framework implementation details · deploying/hosting MCP servers (infra/networking) · Claude's internal architecture/training/RLHF · embeddings/vector DBs · computer use &amp; vision · streaming/SSE · rate limits/quotas/pricing · OAuth/key rotation · cloud-provider-specific config · performance benchmarking · <strong>prompt-caching implementation details</strong> (beyond knowing it exists) · tokenization internals.</p></div>
+
+      <h2 class="sec"><span class="num">07</span> Exam-day conduct</h2>
+      <p>Valid government-issued photo ID matching your registration exactly. Online: webcam on for the full session, clear workspace, no talking, no recording. You'll accept an NDA before starting. Appeals within 14 days via Pearson VUE — standard-setting outcomes and item content aren't appealable.</p>
+    </section>
+
+    <!-- DOMAIN 1 -->
+    <section class="page" id="page-d1">
+      <div class="page-eyebrow">Domain 1</div>
+      <h1>Agentic Architecture &amp; Orchestration</h1>
+      <div class="weight-badge"><b>27%</b> of the exam — the single biggest domain</div>
+      <p class="lede">7 official Task Statements, from the agentic loop through session management.</p>
+
+      <h2 class="sec"><span class="num">1.1</span> Design and implement agentic loops</h2>
+      <p>The loop: send a request → inspect <code>stop_reason</code> → if <code>"tool_use"</code>, execute and append results to history, then repeat → if <code>"end_turn"</code>, stop. This is <strong>model-driven</strong> decision-making, not a pre-configured decision tree.</p>
+      <div class="callout why"><span class="ctag">Named anti-patterns</span><p>Parsing natural-language signals to decide when to stop; an arbitrary iteration cap as the <em>primary</em> stop mechanism; checking for assistant text content as a "done" indicator. None of these are the real signal — use <code>stop_reason</code>.</p></div>
+
+      <h2 class="sec"><span class="num">1.2</span> Orchestrate multi-agent systems: coordinator-subagent patterns</h2>
+      <p><strong>Hub-and-spoke</strong>: the coordinator owns all inter-subagent communication, error handling, and routing. Subagents run with <strong>isolated context</strong> — they don't automatically inherit the coordinator's history. The coordinator decomposes, delegates, aggregates, and decides which subagents to invoke based on query complexity.</p>
+      <div class="callout why"><span class="ctag">Named anti-pattern — official sample question</span><p><strong>Overly narrow task decomposition.</strong> A coordinator researching "AI's impact on creative industries" that only spins up subtasks for digital art, graphic design, and photography misses music, writing, and film — even though every subagent executes its assigned task perfectly. The failure is in what the coordinator assigned, not how subagents performed.</p></div>
+      <p>Skills: dynamically selecting which subagents to invoke (not always the full pipeline); partitioning scope to avoid duplication; iterative refinement loops (evaluate synthesis for gaps → re-delegate with targeted queries → re-invoke); routing all communication through the coordinator for observability.</p>
+
+      <h2 class="sec"><span class="num">1.3</span> Configure subagent invocation, context passing, and spawning</h2>
+      <p>⚠️ The mechanism is the <strong><code>Task</code> tool</strong> — a coordinator's <code>allowedTools</code> must include <code>"Task"</code> to invoke subagents. Subagent context is <strong>not</strong> automatically inherited — include what's needed <strong>explicitly</strong> in its prompt. <code>AgentDefinition</code> configures description, system prompt, and tool restrictions per subagent type.</p>
+      <ul>
+        <li>Use <strong>structured data formats</strong> to separate content from metadata (source URLs, document names, page numbers) when passing context, to preserve attribution</li>
+        <li><strong>Spawn parallel subagents</strong> by emitting multiple <code>Task</code> calls in a single coordinator response, not across separate turns</li>
+        <li>Design coordinator prompts around <strong>goals and quality criteria</strong>, not step-by-step procedures, so subagents can adapt</li>
+      </ul>
+
+      <h2 class="sec"><span class="num">1.4</span> Multi-step workflows: enforcement and handoff</h2>
+      <div class="callout fix"><span class="ctag">Key phrase, memorize it</span><p>When deterministic compliance is required, "prompt instructions alone have a <strong>non-zero failure rate</strong>." That's the guide's own reasoning for choosing programmatic prerequisites over prompts.</p></div>
+      <p>Example: block <code>process_refund</code> until <code>get_customer</code> has returned a verified ID. For multi-concern requests: decompose into distinct items, investigate in parallel with shared context, then synthesize one response. Structured handoff summaries to humans should include customer ID, root cause, refund amount, recommended action.</p>
+
+      <h2 class="sec"><span class="num">1.5</span> Agent SDK hooks: tool call interception and data normalization</h2>
+      <ul>
+        <li><strong><code>PostToolUse</code></strong> — normalize heterogeneous data formats from different MCP tools (Unix timestamps vs. ISO 8601 vs. numeric codes) before Claude reasons over them</li>
+        <li><strong>Tool-call interception</strong> — block a policy-violating action (e.g., a refund over $500) and redirect to human escalation</li>
+      </ul>
+      <p>Choose hooks over prompting whenever a business rule needs a <strong>guaranteed</strong>, not probabilistic, outcome.</p>
+
+      <h2 class="sec"><span class="num">1.6</span> Task decomposition strategies</h2>
+      <p><strong>Prompt chaining</strong> (fixed sequential pipeline) for predictable multi-aspect reviews — e.g., analyze each file, then one cross-file integration pass. <strong>Dynamic/adaptive decomposition</strong> for open-ended investigation — generate subtasks based on what's discovered.</p>
+      <div class="callout why"><span class="ctag">Named anti-pattern — official sample question</span><p>A single review pass over 14 files produces inconsistent depth and even contradictory findings. The fix is <strong>per-file passes + a separate cross-file integration pass</strong> — not a bigger context window (doesn't fix attention dilution) and not requiring majority-consensus across repeated full-context runs (suppresses real intermittent findings).</p></div>
+
+      <h2 class="sec"><span class="num">1.7</span> Session state, resumption, and forking</h2>
+      <p>⚠️ <strong><code>--resume &lt;session-name&gt;</code></strong> continues a specific named session. <strong><code>fork_session</code></strong> branches an independent copy from a shared baseline to explore a divergent approach. When resuming after code changes, <strong>explicitly tell the agent which files changed</strong> — it won't auto-detect drift. If prior tool results are stale, starting fresh with an injected structured summary beats resuming.</p>
+
+      <div class="selfcheck">
+        <h3>Quick self-check</h3>
+        <ul>
+          <li>I can state the loop's stop_reason rule and the three termination anti-patterns.</li>
+          <li>I know the Task tool is the subagent mechanism and allowedTools must include "Task".</li>
+          <li>I can explain fork_session vs. --resume &lt;session-name&gt;.</li>
+          <li>I can recognize "overly narrow coordinator decomposition" as a root cause distinct from blaming a working subagent.</li>
+          <li>I know why per-file + integration passes beat one big pass, and why a bigger window doesn't fix that.</li>
+          <li>I know when hooks (not prompts) are required for guaranteed compliance.</li>
+        </ul>
+        <p class="track-nudge">Track these in the <a href="tracker.html">progress tracker →</a></p>
+      </div>
+    </section>
+
+    <!-- DOMAIN 2 -->
+    <section class="page" id="page-d2">
+      <div class="page-eyebrow">Domain 2</div>
+      <h1>Tool Design &amp; MCP Integration</h1>
+      <div class="weight-badge"><b>18%</b> of the exam</div>
+      <p class="lede">5 official Task Statements, from tool description design through built-in tool selection.</p>
+
+      <h2 class="sec"><span class="num">2.1</span> Design effective tool interfaces</h2>
+      <p>Tool descriptions are the <strong>primary mechanism</strong> models use for tool selection. Minimal descriptions ("Retrieves customer information") cause unreliable selection among similar tools.</p>
+      <div class="callout why"><span class="ctag">Official sample question — confirmed judgment call</span><p>When misrouting is caused by thin descriptions, the correct <strong>first step</strong> is expanding the descriptions (input formats, example queries, edge cases, boundaries) — not few-shot examples (token overhead, doesn't fix root cause), not a routing/classifier layer (over-engineered), and not immediately consolidating tools (valid, but more than a "first step").</p></div>
+      <p>Also watch for keyword-sensitive system-prompt wording creating unintended tool associations that override otherwise good descriptions.</p>
+
+      <h2 class="sec"><span class="num">2.2</span> Structured error responses for MCP tools</h2>
+      <p>The MCP <strong><code>isError</code></strong> flag signals failure. Categorize: transient / validation / business / permission. Recommended fields: <code>errorCategory</code>, <code>isRetryable</code>, human-readable description; for business violations, <code>retriable: false</code> plus a customer-friendly explanation.</p>
+      <div class="callout why"><span class="ctag">Two named anti-patterns</span><p>Generic errors ("Operation failed") hide context the agent needs to recover. And conflating an <strong>access failure</strong> (needs a retry decision) with a <strong>valid empty result</strong> (successful query, nothing found) breaks downstream reasoning either way.</p></div>
+      <p>Implement local recovery within subagents for transient failures; propagate to the coordinator only what couldn't be resolved locally, with partial results and what was attempted.</p>
+
+      <h2 class="sec"><span class="num">2.3</span> Distribute tools across agents; configure tool choice</h2>
+      <div class="callout note"><span class="ctag">Specific numbers from the guide</span><p>Giving an agent <strong>18 tools instead of 4–5</strong> degrades selection reliability by increasing decision complexity. Agents with tools outside their specialization tend to misuse them.</p></div>
+      <p><strong><code>tool_choice</code></strong>: <code>"auto"</code> (model decides) · <code>"any"</code> (must call a tool, chooses which) · forced <code>{"type":"tool","name":"..."}</code> (must call this specific tool first). Give narrow cross-role tools only for specific high-frequency needs (e.g., a scoped <code>verify_fact</code> tool), routing complex cases through the coordinator.</p>
+
+      <h2 class="sec"><span class="num">2.4</span> Integrate MCP servers into Claude Code and agent workflows</h2>
+      <div class="table-wrap"><table>
+        <tr><th>Scope</th><th>Location</th><th>Use</th></tr>
+        <tr><td>Project</td><td><code>.mcp.json</code></td><td>Shared team tooling, version-controlled, <code>${ENV_VAR}</code> expansion for credentials</td></tr>
+        <tr><td>User</td><td><code>~/.claude.json</code></td><td>Personal/experimental servers</td></tr>
+      </table></div>
+      <p>Tools from <strong>all</strong> configured servers are discovered at connection time and available simultaneously. <strong>MCP resources</strong> expose content catalogs (issue summaries, doc hierarchies, DB schemas) to cut down exploratory tool calls. Prefer existing community servers (e.g., Jira) over custom builds for standard integrations.</p>
+
+      <h2 class="sec"><span class="num">2.5</span> Built-in tools: Read, Write, Edit, Bash, Grep, Glob</h2>
+      <div class="table-wrap"><table>
+        <tr><th>Tool</th><th>Use for</th></tr>
+        <tr><td>Grep</td><td>Content search — function names, error messages, imports</td></tr>
+        <tr><td>Glob</td><td>File <em>path</em> pattern matching (<code>**/*.test.tsx</code>)</td></tr>
+        <tr><td>Read / Write</td><td>Full file operations</td></tr>
+        <tr><td>Edit</td><td>Targeted edit via unique text match — falls back to Read+Write if the anchor isn't unique</td></tr>
+      </table></div>
+      <p>Build codebase understanding incrementally: Grep for entry points, then Read to trace imports/flow — don't read everything upfront.</p>
+
+      <div class="selfcheck">
+        <h3>Quick self-check</h3>
+        <ul>
+          <li>I know why "expand the description" beats few-shot/routing/consolidation as the first fix for misrouting.</li>
+          <li>I can write a structured MCP error distinguishing the 4 error categories, and I know access-failure ≠ valid-empty-result.</li>
+          <li>I know the "18 vs 4–5" framing and all three tool_choice modes.</li>
+          <li>I know .mcp.json (project) vs. ~/.claude.json (user) MCP scoping.</li>
+          <li>I can pick the right built-in tool for a described scenario, including the Edit→Read+Write fallback.</li>
+        </ul>
+        <p class="track-nudge">Track these in the <a href="tracker.html">progress tracker →</a></p>
+      </div>
+    </section>
+
+    <!-- DOMAIN 3 -->
+    <section class="page" id="page-d3">
+      <div class="page-eyebrow">Domain 3</div>
+      <h1>Claude Code Configuration &amp; Workflows</h1>
+      <div class="weight-badge"><b>20%</b> of the exam</div>
+      <p class="lede">6 official Task Statements, from CLAUDE.md hierarchy through CI/CD integration.</p>
+
+      <h2 class="sec"><span class="num">3.1</span> CLAUDE.md hierarchy, scoping, modular organization</h2>
+      <div class="table-wrap"><table>
+        <tr><th>Level</th><th>Location</th><th>Shared?</th></tr>
+        <tr><td>User</td><td><code>~/.claude/CLAUDE.md</code></td><td>No — never propagates via VCS</td></tr>
+        <tr><td>Project</td><td><code>.claude/CLAUDE.md</code> or root <code>CLAUDE.md</code></td><td>Yes, via version control</td></tr>
+        <tr><td>Directory</td><td>Subdirectory <code>CLAUDE.md</code></td><td>Yes, scoped to that subtree</td></tr>
+      </table></div>
+      <div class="callout why"><span class="ctag">Diagnostic pattern</span><p>A new teammate not receiving expected instructions is the classic symptom of instructions living at <strong>user-level</strong> instead of <strong>project-level</strong>.</p></div>
+      <p><strong><code>@import</code></strong> keeps CLAUDE.md modular. <strong><code>.claude/rules/</code></strong> splits into topic files as an alternative to one monolith. <strong><code>/memory</code></strong> verifies which files are actually loaded — use it to diagnose inconsistent behavior.</p>
+
+      <h2 class="sec"><span class="num">3.2</span> Custom slash commands and skills</h2>
+      <p>Commands: project-scoped <code>.claude/commands/</code> (shared, VCS) vs. user-scoped <code>~/.claude/commands/</code> (personal). Skills: <code>.claude/skills/</code> with <code>SKILL.md</code> frontmatter — <strong><code>context: fork</code></strong> (isolated sub-agent context, keeps verbose output out of the main conversation), <strong><code>allowed-tools</code></strong> (restrict tools during execution), <strong><code>argument-hint</code></strong> (prompt for required params). Personal variants go in <code>~/.claude/skills/</code> under a different name.</p>
+
+      <h2 class="sec"><span class="num">3.3</span> Path-specific rules for conditional convention loading</h2>
+      <p><code>.claude/rules/</code> with YAML frontmatter <strong><code>paths:</code></strong> glob patterns — loads only when Claude touches a matching file.</p>
+      <div class="callout why"><span class="ctag">Official sample question</span><p>Test files scattered throughout a codebase (e.g., <code>Button.test.tsx</code> next to <code>Button.tsx</code>) need conventions that apply <strong>by file type, regardless of directory</strong>. A glob like <code>paths: ["**/*.test.tsx"]</code> handles this; subdirectory CLAUDE.md files can't (they're directory-bound), and consolidating into root CLAUDE.md relies on unreliable inference.</p></div>
+
+      <h2 class="sec"><span class="num">3.4</span> Plan mode vs. direct execution</h2>
+      <p><strong>Plan mode</strong>: large-scale changes, multiple valid approaches, architectural decisions, multi-file modifications — explore and design before committing. <strong>Direct execution</strong>: simple, well-scoped, single approach. The <strong><code>Explore</code> subagent</strong> isolates verbose discovery output to prevent context-window exhaustion.</p>
+      <div class="callout why"><span class="ctag">Official sample question</span><p>For a monolith→microservices restructuring (dozens of files, architectural decisions) — plan mode is correct <em>from the start</em>. "Start direct and switch to plan mode if surprised" is wrong because the complexity was already known upfront, not something that might emerge later.</p></div>
+
+      <h2 class="sec"><span class="num">3.5</span> Iterative refinement</h2>
+      <p><strong>2–3 concrete input/output examples</strong> when prose descriptions get inconsistent results. <strong>Test-driven iteration</strong>: write tests first, iterate on failures. <strong>The interview pattern</strong>: have Claude ask clarifying questions before implementing in an unfamiliar domain. Batch interacting issues into one message; fix independent issues sequentially.</p>
+
+      <h2 class="sec"><span class="num">3.6</span> Integrate Claude Code into CI/CD pipelines</h2>
+      <p><strong><code>-p</code></strong> (or <code>--print</code>) for non-interactive mode — prevents hangs waiting for input. <strong><code>--output-format json</code></strong> + <strong><code>--json-schema</code></strong> for machine-parseable findings (auto-posted as inline PR comments). CLAUDE.md carries project context (testing standards, fixtures, review criteria) to CI-invoked runs.</p>
+      <div class="callout note"><span class="ctag">Session isolation</span><p>The same session that generated code is <strong>less effective reviewing its own changes</strong> than an independent instance — it retains its own generation reasoning. (Connects to Domain 4's multi-instance review content.)</p></div>
+
+      <div class="selfcheck">
+        <h3>Quick self-check</h3>
+        <ul>
+          <li>I can diagnose the "new teammate missing instructions" symptom against the CLAUDE.md hierarchy.</li>
+          <li>I know context: fork, allowed-tools, argument-hint as skill frontmatter fields.</li>
+          <li>I know why glob-pattern rules beat subdirectory CLAUDE.md for file-type-based conventions.</li>
+          <li>I can pick plan mode vs. direct execution based on what's already known, not what might emerge.</li>
+          <li>I know -p, --output-format json, --json-schema, and why self-review is weaker than independent review.</li>
+        </ul>
+        <p class="track-nudge">Track these in the <a href="tracker.html">progress tracker →</a></p>
+      </div>
+    </section>
+
+    <!-- DOMAIN 4 -->
+    <section class="page" id="page-d4">
+      <div class="page-eyebrow">Domain 4</div>
+      <h1>Prompt Engineering &amp; Structured Output</h1>
+      <div class="weight-badge"><b>20%</b> of the exam</div>
+      <p class="lede">6 official Task Statements. <strong>Correction from earlier drafts</strong>: the exam's actual model of "reliable structured output" is <code>tool_use</code> + JSON schema — there is no separate constrained-decoding "Structured Outputs" feature tested, and prompt caching is out of scope.</p>
+
+      <h2 class="sec"><span class="num">4.1</span> Explicit criteria to improve precision, reduce false positives</h2>
+      <p>Explicit categorical criteria beat vague instructions — "flag comments only when claimed behavior contradicts actual code" beats "check that comments are accurate."</p>
+      <div class="callout why"><span class="ctag">Named anti-pattern</span><p>"Be conservative" or "only report high-confidence findings" <strong>fail to improve precision</strong> compared to specific criteria — confidence filtering isn't a substitute for defining what to report vs. skip.</p></div>
+      <p>A high false-positive rate in one category undermines trust in <em>all</em> categories — temporarily disabling a noisy category while fixing its prompt is a legitimate interim fix.</p>
+
+      <h2 class="sec"><span class="num">4.2</span> Few-shot prompting for consistency and quality</h2>
+      <p>Few-shot examples are the most effective technique for consistent output when prose alone is inconsistent. Good for: ambiguous-case handling, generalization to novel patterns, and reducing hallucination in extraction.</p>
+      <p><strong>2–4 targeted examples</strong> showing the <em>reasoning</em> for choosing one action over plausible alternatives; examples demonstrating the desired output format; examples distinguishing acceptable patterns from genuine issues; examples covering varied document structures.</p>
+
+      <h2 class="sec"><span class="num">4.3</span> Enforce structured output using tool use and JSON schemas</h2>
+      <div class="callout fix"><span class="ctag">The exam's actual answer for "reliable structured output"</span><p><code>tool_use</code> with a JSON schema — eliminates JSON <strong>syntax</strong> errors by construction. It does <strong>not</strong> prevent <strong>semantic</strong> errors (line items not summing to total, values in the wrong field).</p></div>
+      <p>Same <code>tool_choice</code> modes as Domain 2, applied here: <code>"any"</code> when the document type is unknown and multiple extraction schemas exist; forced named tool to guarantee a specific extraction runs first. Schema design: optional/nullable fields prevent fabricated values; enum + "other" + detail-string pattern for extensibility; an explicit <code>"unclear"</code> value for genuine ambiguity.</p>
+
+      <h2 class="sec"><span class="num">4.4</span> Validation, retry, and feedback loops</h2>
+      <p>Retry-with-error-feedback: include the original document, the failed extraction, and the specific validation error.</p>
+      <div class="callout why"><span class="ctag">The limit of retries</span><p>Retries fix <strong>format/structural</strong> errors but are <strong>ineffective</strong> when the required information is simply <strong>absent from the source</strong> — no amount of retrying recovers information that was never there.</p></div>
+      <p><code>detected_pattern</code> fields let you analyze which constructs trigger false positives. Self-correction flows: extract <code>calculated_total</code> alongside <code>stated_total</code> to flag discrepancies; add a <code>conflict_detected</code> boolean.</p>
+
+      <h2 class="sec"><span class="num">4.5</span> Batch processing strategies</h2>
+      <div class="table-wrap"><table>
+        <tr><th>Message Batches API</th><th>Fact</th></tr>
+        <tr><td>Cost</td><td>~50% savings</td></tr>
+        <tr><td>Latency</td><td>Up to 24h, <strong>no guaranteed SLA</strong></td></tr>
+        <tr><td>Tool calling</td><td><strong>No multi-turn tool calling within a single request</strong></td></tr>
+        <tr><td>Correlation</td><td><code>custom_id</code> per request/response pair</td></tr>
+      </table></div>
+      <div class="callout why"><span class="ctag">Official sample question</span><p>Batch is right for overnight/weekly non-blocking work; wrong for a <strong>blocking pre-merge check</strong> a developer is waiting on. Resubmit only failed documents by <code>custom_id</code>; refine the prompt on a small sample before batch-processing a large volume.</p></div>
+
+      <h2 class="sec"><span class="num">4.6</span> Multi-instance and multi-pass review architectures</h2>
+      <p>A session that generated code <strong>retains its own reasoning</strong>, making it less likely to question its own decisions — even with self-review instructions. An <strong>independent review instance</strong> catches subtle issues more reliably. Split large reviews into per-file + cross-file integration passes (see Domain 1, TS 1.6). Have the model self-report a confidence score per finding to enable calibrated review routing.</p>
+
+      <div class="selfcheck">
+        <h3>Quick self-check</h3>
+        <ul>
+          <li>I know tool_use + JSON schema is the exam's actual structured-output answer — not a separate feature.</li>
+          <li>I can explain syntax vs. semantic errors and give the "totals don't sum" example.</li>
+          <li>I know when retries help (format) vs. can't help (info absent from source).</li>
+          <li>I know the Batch API's exact tradeoffs, including "no multi-turn tool calling."</li>
+          <li>I know why independent review beats self-review.</li>
+        </ul>
+        <p class="track-nudge">Track these in the <a href="tracker.html">progress tracker →</a></p>
+      </div>
+    </section>
+
+    <!-- DOMAIN 5 -->
+    <section class="page" id="page-d5">
+      <div class="page-eyebrow">Domain 5</div>
+      <h1>Context Management &amp; Reliability</h1>
+      <div class="weight-badge"><b>15%</b> of the exam</div>
+      <p class="lede">6 official Task Statements. <strong>Correction from earlier drafts</strong>: prompt-caching mechanics (TTL, breakpoints, pricing) are out of scope — this domain is about information management and reliability judgment, not caching internals.</p>
+
+      <h2 class="sec"><span class="num">5.1</span> Manage conversation context across long interactions</h2>
+      <p>Progressive summarization risks condensing numbers, dates, and customer-stated expectations into vague summaries. <strong>"Lost in the middle"</strong>: models process the beginning/end of long inputs reliably but may omit middle sections. Tool results accumulate disproportionately to relevance (40+ fields when only 5 matter).</p>
+      <p>Fixes: a persistent <strong>"case facts" block</strong> outside summarized history; trim verbose tool outputs before they accumulate; place key findings at the <strong>beginning</strong> of aggregated inputs with explicit headers; have upstream agents return structured data instead of verbose prose when downstream context budgets are tight.</p>
+
+      <h2 class="sec"><span class="num">5.2</span> Escalation and ambiguity resolution</h2>
+      <div class="callout why"><span class="ctag">Two named anti-patterns — official sample question</span><p><strong>Sentiment-based escalation</strong> and <strong>self-reported confidence scores</strong> are both unreliable proxies for actual case complexity.</p></div>
+      <p>Correct triggers: explicit customer request for a human (honor immediately, no investigation first), genuine policy gap/exception, inability to progress. If merely frustrated but the issue is solvable, acknowledge and offer to resolve — escalate only if they reiterate. Multiple ambiguous matches → ask for an additional identifier, never guess heuristically.</p>
+
+      <h2 class="sec"><span class="num">5.3</span> Error propagation across multi-agent systems</h2>
+      <div class="callout why"><span class="ctag">Two opposite anti-patterns</span><p><strong>Silently suppressing</strong> an error (empty result marked success) and <strong>terminating the whole workflow</strong> on one failure are both wrong — both remove the coordinator's ability to make an informed recovery decision.</p></div>
+      <p>Structured error context (failure type, attempted query, partial results, alternatives) enables recovery. Distinguish an access failure (needs retry decision) from a valid empty result (doesn't).</p>
+
+      <h2 class="sec"><span class="num">5.4</span> Context management in large codebase exploration</h2>
+      <p>Context degradation shows up as inconsistent answers referencing "typical patterns" instead of specific classes found earlier. Fixes: <strong>subagent delegation</strong> to isolate verbose exploration; <strong>scratchpad files</strong> for key findings; <strong>summarize before the next phase</strong> rather than carrying raw exploration forward; <strong>manifests</strong> for crash recovery (each agent exports state, coordinator reloads on resume); <code>/compact</code> once verbose discovery fills the window.</p>
+
+      <h2 class="sec"><span class="num">5.5</span> Human review workflows and confidence calibration</h2>
+      <div class="callout why"><span class="ctag">The masking risk</span><p>A 97% aggregate accuracy figure can hide much worse performance on a specific document type or field.</p></div>
+      <p><strong>Stratified random sampling of high-confidence extractions specifically</strong> catches novel error patterns a naive low-confidence-only check would miss. Validate by document type and field segment before scaling back review; route low-confidence/contradictory cases to scarce reviewer capacity.</p>
+
+      <h2 class="sec"><span class="num">5.6</span> Information provenance and uncertainty in synthesis</h2>
+      <p>Source attribution is lost when findings are compressed without preserving claim-source mappings. Require subagents to output structured mappings (source URL, document name, excerpt) that synthesis preserves. Conflicting statistics from credible sources → <strong>include both with attribution</strong>, don't arbitrarily pick one. Require publication/collection dates so temporal differences aren't misread as contradictions.</p>
+
+      <div class="selfcheck">
+        <h3>Quick self-check</h3>
+        <ul>
+          <li>I can explain "lost in the middle" and name two mitigations.</li>
+          <li>I know sentiment-based escalation and self-reported confidence are both named anti-patterns.</li>
+          <li>I know why suppressing errors and terminating the whole workflow are opposite but equally wrong.</li>
+          <li>I know scratchpad files, phase summarization, and crash-recovery manifests for context degradation.</li>
+          <li>I know why a 97% aggregate figure can hide a bad segment.</li>
+          <li>I know why conflicting source data should be preserved with attribution, not resolved arbitrarily.</li>
+        </ul>
+        <p class="track-nudge">Track these in the <a href="tracker.html">progress tracker →</a></p>
+      </div>
+    </section>
+
+    <!-- ANTI-PATTERNS -->
+    <section class="page" id="page-anti">
+      <div class="page-eyebrow">Review</div>
+      <h1>Anti-Patterns &amp; Common Pitfalls</h1>
+      <p class="lede">18 patterns. ✅ Confirmed = directly named in the guide's task statements/sample questions. 🔹 Supplementary = a reasonable extension of the guide's stated principles.</p>
+      <div id="ap-list"></div>
+    </section>
+
+    <!-- PRACTICE EXAM -->
+    <section class="page" id="page-quiz">
+      <div class="page-eyebrow">Review</div>
+      <h1>Practice Exam</h1>
+      <p class="lede">50 original questions (Sections 1–5) plus the <strong>12 official sample questions from the Exam Guide itself</strong> (tagged "Official" — filter for them below). Click an option to check it; explanations reveal automatically. Progress is saved in this browser.</p>
+
+      <div class="quiz-toolbar">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="D1">D1</button>
+        <button class="filter-btn" data-filter="D2">D2</button>
+        <button class="filter-btn" data-filter="D3">D3</button>
+        <button class="filter-btn" data-filter="D4">D4</button>
+        <button class="filter-btn" data-filter="D5">D5</button>
+        <button class="filter-btn" data-filter="OFF">Official</button>
+        <span class="quiz-score" id="quiz-score">Score: <b>0</b> / 0 answered</span>
+        <button class="quiz-reset" id="quiz-reset" type="button">Reset quiz</button>
+      </div>
+
+      <div id="quiz-list"></div>
+    </section>
+
+    <!-- GLOSSARY -->
+    <section class="page" id="page-gloss">
+      <div class="page-eyebrow">Reference</div>
+      <h1>Glossary</h1>
+      <p class="lede">Quick-reference terms. Start typing to filter.</p>
+      <input type="text" class="gloss-search" id="gloss-search" placeholder="Filter terms…" />
+      <dl id="gloss-list"></dl>
+    </section>
+
+  </main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var navBtns = document.querySelectorAll(".nav-btn");
+  var pages = document.querySelectorAll(".page");
+  var sidebar = document.getElementById("sidebar");
+
+  function go(target) {
+    pages.forEach(function (p) { p.classList.toggle("active", p.id === "page-" + target); });
+    navBtns.forEach(function (b) { b.classList.toggle("active", b.dataset.target === target); });
+    sidebar.classList.remove("open");
+    window.scrollTo(0, 0);
+    if (history.replaceState) history.replaceState(null, "", "#" + target);
+  }
+  navBtns.forEach(function (b) { b.addEventListener("click", function () { go(b.dataset.target); }); });
+  document.querySelectorAll("[data-nav]").forEach(function (el) {
+    el.addEventListener("click", function (e) { e.preventDefault(); go(el.dataset.nav); });
+  });
+  document.getElementById("menu-toggle").addEventListener("click", function () {
+    sidebar.classList.toggle("open");
+  });
+
+  var initial = (location.hash || "").replace("#", "");
+  var valid = ["overview","d1","d2","d3","d4","d5","anti","quiz","gloss"];
+  go(valid.indexOf(initial) !== -1 ? initial : "overview");
+
+  /* ---------- anti-patterns ---------- */
+  var AP = [
+    ["Relying on prompts instead of programmatic enforcement for critical rules","confirmed","\"We told Claude in the system prompt that customer verification is mandatory before any order operation.\"","The guide's own phrasing: prompt instructions alone have a non-zero failure rate. When deterministic compliance matters, probabilistic compliance isn't good enough.","Programmatic prerequisites/hooks — e.g., block process_refund until get_customer returns a verified ID. (D1, TS 1.4/1.5)"],
+    ["Loop termination via natural-language parsing, iteration caps, or text-presence checks","confirmed","Deciding a loop is \"done\" by scanning text for phrases, capping iterations as the primary stop mechanism, or checking whether any text was returned.","None of these are the actual API signal.","Govern the loop by stop_reason: continue on \"tool_use\", stop on \"end_turn\". (D1, TS 1.1)"],
+    ["Overly narrow task decomposition by a coordinator","confirmed","A coordinator researching \"AI's impact on creative industries\" only spins up subtasks for digital art, graphic design, and photography.","Every subagent can execute perfectly and the system still fails, because the coordinator defined too narrow a scope.","Review coordinator scope for full breadth of the request. (D1, TS 1.2 — official Sample Question 7)"],
+    ["Ambiguous or overlapping tool descriptions causing misrouting","confirmed","Two tools like analyze_content and analyze_document with near-identical minimal descriptions cause misrouting.","Tool descriptions are the primary mechanism models use for selection — thin/overlapping descriptions remove the only signal available.","Expand descriptions with input formats, examples, edge cases, boundaries — the correct first step, ahead of few-shot examples, a routing layer, or consolidation. (D2, TS 2.1 — official Sample Question 2)"],
+    ["Giving one agent too many tools, or tools outside its specialization","confirmed","An agent has 18 tools available \"just in case,\" including ones belonging to a different role.","More tools increases decision complexity and degrades selection reliability; agents misuse tools outside their specialization.","Scope tools tightly per role (4–5, not 18), with narrow cross-role tools only for high-frequency needs. (D2, TS 2.3)"],
+    ["Uniform/generic error responses, and confusing access failures with valid empty results","confirmed","Every failure returns \"Operation failed\"; or an empty result is treated the same whether nothing was found or the call broke.","Generic errors hide context needed to recover intelligently; access failures need a retry decision, valid empty results don't.","Structured error metadata (errorCategory, isRetryable) with a clear failed-vs-succeeded-with-nothing distinction. (D2, TS 2.2; D5, TS 5.3)"],
+    ["Silently suppressing subagent errors, or terminating the whole workflow on one failure","confirmed","A failing subagent quietly returns an empty \"success,\" or its failure kills the entire run.","Opposite overcorrections to the same problem — both remove the coordinator's ability to make an informed recovery decision.","Structured error context (failure type, attempted, partial results, alternatives) to the coordinator, which can retry, try an alternative, or proceed with an annotated gap. (D5, TS 5.3)"],
+    ["Schema validation mistaken for semantic correctness","confirmed","Assuming a tool_use call matching its schema is necessarily a correct extraction.","Strict schemas eliminate syntax errors, not semantic ones — totals that don't sum, values in the wrong field.","Semantic checks alongside schema validation — e.g., calculated_total vs. stated_total. (D4, TS 4.3/4.4)"],
+    ["Routing a blocking, user-facing workflow through the Message Batches API","confirmed","Switching a pre-merge check to Batch because it's 50% cheaper.","Batch has no guaranteed SLA (up to 24h) and no multi-turn tool calling in a single request.","Synchronous for blocking checks, Batch for overnight/weekly non-blocking analysis. (D4, TS 4.5 — official Sample Question 11)"],
+    ["Assuming a bigger context window fixes attention dilution","confirmed","\"Upgrade to a larger context window so all 14 files get equal attention in one pass.\"","One pass over many files produces inconsistent depth and contradictory findings — an attention problem, not a capacity problem.","Per-file local passes + a separate cross-file integration pass. (D1, TS 1.6; D4, TS 4.6 — official Sample Question 12)"],
+    ["Self-reported model confidence, or customer sentiment, as an escalation trigger","confirmed","\"Escalate when confidence drops below N,\" or \"escalate when sentiment detects frustration.\"","Both are named as unreliable proxies for actual case complexity.","Escalate on explicit request, genuine policy gaps, or demonstrated inability to progress. (D5, TS 5.2 — official Sample Question 3)"],
+    ["Heuristic selection among multiple ambiguous matches","confirmed","A lookup returns several similar customers, and the agent guesses one.","Guessing risks acting on the wrong person's data.","Ask for an additional identifier to disambiguate. (D5, TS 5.2)"],
+    ["Aggregate accuracy metrics masking segment-level failure","confirmed","\"Our pipeline is 97% accurate overall, so we're fine to reduce human review.\"","A single aggregate figure can hide much worse performance on a specific document type or field.","Validate by document type/field segment; stratified sampling of high-confidence extractions specifically. (D5, TS 5.5)"],
+    ["Arbitrarily resolving conflicting source data instead of preserving both","confirmed","Two credible sources give different statistics, and synthesis just picks one.","Silently discarding a value hides a real disagreement from anyone downstream who needs to judge it.","Include both values with source attribution; require publication dates so time-based differences aren't misread as contradictions. (D5, TS 5.6)"],
+    ["Treating self-review as equivalent to independent review","supplementary","Asking the same session that generated code to also review it.","A session retains its own generation reasoning, making it less likely to question its own decisions.","Use a second, independent instance with no prior reasoning context. (D3, TS 3.6; D4, TS 4.6)"],
+    ["Session resumption without informing the agent what changed","supplementary","Resuming a named session after code changes, assuming the agent notices on its own.","Resumption doesn't auto-detect file changes; stale tool results can mislead.","Explicitly tell a resumed session which files changed, or start fresh with an injected summary. (D1, TS 1.7)"],
+    ["Consolidating all conventions into one root CLAUDE.md, relying on inference","supplementary","Putting React/API/DB conventions all in one file under headers, trusting Claude to apply the right section.","Relies on inference rather than deterministic matching — fragile for path-spanning conventions like test-file rules.","`.claude/rules/` with YAML frontmatter paths: glob patterns. (D3, TS 3.3 — official Sample Question 6)"],
+    ["Choosing plan mode/direct execution based on when complexity is discovered, not what's known","supplementary","\"Start direct, switch to plan mode only if something unexpected comes up\" for a task already described as large-scale and architectural.","The complexity isn't something that might emerge later — it's already known from the task description.","Use plan mode upfront for tasks already known to be architecturally significant. (D3, TS 3.4 — official Sample Question 5)"]
+  ];
+  var apList = document.getElementById("ap-list");
+  AP.forEach(function (a, i) {
+    var card = document.createElement("div");
+    card.className = "ap-card";
+    var badge = a[1] === "confirmed" ? '<span class="ap-badge confirmed">✅ CONFIRMED</span>' : '<span class="ap-badge supp">🔹 SUPPLEMENTARY</span>';
+    card.innerHTML =
+      '<div class="ap-head"><span class="ap-num">' + (i+1) + '</span><h3>' + a[0] + '</h3>' + badge + '</div>' +
+      '<div class="ap-body">' +
+      '<div class="callout trap"><span class="ctag">The trap</span><p>' + a[2] + '</p></div>' +
+      '<div class="callout why"><span class="ctag">Why it\'s wrong</span><p>' + a[3] + '</p></div>' +
+      '<div class="callout fix"><span class="ctag">The fix</span><p>' + a[4] + '</p></div>' +
+      '</div>';
+    apList.appendChild(card);
+  });
+
+  /* ---------- practice exam data ---------- */
+  var QUESTIONS = [
+["D1","You're building a multi-agent research system: a coordinator dispatches to a search subagent, an analysis subagent, and a synthesis subagent, each reporting back. What topology is this, and why is it preferred over agents messaging each other directly?",["Flat/mesh — it's simpler to implement","Hub-and-spoke — a single coordinator owns decomposition, integration, and failure handling","Peer-to-peer — subagents negotiate directly for lower latency","Round-robin — each subagent takes turns owning the conversation"],1,"Hub-and-spoke: coordinator owns decomposition/integration/failure-handling (TS 1.2)."],
+["D1","A team wants to guarantee that Claude never runs rm -rf in production, no matter what a user asks. Which mechanism actually guarantees this?","A CLAUDE.md rule: \"Never run destructive bash commands\"|A strongly worded system prompt repeated at the top of every message|A tool-call interception hook that inspects the Bash command and denies matching patterns|Asking Claude to double-check with the user before running any Bash command".split("|"),2,"Hooks are code-enforced, unlike prompts/CLAUDE.md (TS 1.4/1.5)."],
+["D1","When should you delegate work to a subagent rather than handling it directly in the main agent loop?","Whenever a task involves more than one tool call|When the task is parallelizable, needs isolated context, or is an independent workstream|Always — subagents produce higher quality output than the main loop|Only when the user explicitly asks for \"an agent\"".split("|"),1,"Parallelizable / isolated / independent work is the delegation criterion (TS 1.2/1.3)."],
+["D1","You need an agent to autonomously read files, run tests, and edit code with minimal custom glue code, without building your own tool-execution loop. What should you build on?","The raw Anthropic Client SDK, implementing your own tool loop|The Claude Agent SDK, which provides the agent loop and built-in tools|A custom REST wrapper with no tool use|The Message Batches API, scheduling tool calls asynchronously".split("|"),1,"Agent SDK gives you the loop + built-in tools out of the box."],
+["D1","A production agent needs to run inside your own infrastructure with full filesystem control, and you want to prototype quickly before scaling. What's the recommended progression?","Start with Managed Agents, then migrate to the Agent SDK once traffic grows|Prototype with the Agent SDK locally, then move to Managed Agents for production scale|Use the Client SDK exclusively at every stage|There is no recommended progression".split("|"),1,"Prototype on Agent SDK, scale on Managed Agents."],
+["D1","A coordinator needs to attribute which output came from which delegated subagent call for debugging and observability. What supports this?","Rate-limiting the subagent|A per-call identifier tying subagent messages back to the specific Task invocation|Encrypting the subagent's output|Automatically retrying failed subagent calls".split("|"),1,"Attribution of subagent output to its specific call (TS 1.3)."],
+["D1","A coordinator dispatches a task to a \"code-reviewer\" subagent. Which AgentDefinition design best follows least privilege?","Give it the full tool list including Bash and Edit, in case it needs them|Give it only Read, Glob, and Grep — what it needs for a read-only review|Give it no tools; feed it all file contents inline|Give it the Task tool so it can spawn its own subagents".split("|"),1,"Least privilege: only the tools the role needs (TS 1.3; anti-pattern #5)."],
+["D1","You want to continue a specific named prior Claude Code session, keeping all prior context. What's the correct mechanism?","--resume <session-name>|A brand-new session with the same prompt text repeated|fork_session, which always starts a blank session|Re-sending the entire prior conversation as one new user message".split("|"),0,"--resume <session-name> continues a specific named session (TS 1.7)."],
+["D1","What's the difference between --resume <session-name> and fork_session?","They are identical; \"fork\" is just older terminology for \"resume\"|Resume continues the same named session with full history; fork_session branches an independent copy from a shared baseline to explore a divergent approach|Fork deletes the original session; resume preserves it|Resume only works with subagents; fork only works with the main agent".split("|"),1,"Resume continues; fork_session branches without mutating original (TS 1.7)."],
+["D1","An engineer argues: \"We told Claude in CLAUDE.md to always confirm before deleting files, so we don't need any other safeguard.\" What's the flaw?","CLAUDE.md files are never loaded at session start|CLAUDE.md is context/guidance, not enforced configuration|CLAUDE.md only applies to subagents|There is no flaw; this is sufficient".split("|"),1,"CLAUDE.md is guidance, not enforcement (anti-pattern #1)."],
+["D1","For a very long-running coding task spanning multiple context windows, which state-tracking combination is recommended?","Rely entirely on the model's memory; write nothing to disk|Structured JSON for machine-parsed state + freeform progress notes + git commits as checkpoints|One unstructured text file updated at session end|Store all state exclusively in the system prompt".split("|"),1,"Structured JSON + freeform notes + git checkpoints (TS 1.6)."],
+["D1","Which scenario best justifies using plan mode instead of direct execution?","Renaming a single local variable in one file|A large refactor across a production codebase where a wrong first attempt would be costly|Reading a file to answer a question|Running a linter that only reports issues".split("|"),1,"High blast radius / architectural → plan mode (TS 3.4)."],
+["D1","A support-automation team wants each specialized agent (billing, returns, technical) to only access tools relevant to its domain. What principle is this?","Latency optimization only|Least privilege / tool scoping to reduce blast radius and tool-selection confusion|Batch processing optimization|Prompt caching optimization".split("|"),1,"Least privilege / tool scoping (TS 2.3)."],
+["D1","A coordinator asked to research \"impact of AI on creative industries\" only creates subtasks for digital art, graphic design, and photography, completely missing music, writing, and film. Every subagent executes its assigned task correctly. What's the root cause?","The synthesis agent lacks gap-identification instructions|The coordinator's task decomposition is too narrow|The web search agent's queries aren't comprehensive enough|The document analysis agent is filtering out non-visual sources".split("|"),1,"Coordinator decomposition too narrow — the subagents did their assigned jobs correctly (TS 1.2, official Sample Q7)."],
+["D2","Which is the strongest description for a custom tool named get_weather?","\"Gets weather.\"|\"Weather tool.\"|\"Get current weather conditions for a specified location. Use this when the user asks about current conditions, temperature, or forecasts.\"|No description is needed if the name is self-explanatory".split("|"),2,"Description should say what AND when to use it (TS 2.1)."],
+["D2","A tool call fails because an upstream API returned a 500 error. Which tool_result is the best design?","Return an empty array [] so the agent isn't confused by error text|Return {isError:true, isRetryable:true, errorCategory:\"transient\", message:\"...\"}|Return the raw HTTP response with no structure|Silently retry three times internally and never inform the model".split("|"),1,"Structured error with isError/isRetryable/errorCategory (TS 2.2)."],
+["D2","What are the three core primitives an MCP server exposes to clients?","Tools, Resources, Prompts|Sessions, Tokens, Endpoints|Models, Datasets, Pipelines|Requests, Responses, Errors".split("|"),0,"Tools (actions), Resources (content catalogs), Prompts (templates)."],
+["D2","Where should a shared, team-wide MCP server be configured?","Project-scoped .mcp.json|User-scoped ~/.claude.json|A CLAUDE.md entry|A .claude/skills/ file".split("|"),0,".mcp.json is project-level, shared via version control (TS 2.4)."],
+["D2","Where should a personal, experimental MCP server be configured so it doesn't affect teammates?","Project-scoped .mcp.json|User-scoped ~/.claude.json|The root CLAUDE.md|.claude/commands/".split("|"),1,"~/.claude.json is user-level, personal/experimental (TS 2.4)."],
+["D2","You want Claude guaranteed to call a specific tool, not just likely to based on the prompt. What should you configure?","A stronger system prompt reminding Claude to use the tool|tool_choice: {\"type\":\"tool\",\"name\":\"your_tool\"}|Increase max_tokens|Enable a Message Batches job".split("|"),1,"Forced tool_choice guarantees a specific tool call (TS 2.3)."],
+["D2","Logs show the agent frequently calls the wrong one of two similar tools, both with minimal one-line descriptions accepting similar identifiers. What's the most effective first step?","Add 5-8 few-shot examples showing correct tool selection|Expand each tool's description with input formats, example queries, and explicit boundaries|Build a keyword-based routing layer to pre-select the tool|Immediately consolidate both tools into one generic tool".split("|"),1,"Expand descriptions first — confirmed root-cause fix (TS 2.1, official Sample Q2)."],
+["D2","A company builds an internal Slack-notification tool used by only one internal agent, with no plan to reuse it. What's the simplest appropriate design?","A full MCP server with its own transport layer|A plain custom tool with an input_schema, executed directly|A Message Batches job|A subagent with no tools".split("|"),1,"Single-consumer integration doesn't need MCP overhead."],
+["D2","Which built-in tool combination best fits \"find where a bug might live in an unfamiliar 500-file codebase\" without spawning unnecessary subagents?","Bash with a hand-written find-and-grep shell pipeline|Glob + Grep + Read, used directly, building understanding incrementally|Immediately spawn 10 subagents, one per top-level directory|WebSearch, since the answer might be documented online".split("|"),1,"Narrowest correct built-in combo, incremental exploration (TS 2.5)."],
+["D3","Which CLAUDE.md location is never shared with teammates via version control?","./CLAUDE.md|~/.claude/CLAUDE.md|A subdirectory CLAUDE.md|A managed-policy CLAUDE.md".split("|"),1,"User-level ~/.claude/CLAUDE.md applies only to that user (TS 3.1)."],
+["D3","Test files are spread throughout a codebase (Button.test.tsx next to Button.tsx) and you want consistent test conventions regardless of location. What's the most maintainable fix?","Consolidate all conventions in root CLAUDE.md under headers|Create a .claude/rules/ file with YAML frontmatter paths: [\"**/*.test.tsx\"]|Create a skill requiring manual invocation before writing tests|Place a separate CLAUDE.md in every subdirectory".split("|"),1,"Glob-pattern rules apply by file type regardless of directory (TS 3.3, official Sample Q6)."],
+["D3","What's the key difference between CLAUDE.md and auto memory?","They are the same mechanism with different names|CLAUDE.md is written by you (instructions/rules); auto memory is written by Claude itself|Auto memory has no size limit; CLAUDE.md is capped by the system|CLAUDE.md only works for subagents".split("|"),1,"You write CLAUDE.md; Claude writes auto memory."],
+["D3","A new team member isn't receiving expected coding-standard instructions that other team members get automatically. What's the most likely cause?","The instructions are in ~/.claude/CLAUDE.md (user-level) instead of project-level|The instructions are too short|The instructions use @import syntax|The instructions are in a skill instead of a command".split("|"),0,"User-level settings never propagate to teammates via version control (TS 3.1)."],
+["D3","For packaging a repeatable, shareable team workflow going forward, what's the currently preferred mechanism?","Skills (.claude/skills/*/SKILL.md)|A new CLAUDE.md entry per invocation|A shell alias|An MCP resource".split("|"),0,"Skills are the modern preferred mechanism (TS 3.2)."],
+["D3","Which skill frontmatter field runs a skill in an isolated sub-agent context, keeping verbose output out of the main conversation?","allowed-tools|context: fork|argument-hint|paths".split("|"),1,"context: fork isolates skill execution (TS 3.2)."],
+["D3","Which flag runs Claude Code non-interactively, suitable for piping into CI/CD scripts?","--interactive|-p|--batch-mode|--headless-only".split("|"),1,"-p (or --print) = non-interactive mode (TS 3.6)."],
+["D3","A GitHub Action needs Claude Code to post a PR review comment that a downstream bot will parse automatically. Which combination is required?","Only CI/CD integration — structured output isn't relevant|Non-interactive -p mode AND --output-format json/--json-schema for reliable parsing|Only structured output — CI/CD mechanics are irrelevant|An MCP server, since this is fundamentally an MCP problem".split("|"),1,"CI/CD mechanics (TS 3.6) + reliable structured output (TS 4.3) together."],
+["D3","You've been assigned to restructure a monolith into microservices across dozens of files with architectural decisions to make. Which approach?","Enter plan mode to explore dependencies and design an approach before changing code|Start with direct execution and let boundaries emerge incrementally|Use direct execution with exhaustive upfront instructions|Begin in direct execution, switch to plan mode only if surprised".split("|"),0,"Plan mode is designed for exactly this (TS 3.4, official Sample Q5)."],
+["D3","What does /init do?","Deletes any existing CLAUDE.md and starts blank every time|Analyzes the codebase and generates/suggests a starting CLAUDE.md with discovered conventions|Installs MCP servers automatically|Runs the full test suite".split("|"),1,"/init analyzes the codebase and generates/suggests CLAUDE.md."],
+["D4","You need extraction output that reliably matches an exact schema, because a downstream system crashes on malformed input. Which mechanism?","Ask nicely in the prompt for \"valid JSON only\"|tool_use with a JSON schema — eliminates syntax errors by construction|Prefill the assistant's response with {|Increase temperature for more creative formatting".split("|"),1,"tool_use + JSON schema is the exam's actual structured-output answer (TS 4.3)."],
+["D4","A team validates output only against its JSON Schema and ships it to a billing system. A bug slips through where amounts are swapped between subtotal and tax, both correctly typed. What's missing?","Nothing — schema validation was sufficient|Programmatic/semantic validation on top of schema validation|A larger context window|The Message Batches API".split("|"),1,"Schema = syntax only; need semantic validation too (TS 4.3/4.4)."],
+["D4","Roughly how many few-shot examples does the guide recommend for an ambiguous scenario?","1|2–4|50+|0 — examples reduce reliability".split("|"),1,"2–4 targeted examples for ambiguous scenarios (TS 4.2)."],
+["D4","Which technique is recommended for structuring a prompt mixing instructions, context, examples, and variable input?","Concatenate everything as undifferentiated prose|Wrap each content type in its own XML tag so Claude can parse them unambiguously|Put everything in the system prompt, leave the user message empty|Use only bullet points, never tags".split("|"),1,"XML tags disambiguate mixed content types."],
+["D4","Extraction from a document sometimes has fields the source simply doesn't contain. How should the schema handle this?","Make every field required so nothing is missed|Make those fields optional/nullable so the model doesn't fabricate values to satisfy them|Reject the document entirely|Always default missing fields to an empty string".split("|"),1,"Nullable/optional fields prevent fabricated values (TS 4.3)."],
+["D4","A blocking pre-merge check and an overnight technical-debt report both currently use real-time calls. Your manager wants to move both to the Message Batches API for the 50% savings. What's the right evaluation?","Move both — savings apply regardless of workflow|Move only the overnight report; keep the pre-merge check synchronous, since Batch has no guaranteed latency SLA|Keep both synchronous to avoid custom_id correlation issues|Move both with a timeout fallback to synchronous calls".split("|"),1,"Batch is wrong for blocking workflows (TS 4.5, official Sample Q11)."],
+["D4","Which is a stronger way to instruct Claude to avoid markdown bullet lists in long-form output?","\"Do not use bullet points.\"|\"Write in flowing prose paragraphs; reserve markdown for inline code and simple headings.\"|Leave it unspecified and hope for the best|Set max_tokens very low".split("|"),1,"Tell Claude what TO do, not just what to avoid (TS 4.1)."],
+["D4","What's the primary purpose of a validation/retry loop for structured extraction?","Silently discard failed generations without telling the model why|Validate output, and on failure feed the specific validation error back to Claude for a targeted retry|Always retry with the exact same prompt regardless of the failure reason|Increase temperature until output validates by chance".split("|"),1,"Feed the actual validation error back for a targeted retry (TS 4.4)."],
+["D4","An extraction keeps failing on a specific field because the source document genuinely never contains that information. What should you do?","Keep retrying — retries eventually recover missing information|Recognize retries won't help here and make the field optional/nullable instead|Increase max_tokens|Switch to the Message Batches API".split("|"),1,"Retries don't work when information is absent from the source (TS 4.4)."],
+["D4","What does tool_choice: \"none\" do?","Forces Claude to call every available tool|Prevents Claude from calling any tool, forcing a direct text response|Deletes all tool definitions from the request|Is equivalent to tool_choice: \"auto\"".split("|"),1,"tool_choice:\"none\" blocks all tool calls."],
+["D5","During an extended codebase-exploration session, the model starts giving inconsistent answers and referencing \"typical patterns\" instead of the specific classes it identified earlier. What's the most effective mitigation?","Restart the task from scratch with no context at all|Have the agent maintain a scratchpad file recording key findings, and reference it explicitly later|Ignore it — this is expected and self-corrects|Switch to a completely unrelated task to \"reset\" the model".split("|"),1,"Scratchpad files counteract context degradation (TS 5.4)."],
+["D5","A coordinator needs to survive a crash mid-way through a long multi-agent exploration and resume where it left off. What's the recommended design?","Rely on the model's memory with no external state|Each agent exports structured state to a known location; the coordinator loads a manifest on resume|Restart the entire exploration every time|Store all state only in the system prompt of the next session".split("|"),1,"Structured state exports + manifest for crash recovery (TS 5.4)."],
+["D5","A team assumes upgrading to a much larger context window automatically fixes their agent missing details in a huge input. What's the flaw?","There is no flaw; bigger windows always fix this|Larger windows don't prevent \"lost in the middle\" — the fix is better context structuring, not just more capacity|Larger context windows always cost less|Context window size only affects output tokens".split("|"),1,"\"Lost in the middle\" isn't fixed by a bigger window (TS 5.1, anti-pattern #10)."],
+["D5","A subagent's API call fails and it returns an empty result to the coordinator instead of an explicit error. What downstream risk does this create?","None — empty results are always interpreted correctly|The coordinator may mistake \"the call failed\" for \"there was genuinely nothing to find\"|It automatically triggers a retry with no side effects|It reduces token costs with no other consequences".split("|"),1,"Empty result masks failure as \"nothing found\" (TS 2.2/5.3)."],
+["D5","What should trigger escalation of a task from an autonomous agent to a human reviewer?","The model self-reporting low confidence in its own answer|Explicit customer request, a genuine policy gap/exception, or inability to make progress|Sentiment analysis detecting customer frustration|Whenever the response exceeds 500 tokens".split("|"),1,"Escalate on the guide's named objective triggers, not confidence or sentiment (TS 5.2, official Sample Q3)."],
+["D5","Two credible sources give conflicting statistics during multi-source synthesis. What should the synthesis output do?","Arbitrarily select the more recent-sounding value|Include both values with explicit source attribution, letting a human or coordinator reconcile|Average the two values together|Omit both values since they conflict".split("|"),1,"Preserve conflicting values with attribution rather than arbitrarily resolving them (TS 5.6)."],
+["D5","Your extraction pipeline reports 97% overall accuracy, and the team wants to reduce human review to cut costs. What should you check first?","Nothing — a 97% aggregate figure is sufficient justification|Accuracy broken down by document type and field segment, plus stratified sampling of high-confidence extractions specifically|Only the extractions already flagged as low-confidence|Whether the batch job finished within its SLA window".split("|"),1,"Aggregate accuracy can mask segment-level failure (TS 5.5)."],
+["OFF","Production data shows that in 12% of cases, your agent skips get_customer entirely and calls lookup_order using only the customer's stated name, occasionally leading to misidentified accounts and incorrect refunds. What change would most effectively address this reliability issue?","Add a programmatic prerequisite that blocks lookup_order and process_refund calls until get_customer has returned a verified customer ID.|Enhance the system prompt to state that customer verification via get_customer is mandatory before any order operations.|Add few-shot examples showing the agent always calling get_customer first, even when customers volunteer order details.|Implement a routing classifier that analyzes each request and enables only the subset of tools appropriate for that request type.".split("|"),0,"Official Exam Guide Sample Question 1. Programmatic enforcement gives deterministic guarantees prompts/examples can't; a routing classifier addresses tool availability, not ordering."],
+["OFF","Production logs show the agent frequently calls get_customer when users ask about orders, instead of calling lookup_order. Both tools have minimal descriptions and accept similar identifier formats. What's the most effective first step?","Add 5-8 few-shot examples demonstrating correct tool selection.|Expand each tool's description to include input formats, example queries, edge cases, and boundaries versus similar tools.|Implement a routing layer that pre-selects the tool based on detected keywords.|Consolidate both tools into a single lookup_entity tool.".split("|"),1,"Official Exam Guide Sample Question 2. Tool descriptions are the primary selection mechanism — the lowest-effort, highest-leverage fix."],
+["OFF","Your agent achieves 55% first-contact resolution, well below an 80% target. It escalates straightforward cases while attempting complex ones needing policy exceptions. What's the most effective way to improve escalation calibration?","Add explicit escalation criteria to the system prompt with few-shot examples of when to escalate vs. resolve autonomously.|Have the agent self-report a confidence score and route to humans below a threshold.|Deploy a separate classifier model trained on historical tickets.|Implement sentiment analysis and escalate on negative sentiment.".split("|"),0,"Official Exam Guide Sample Question 3. Self-reported confidence and sentiment are both named as unreliable proxies for case complexity."],
+["OFF","You want a custom /review slash command available to every developer when they clone or pull the repository. Where should you create it?","In the .claude/commands/ directory in the project repository|In ~/.claude/commands/ in each developer's home directory|In the CLAUDE.md file at the project root|In a .claude/config.json file with a commands array".split("|"),0,"Official Exam Guide Sample Question 4. Project-scoped commands are version-controlled and shared automatically."],
+["OFF","You're restructuring a monolith into microservices across dozens of files, with decisions about service boundaries and dependencies. Which approach should you take?","Enter plan mode to explore the codebase and design an approach before making changes.|Start with direct execution and let boundaries emerge incrementally.|Use direct execution with exhaustive upfront instructions.|Begin in direct execution and only switch to plan mode if surprised.".split("|"),0,"Official Exam Guide Sample Question 5. Plan mode suits large-scale, multi-file, architectural changes known upfront."],
+["OFF","Your codebase has distinct conventions per area, and test files (Button.test.tsx next to Button.tsx) are spread throughout with conventions that should apply regardless of location. What's the most maintainable approach?","Create .claude/rules/ files with YAML frontmatter glob patterns to conditionally apply conventions by file path.|Consolidate all conventions in root CLAUDE.md under headers, relying on Claude to infer the right section.|Create skills for each code type containing the relevant conventions.|Place a separate CLAUDE.md file in each subdirectory.".split("|"),0,"Official Exam Guide Sample Question 6. Glob patterns apply by file type regardless of directory location."],
+["OFF","Each subagent in a research system completes successfully, but the final reports on \"AI's impact on creative industries\" cover only visual arts, missing music, writing, and film. The coordinator decomposed the topic into three visual-arts-only subtasks. What's the most likely root cause?","The synthesis agent lacks instructions for identifying coverage gaps.|The coordinator agent's task decomposition is too narrow, missing relevant domains.|The web search agent's queries aren't comprehensive enough.|The document analysis agent is filtering out non-visual sources.".split("|"),1,"Official Exam Guide Sample Question 7. The coordinator's own logs reveal the root cause — subagents executed correctly within an overly narrow assignment."],
+["OFF","A web search subagent times out during a complex research task. Which error propagation approach best enables intelligent recovery by the coordinator?","Return structured error context: failure type, attempted query, partial results, and potential alternatives.|Retry with exponential backoff internally, returning a generic \"search unavailable\" status only after retries are exhausted.|Catch the timeout and return an empty result set marked as successful.|Propagate the exception to a top-level handler that terminates the entire workflow.".split("|"),0,"Official Exam Guide Sample Question 8. Structured context enables recovery; the other options hide or overreact to the failure."],
+["OFF","A synthesis agent frequently needs simple fact-checks (85% of cases) and occasionally deeper investigation (15%), currently all routed through the coordinator to a web search agent, adding 40% latency. What's the most effective fix?","Give the synthesis agent a scoped verify_fact tool for simple lookups, routing complex verifications through the coordinator as before.|Have the synthesis agent batch all verification needs for the coordinator at the end of its pass.|Give the synthesis agent access to all web search tools directly.|Have the web search agent proactively cache extra context anticipating verification needs.".split("|"),0,"Official Exam Guide Sample Question 9. Least privilege for the common case, preserving coordination for complex cases."],
+["OFF","Your pipeline script runs claude \"Analyze this pull request for security issues\" but the job hangs indefinitely, waiting for interactive input. What's the correct fix?","Add the -p flag: claude -p \"Analyze this pull request for security issues\"|Set an environment variable CLAUDE_HEADLESS=true|Redirect stdin from /dev/null|Add a --batch flag".split("|"),0,"Official Exam Guide Sample Question 10. -p/--print is the documented non-interactive mode; the other options reference non-existent flags or unreliable workarounds."],
+["OFF","A blocking pre-merge check and an overnight technical-debt report both use real-time Claude calls. Your manager proposes switching both to the Message Batches API for 50% savings. How should you evaluate this?","Use batch processing for the technical debt reports only; keep real-time calls for pre-merge checks.|Switch both workflows to batch processing with status polling.|Keep real-time calls for both to avoid batch result ordering issues.|Switch both to batch with a timeout fallback to real-time.".split("|"),0,"Official Exam Guide Sample Question 11. Batch has no guaranteed SLA — unsuitable for a blocking workflow; ideal for the overnight report."],
+["OFF","A pull request modifying 14 files produces an inconsistent single-pass review: detailed feedback for some files, superficial for others, and contradictory findings across identical patterns. How should you restructure the review?","Split into focused passes: per-file local analysis, then a separate cross-file integration pass.|Require developers to split large PRs into smaller submissions first.|Switch to a higher-tier model with a larger context window.|Run three independent passes and only flag issues appearing in at least two.".split("|"),0,"Official Exam Guide Sample Question 12. Directly addresses attention dilution; a bigger window doesn't fix attention-quality issues, and requiring consensus would suppress intermittently-caught real bugs."]
+  ];
+
+  var quizList = document.getElementById("quiz-list");
+  var QUIZ_KEY = "cca-f-quiz-v2";
+  var quizState = {};
+  try { quizState = JSON.parse(localStorage.getItem(QUIZ_KEY) || "{}"); } catch (e) { quizState = {}; }
+  function saveQuiz() { try { localStorage.setItem(QUIZ_KEY, JSON.stringify(quizState)); } catch (e) {} }
+
+  var letters = ["A","B","C","D"];
+  QUESTIONS.forEach(function (q, qi) {
+    var id = "q" + (qi + 1);
+    var domain = q[0], text = q[1], opts = q[2], correctIdx = q[3], explain = q[4];
+    var card = document.createElement("article");
+    card.className = "qcard" + (domain === "OFF" ? " official" : "");
+    card.dataset.domain = domain;
+    card.dataset.qid = id;
+
+    var num = document.createElement("p"); num.className = "qnum mono"; num.textContent = (domain === "OFF" ? "OFFICIAL SAMPLE" : domain) + " · Q" + (qi + 1);
+    var qt = document.createElement("p"); qt.className = "qtext"; qt.textContent = text;
+    var optsWrap = document.createElement("div"); optsWrap.className = "opts";
+
+    opts.forEach(function (optText, oi) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.dataset.idx = oi;
+      var lt = document.createElement("span"); lt.className = "lt"; lt.textContent = letters[oi];
+      var txt = document.createElement("span"); txt.textContent = optText;
+      btn.appendChild(lt); btn.appendChild(txt);
+      optsWrap.appendChild(btn);
+    });
+
+    var explainEl = document.createElement("div");
+    explainEl.className = "explain";
+    explainEl.textContent = explain;
+
+    card.appendChild(num); card.appendChild(qt); card.appendChild(optsWrap); card.appendChild(explainEl);
+    quizList.appendChild(card);
+
+    function applyAnswer(chosenIdx) {
+      card.classList.add("answered");
+      var btns = optsWrap.querySelectorAll("button");
+      btns.forEach(function (b) {
+        var idx = parseInt(b.dataset.idx, 10);
+        if (idx === correctIdx) b.classList.add("correct");
+        else if (idx === chosenIdx) b.classList.add("wrong");
+        b.disabled = true;
+      });
+    }
+
+    if (quizState[id] !== undefined) {
+      applyAnswer(quizState[id].chosen);
+    }
+
+    optsWrap.querySelectorAll("button").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (card.classList.contains("answered")) return;
+        var chosenIdx = parseInt(btn.dataset.idx, 10);
+        quizState[id] = { chosen: chosenIdx, correct: chosenIdx === correctIdx };
+        saveQuiz();
+        applyAnswer(chosenIdx);
+        updateScore();
+      });
+    });
+  });
+
+  function updateScore() {
+    var answered = 0, correct = 0;
+    Object.keys(quizState).forEach(function (k) {
+      if (k.indexOf("q") === 0) { answered++; if (quizState[k].correct) correct++; }
+    });
+    document.getElementById("quiz-score").innerHTML = "Score: <b>" + correct + "</b> / " + answered + " answered";
+  }
+  updateScore();
+
+  document.querySelectorAll(".filter-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll(".filter-btn").forEach(function (b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+      var f = btn.dataset.filter;
+      quizList.querySelectorAll(".qcard").forEach(function (c) {
+        c.style.display = (f === "all" || c.dataset.domain === f) ? "" : "none";
+      });
+    });
+  });
+
+  document.getElementById("quiz-reset").addEventListener("click", function () {
+    if (confirm("Reset all quiz answers?")) {
+      quizState = {};
+      saveQuiz();
+      location.reload();
+    }
+  });
+
+  /* ---------- glossary ---------- */
+  var TERMS = [
+    ["Agent loop", "send request → check stop_reason → if \"tool_use\", execute and append results → repeat → if \"end_turn\", stop. (TS 1.1)"],
+    ["AgentDefinition", "Config object defining a subagent: description, system prompt, and its own restricted tool list. (TS 1.3)"],
+    ["allowed-tools", "Skill frontmatter field restricting which tools are available while that skill executes. (TS 3.2)"],
+    ["argument-hint", "Skill frontmatter field that prompts for required parameters when invoked without arguments. (TS 3.2)"],
+    ["Claim-source mapping", "Structured pairing of a claim with its source, preserved through summarization/synthesis to avoid losing provenance. (TS 5.6)"],
+    ["CLAUDE.md hierarchy", "User (~/.claude/CLAUDE.md, personal) → Project (.claude/CLAUDE.md or root, shared via VCS) → Directory (subdirectory files). (TS 3.1)"],
+    ["context: fork", "Skill frontmatter option running the skill in an isolated sub-agent context, keeping verbose output out of the main conversation. (TS 3.2)"],
+    ["Coordinator / hub-and-spoke", "One coordinator owns all inter-subagent communication, error handling, and routing; subagents don't talk directly. (TS 1.2)"],
+    ["custom_id", "Field on a Message Batches API request correlating it with its response, including for resubmitting failures. (TS 4.5)"],
+    ["Escalation triggers", "Correct: explicit customer request, genuine policy gap, inability to progress. Wrong: self-reported confidence, sentiment analysis. (TS 5.2)"],
+    ["Explore subagent", "Isolates verbose codebase-discovery output, returning summaries to prevent context-window exhaustion. (TS 3.4)"],
+    ["fork_session", "Creates an independent session branch from a shared baseline to explore a divergent approach. Contrast with --resume. (TS 1.7)"],
+    ["Hooks", "Code run at agent-lifecycle points. Tested: PostToolUse (normalize heterogeneous tool-result formats) and tool-call interception (block a policy-violating action). (TS 1.5)"],
+    ["isError / isRetryable / errorCategory", "MCP structured error-response pattern distinguishing transient/validation/business/permission errors. (TS 2.2)"],
+    ["\"Lost in the middle\"", "Models reliably process the start/end of a long input but may omit findings buried in the middle. (TS 5.1)"],
+    ["Manifest (crash recovery)", "Structured export of agent state to a known location; coordinator loads it on resume and re-injects into prompts. (TS 5.4)"],
+    ["MCP (Model Context Protocol)", "Standard connecting AI hosts to servers exposing tools (actions), resources (content catalogs), and prompts (templates)."],
+    ["MCP server scoping", "Project-level .mcp.json (shared, VCS, ${ENV_VAR} expansion) vs. user-level ~/.claude.json (personal). (TS 2.4)"],
+    ["Message Batches API", "~50% cheaper, up to 24h window, no guaranteed SLA, no multi-turn tool calling in a single request. Never for blocking workflows. (TS 4.5)"],
+    ["Multishot / few-shot prompting", "2–4 targeted, relevant examples to steer format, demonstrate ambiguous-case handling, and reduce hallucination. (TS 4.2)"],
+    ["Plan mode", "Propose-then-review before executing side-effecting tools. Right for large-scale/architectural/ambiguous tasks. (TS 3.4)"],
+    ["Task tool", "The mechanism for spawning subagents. A coordinator's allowedTools must include \"Task\". (TS 1.3)"],
+    ["--resume <session-name>", "CLI flag continuing a specific named prior session with full history. Contrast with fork_session. (TS 1.7)"],
+    ["Scratchpad files", "Files where an agent records key findings during long exploration, referenced later to counteract context degradation. (TS 5.4)"],
+    ["Stratified random sampling", "Sampling high-confidence extractions specifically to measure true error rates and catch novel error patterns. (TS 5.5)"],
+    ["Subagent", "A specialized agent spawned via the Task tool, with its own scoped tools and isolated context — doesn't auto-inherit coordinator history."],
+    ["tool_choice", "\"auto\" (model decides), \"any\" (must call a tool, chooses which), or forced {\"type\":\"tool\",\"name\":\"...\"}. (TS 2.3, 4.3)"],
+    ["tool_use + JSON schema", "The exam's actual mechanism for reliable structured output — eliminates syntax errors, not semantic ones. (TS 4.3)"],
+    [".claude/rules/", "Modular instruction files, optionally scoped via YAML frontmatter paths: glob patterns. (TS 3.3)"]
+  ];
+  var glossList = document.getElementById("gloss-list");
+  TERMS.forEach(function (t) {
+    var card = document.createElement("div");
+    card.className = "term-card";
+    card.innerHTML = "<dt>" + t[0] + "</dt><dd>" + t[1] + "</dd>";
+    glossList.appendChild(card);
+  });
+  document.getElementById("gloss-search").addEventListener("input", function (e) {
+    var v = e.target.value.trim().toLowerCase();
+    glossList.querySelectorAll(".term-card").forEach(function (c) {
+      c.style.display = c.textContent.toLowerCase().indexOf(v) !== -1 ? "" : "none";
+    });
+  });
+})();
+</script>
+</body>
+</html>

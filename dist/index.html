@@ -30,10 +30,12 @@
             --card-docker-hover: rgba(3, 105, 161, 0.45);
             --card-n8n-hover: rgba(255, 109, 90, 0.45);
             --card-llamaindex-hover: rgba(157, 78, 221, 0.45);
+            --card-ccap-hover: rgba(31, 122, 140, 0.45);
             --chip-fastapi-bg: rgba(15, 118, 110, 0.12);
             --chip-docker-bg: rgba(36, 150, 237, 0.16);
             --chip-n8n-bg: rgba(255, 109, 90, 0.16);
             --chip-llamaindex-bg: rgba(157, 78, 221, 0.16);
+            --chip-ccap-bg: rgba(31, 122, 140, 0.16);
             --cta: #bdd8ff;
             --bg-spot-teal: radial-gradient(circle at 8% 10%, rgba(16, 191, 174, 0.24), transparent 36%);
             --bg-spot-blue: radial-gradient(circle at 92% 90%, rgba(36, 150, 237, 0.28), transparent 40%);
@@ -131,6 +133,10 @@
             border-color: var(--card-llamaindex-hover);
         }
 
+        .ccap:hover {
+            border-color: var(--card-ccap-hover);
+        }
+
         .chip {
             width: fit-content;
             border-radius: 999px;
@@ -145,6 +151,7 @@
         .chip.docker { background: var(--chip-docker-bg); color: var(--blue); }
         .chip.n8n { background: var(--chip-n8n-bg); color: #ff6d5a; }
         .chip.llamaindex { background: var(--chip-llamaindex-bg); color: #b36cf2; }
+        .chip.ccap { background: var(--chip-ccap-bg); color: #5fd0e6; }
 
         .card-head {
             display: flex;
@@ -197,6 +204,12 @@
         .brand-logo.docker svg {
             width: 27px;
             height: 27px;
+        }
+
+        .brand-logo.ccap {
+            background: linear-gradient(145deg, #1f7a8c, #16283a);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.28);
         }
 
         h2 {
@@ -311,6 +324,23 @@
                     <p>Build RAG applications, setup vector stores, retrieve relevant data, and create agents.</p>
                 </div>
                 <p class="cta">Open handbook -></p>
+            </a>
+
+            <a href="/claude_certified_architect_prep/" class="card ccap">
+                <div>
+                    <span class="chip ccap">Certification</span>
+                    <div class="card-head">
+                        <span class="brand-logo ccap" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 2.5 4.5 6v6c0 5 3.2 8.6 7.5 9.5 4.3-.9 7.5-4.5 7.5-9.5V6L12 2.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                                <path d="M8.7 12.2 11 14.5l4.3-4.7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </span>
+                        <h2>CCAR-F Study Guide</h2>
+                    </div>
+                    <p>Claude Certified Architect - Foundations exam prep: domain notes, anti-patterns, practice quiz, and a progress tracker.</p>
+                </div>
+                <p class="cta">Open guide -></p>
             </a>
         </div>
     </main>

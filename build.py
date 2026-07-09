@@ -26,6 +26,8 @@ HUB_THEME = {
     "chip_n8n_bg": "rgba(255, 109, 90, 0.16)",
     "card_llamaindex_hover": "rgba(157, 78, 221, 0.45)",
     "chip_llamaindex_bg": "rgba(157, 78, 221, 0.16)",
+    "card_ccap_hover": "rgba(31, 122, 140, 0.45)",
+    "chip_ccap_bg": "rgba(31, 122, 140, 0.16)",
     "cta": "#bdd8ff",
 }
 
@@ -35,6 +37,14 @@ def create_dist_dirs():
     os.makedirs("dist/docker", exist_ok=True)
     os.makedirs("dist/n8n", exist_ok=True)
     os.makedirs("dist/llamaindex", exist_ok=True)
+
+
+def copy_static_folder(src_dir, dist_folder):
+    """Copy a self-contained static folder (own HTML/CSS/JS, no build step) into dist/."""
+    dest = os.path.join("dist", dist_folder)
+    if os.path.exists(dest):
+        shutil.rmtree(dest)
+    shutil.copytree(src_dir, dest)
 
 
 def sync_local_preview_dirs():
@@ -231,10 +241,12 @@ def build_hub():
             --card-docker-hover: {HUB_THEME['card_docker_hover']};
             --card-n8n-hover: {HUB_THEME['card_n8n_hover']};
             --card-llamaindex-hover: {HUB_THEME['card_llamaindex_hover']};
+            --card-ccap-hover: {HUB_THEME['card_ccap_hover']};
             --chip-fastapi-bg: {HUB_THEME['chip_fastapi_bg']};
             --chip-docker-bg: {HUB_THEME['chip_docker_bg']};
             --chip-n8n-bg: {HUB_THEME['chip_n8n_bg']};
             --chip-llamaindex-bg: {HUB_THEME['chip_llamaindex_bg']};
+            --chip-ccap-bg: {HUB_THEME['chip_ccap_bg']};
             --cta: {HUB_THEME['cta']};
             --bg-spot-teal: {HUB_THEME['bg_spot_teal']};
             --bg-spot-blue: {HUB_THEME['bg_spot_blue']};
@@ -353,6 +365,10 @@ def build_hub():
             border-color: var(--card-llamaindex-hover);
         }
 
+        .ccap:hover {
+            border-color: var(--card-ccap-hover);
+        }
+
         .chip {
             width: fit-content;
             border-radius: 999px;
@@ -367,6 +383,7 @@ def build_hub():
         .chip.docker { background: var(--chip-docker-bg); color: var(--blue); }
         .chip.n8n { background: var(--chip-n8n-bg); color: #ff6d5a; }
         .chip.llamaindex { background: var(--chip-llamaindex-bg); color: #b36cf2; }
+        .chip.ccap { background: var(--chip-ccap-bg); color: #5fd0e6; }
 
         .card-head {
             display: flex;
@@ -419,6 +436,12 @@ def build_hub():
         .brand-logo.docker svg {
             width: 27px;
             height: 27px;
+        }
+
+        .brand-logo.ccap {
+            background: linear-gradient(145deg, #1f7a8c, #16283a);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.28);
         }
 
         h2 {
@@ -534,6 +557,23 @@ def build_hub():
                 </div>
                 <p class="cta">Open handbook -></p>
             </a>
+
+            <a href="/claude_certified_architect_prep/" class="card ccap">
+                <div>
+                    <span class="chip ccap">Certification</span>
+                    <div class="card-head">
+                        <span class="brand-logo ccap" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 2.5 4.5 6v6c0 5 3.2 8.6 7.5 9.5 4.3-.9 7.5-4.5 7.5-9.5V6L12 2.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                                <path d="M8.7 12.2 11 14.5l4.3-4.7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </span>
+                        <h2>CCAR-F Study Guide</h2>
+                    </div>
+                    <p>Claude Certified Architect - Foundations exam prep: domain notes, anti-patterns, practice quiz, and a progress tracker.</p>
+                </div>
+                <p class="cta">Open guide -></p>
+            </a>
         </div>
     </main>
 </body>
@@ -554,6 +594,8 @@ if __name__ == "__main__":
     generate_handbook("src_n8n", "n8n", "n8n Complete Handbook")
     print("Building LlamaIndex Handbook...")
     generate_handbook("src_llamaindex", "llamaindex", "LlamaIndex Complete Handbook")
+    print("Copying CCAR-F Study Guide...")
+    copy_static_folder("src_claude_certified_architect_prep", "claude_certified_architect_prep")
     print("Building Hub...")
     build_hub()
     print("Syncing local preview folders...")

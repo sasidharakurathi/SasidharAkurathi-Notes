@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CCAR-F Study Tracker</title>
+<style>
+  :root {
+    --bg: #eef2f5;
+    --surface: #ffffff;
+    --surface-2: #e4eaee;
+    --grid-line: #c9d6dc;
+    --ink: #16283a;
+    --ink-muted: #55707f;
+    --accent: #1f7a8c;
+    --accent-ink: #ffffff;
+    --success: #3f8f5f;
+    --warning: #b5791f;
+    --critical: #b1392f;
+    --border: #c3d0d6;
+    --shadow: 0 1px 2px rgba(22,40,58,0.06), 0 8px 24px -12px rgba(22,40,58,0.18);
+    --radius: 3px;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1b26;
+      --surface: #16283a;
+      --surface-2: #1c3247;
+      --grid-line: rgba(129,178,199,0.16);
+      --ink: #e7eef3;
+      --ink-muted: #93b0c0;
+      --accent: #5fd0e6;
+      --accent-ink: #0f1b26;
+      --success: #6fcf97;
+      --warning: #e3ab55;
+      --critical: #e2695c;
+      --border: #2b415580;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 28px -12px rgba(0,0,0,0.55);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1b26;
+    --surface: #16283a;
+    --surface-2: #1c3247;
+    --grid-line: rgba(129,178,199,0.16);
+    --ink: #e7eef3;
+    --ink-muted: #93b0c0;
+    --accent: #5fd0e6;
+    --accent-ink: #0f1b26;
+    --success: #6fcf97;
+    --warning: #e3ab55;
+    --critical: #e2695c;
+    --border: #2b415580;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 28px -12px rgba(0,0,0,0.55);
+    color-scheme: dark;
+  }
+  :root[data-theme="light"] {
+    --bg: #eef2f5;
+    --surface: #ffffff;
+    --surface-2: #e4eaee;
+    --grid-line: #c9d6dc;
+    --ink: #16283a;
+    --ink-muted: #55707f;
+    --accent: #1f7a8c;
+    --accent-ink: #ffffff;
+    --success: #3f8f5f;
+    --warning: #b5791f;
+    --critical: #b1392f;
+    --border: #c3d0d6;
+    --shadow: 0 1px 2px rgba(22,40,58,0.06), 0 8px 24px -12px rgba(22,40,58,0.18);
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background:
+      linear-gradient(var(--bg), var(--bg)),
+      repeating-linear-gradient(0deg, var(--grid-line) 0 1px, transparent 1px 28px),
+      repeating-linear-gradient(90deg, var(--grid-line) 0 1px, transparent 1px 28px);
+    background-blend-mode: normal, normal, normal;
+    color: var(--ink);
+    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+    line-height: 1.5;
+    min-height: 100vh;
+    padding: clamp(16px, 4vw, 48px);
+  }
+
+  .display {
+    font-family: Bahnschrift, "Arial Narrow", "Segoe UI Semibold", sans-serif;
+    font-stretch: condensed;
+  }
+  .mono {
+    font-family: "Cascadia Code", Consolas, "SF Mono", ui-monospace, Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sheet {
+    max-width: 920px;
+    margin: 0 auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* registration ticks, corner marks like a drafting sheet */
+  .sheet::before, .sheet::after,
+  .titleblock::before, .titleblock::after {
+    content: "";
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid var(--accent);
+    opacity: 0.55;
+    pointer-events: none;
+  }
+  .sheet::before { top: 10px; left: 10px; border-right: none; border-bottom: none; }
+  .sheet::after { top: 10px; right: 10px; border-left: none; border-bottom: none; }
+  .titleblock::before { bottom: 10px; left: 10px; top: auto; right: auto; border-right: none; border-top: none; }
+  .titleblock::after { bottom: 10px; right: 10px; top: auto; left: auto; border-left: none; border-top: none; }
+
+  header.titleblock {
+    position: relative;
+    padding: 28px 32px 22px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  h1 {
+    font-family: Bahnschrift, "Arial Narrow", sans-serif;
+    font-stretch: condensed;
+    font-size: clamp(24px, 4vw, 32px);
+    margin: 4px 0 6px;
+    text-wrap: balance;
+    letter-spacing: 0.01em;
+  }
+  .subtitle {
+    color: var(--ink-muted);
+    font-size: 14.5px;
+    max-width: 60ch;
+  }
+
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 18px;
+  }
+  .meta-field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .meta-field label {
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+  .meta-field input {
+    font-family: inherit;
+    font-size: 13.5px;
+    color: var(--ink);
+    background: transparent;
+    border: none;
+    border-bottom: 1px dashed var(--border);
+    padding: 2px 0;
+    width: 150px;
+  }
+  .meta-field input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  main { padding: 26px 32px 8px; }
+
+  section.block { margin-bottom: 30px; }
+
+  .section-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+  }
+  .section-heading h2 {
+    font-family: Bahnschrift, "Arial Narrow", sans-serif;
+    font-stretch: condensed;
+    font-size: 12.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink);
+    margin: 0;
+  }
+  .section-heading .count {
+    font-size: 12px;
+    color: var(--ink-muted);
+  }
+
+  /* overall progress */
+  .overall {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    flex-wrap: wrap;
+  }
+  .overall-number {
+    font-family: Bahnschrift, "Arial Narrow", sans-serif;
+    font-stretch: condensed;
+    font-size: 46px;
+    line-height: 1;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    min-width: 92px;
+  }
+  .overall-bar-wrap { flex: 1; min-width: 220px; }
+  .bar-track {
+    height: 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.35s ease;
+  }
+  .overall-caption {
+    font-size: 12.5px;
+    color: var(--ink-muted);
+    margin-top: 6px;
+  }
+
+  /* domain gauges */
+  .gauges {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+  }
+  .gauge {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    background: var(--surface-2);
+  }
+  .gauge-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .gauge-code {
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--ink-muted);
+  }
+  .gauge-pct {
+    font-size: 18px;
+    color: var(--accent);
+  }
+  .gauge-name {
+    font-size: 12.5px;
+    margin-bottom: 8px;
+    min-height: 32px;
+  }
+  .gauge .bar-track { height: 6px; }
+  .gauge-weight {
+    margin-top: 6px;
+    font-size: 10.5px;
+    color: var(--ink-muted);
+    letter-spacing: 0.04em;
+  }
+
+  /* checklist rows */
+  .list { display: flex; flex-direction: column; }
+  .row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 4px;
+    border-bottom: 1px solid var(--grid-line);
+  }
+  .row:last-child { border-bottom: none; }
+  .row input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    flex-shrink: 0;
+    border: 1.5px solid var(--ink-muted);
+    border-radius: 2px;
+    background: var(--surface);
+    cursor: pointer;
+    position: relative;
+  }
+  .row input[type="checkbox"]:checked {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .row input[type="checkbox"]:checked::after {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 0.5px;
+    width: 4px;
+    height: 8px;
+    border: solid var(--accent-ink);
+    border-width: 0 2px 2px 0;
+    transform: rotate(40deg);
+  }
+  .row input[type="checkbox"]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .row label {
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .row.done label { color: var(--ink-muted); text-decoration: line-through; text-decoration-color: var(--border); }
+
+  details.week {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-2);
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+  details.week > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  details.week > summary::-webkit-details-marker { display: none; }
+  .week-title {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .week-title .display { font-size: 13.5px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .week-title .goal { font-size: 12.5px; color: var(--ink-muted); font-family: Georgia, serif; }
+  .week-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .chip {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--ink-muted);
+    white-space: nowrap;
+  }
+  summary .caret {
+    transition: transform 0.2s ease;
+    color: var(--ink-muted);
+  }
+  details[open] summary .caret { transform: rotate(90deg); }
+  .week-body { padding: 4px 14px 12px; background: var(--surface); }
+
+  .readiness .row label { font-size: 14.5px; }
+
+  footer {
+    padding: 18px 32px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    border-top: 1px solid var(--border);
+  }
+  footer p {
+    font-size: 12px;
+    color: var(--ink-muted);
+    max-width: 46ch;
+    margin: 0;
+  }
+  button.reset {
+    font-family: Bahnschrift, "Arial Narrow", sans-serif;
+    font-stretch: condensed;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 11.5px;
+    background: transparent;
+    border: 1px solid var(--critical);
+    color: var(--critical);
+    padding: 8px 14px;
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+  button.reset:hover { background: var(--critical); color: var(--surface); }
+  button.reset:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bar-fill { transition: none; }
+  }
+
+  @media (max-width: 520px) {
+    header.titleblock, main, footer { padding-left: 18px; padding-right: 18px; }
+    .overall-number { font-size: 36px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="sheet">
+  <header class="titleblock">
+    <div class="eyebrow">Study Tracker · Rev. 2 — updated against the official Exam Guide (CCAR-F)</div>
+    <h1>Claude Certified Architect — Foundations</h1>
+    <p class="subtitle">Domain mastery, six-week study plan, and exam-readiness — tracked in one sheet. Progress is saved automatically in this browser.</p>
+    <div class="meta-row">
+      <div class="meta-field">
+        <label for="start-date">Start date</label>
+        <input id="start-date" type="text" placeholder="e.g. 2026-07-13" />
+      </div>
+      <div class="meta-field">
+        <label for="exam-date">Target exam date</label>
+        <input id="exam-date" type="text" placeholder="e.g. 2026-08-24" />
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="block">
+      <div class="section-heading">
+        <h2>Overall progress</h2>
+        <span class="count mono" id="overall-count">0 / 0</span>
+      </div>
+      <div class="overall">
+        <div class="overall-number mono" id="overall-pct">0%</div>
+        <div class="overall-bar-wrap">
+          <div class="bar-track"><div class="bar-fill" id="overall-bar" style="width:0%"></div></div>
+          <div class="overall-caption">Combines domain mastery checks, the six-week plan, and exam-readiness items below.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="section-heading">
+        <h2>Domain mastery</h2>
+        <span class="count mono">weighted by exam share</span>
+      </div>
+      <div class="gauges" id="gauges"></div>
+    </section>
+
+    <section class="block">
+      <div class="section-heading">
+        <h2>Six-week study plan</h2>
+        <span class="count mono" id="weeks-count">0 / 0</span>
+      </div>
+      <div id="weeks"></div>
+    </section>
+
+    <section class="block readiness">
+      <div class="section-heading">
+        <h2>Exam readiness</h2>
+        <span class="count mono" id="ready-count">0 / 0</span>
+      </div>
+      <div class="list" id="ready-list"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Stored locally in this browser only (localStorage) — it won't sync across devices. The markdown files in your prep folder remain the source of truth.</p>
+    <button class="reset" id="reset-btn" type="button">Reset all progress</button>
+  </footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var DOMAINS = [
+    { code: "D1", weight: 27, name: "Agentic Architecture & Orchestration", items: [
+      "Can state the loop's stop_reason rule and the three termination anti-patterns",
+      "Know the Task tool is the subagent mechanism and allowedTools must include \"Task\"",
+      "Can explain fork_session vs. --resume <session-name>",
+      "Can recognize \"overly narrow coordinator decomposition\" as a root cause distinct from blaming a working subagent",
+      "Know why per-file + integration passes beat one big review pass",
+      "Know when hooks (not prompts) are required for guaranteed compliance"
+    ]},
+    { code: "D2", weight: 18, name: "Tool Design & MCP Integration", items: [
+      "Know why expanding tool descriptions beats few-shot/routing/consolidation as the first fix for misrouting",
+      "Can write a structured MCP error (isError/isRetryable/errorCategory) and distinguish access-failure from valid-empty-result",
+      "Know the \"18 tools vs 4-5\" framing and all three tool_choice modes",
+      "Know .mcp.json (project) vs. ~/.claude.json (user) MCP server scoping",
+      "Can pick the right built-in tool (Grep/Glob/Edit/Read+Write fallback) for a scenario"
+    ]},
+    { code: "D3", weight: 20, name: "Claude Code Configuration & Workflows", items: [
+      "Can diagnose the \"new teammate missing instructions\" symptom against the CLAUDE.md hierarchy",
+      "Know context: fork, allowed-tools, argument-hint as skill frontmatter fields",
+      "Know why glob-pattern rules beat subdirectory CLAUDE.md for file-type conventions",
+      "Can pick plan mode vs. direct execution based on what's already known, not what might emerge",
+      "Know -p, --output-format json, --json-schema, and why independent review beats self-review"
+    ]},
+    { code: "D4", weight: 20, name: "Prompt Engineering & Structured Output", items: [
+      "Know tool_use + JSON schema is the exam's actual structured-output answer (not a separate feature)",
+      "Can explain syntax vs. semantic errors (e.g., totals that don't sum)",
+      "Know when retries help (format errors) vs. can't help (info absent from source)",
+      "Know the Message Batches API's exact tradeoffs, including \"no multi-turn tool calling\"",
+      "Know why an independent review instance beats self-review"
+    ]},
+    { code: "D5", weight: 15, name: "Context Management & Reliability", items: [
+      "Can explain \"lost in the middle\" and name two mitigations",
+      "Know sentiment-based escalation and self-reported confidence are both named anti-patterns",
+      "Know why suppressing errors and terminating the whole workflow are opposite but equally wrong",
+      "Know scratchpad files, phase summarization, and crash-recovery manifests",
+      "Know why conflicting source data should be preserved with attribution, not resolved arbitrarily"
+    ]}
+  ];
+
+  var WEEKS = [
+    { title: "Week 1", goal: "Foundations + Claude API core concepts", items: [
+      "Take Claude 101",
+      "Take Claude Platform 101",
+      "Start Building with the Claude API (streaming, auth, basic requests)",
+      "Read 00_exam_overview.md fully",
+      "Read Domain 4 Task Statements 4.1-4.2 (precision criteria + few-shot)",
+      "Run at least 3 hands-on API calls yourself"
+    ]},
+    { title: "Week 2", goal: "Claude Code hands-on", items: [
+      "Take Claude Code 101",
+      "Take Claude Code in Action",
+      "Take Introduction to Agent Skills",
+      "Take Introduction to Subagents",
+      "Read 03_domain3_claude_code_config.md fully",
+      "Write a CLAUDE.md + a path-scoped .claude/rules/ file + one Skill using context: fork / allowed-tools / argument-hint",
+      "Configure a tool-call interception hook and verify it blocks the action",
+      "Run Claude Code with -p, and again with --output-format json --json-schema"
+    ]},
+    { title: "Week 3", goal: "Model Context Protocol & tool design", items: [
+      "Take Introduction to Model Context Protocol",
+      "Take Model Context Protocol: Advanced Topics",
+      "Read 02_domain2_tool_design_mcp.md fully",
+      "Build a toy MCP server with a tool, a resource, and a prompt",
+      "Configure it in project .mcp.json and separately in user ~/.claude.json",
+      "Write one structured tool error response by hand",
+      "Do practice Q15-23, review misses against anti-patterns"
+    ]},
+    { title: "Week 4", goal: "Prompt engineering & structured output deep dive", items: [
+      "Finish Domain 4 notes end to end",
+      "Write 2-4 few-shot examples for an ambiguous extraction scenario",
+      "Implement a tool_use + JSON-schema extraction with nullable fields and an \"other\"+detail enum",
+      "Implement a validation/retry loop with real error feedback",
+      "Do practice Q34-43, review misses"
+    ]},
+    { title: "Week 5", goal: "Multi-agent systems & context management", items: [
+      "Read Domain 1 notes fully",
+      "Read Domain 5 notes fully",
+      "Build a hub-and-spoke system: coordinator (Task in allowedTools) + 2 scoped subagents, spawned in parallel",
+      "Simulate a subagent timeout and verify structured error context reaches the coordinator",
+      "Have an agent maintain a scratchpad file during long exploration",
+      "Do practice Q1-14 and Q44-50, review misses"
+    ]},
+    { title: "Week 6", goal: "Anti-patterns, mock exams, gap closing", items: [
+      "Read 06_anti_patterns.md fully (all 18 patterns)",
+      "Do the full 50-question mock cold, timed ≤ 100 minutes",
+      "Do all 12 official sample questions cold",
+      "Re-read any domain with more than 2 misses",
+      "Re-take the mock 48+ hours later, target ≥ 90%",
+      "Read the Certification T&C and Exam Policy PDFs",
+      "Book the proctored exam via Pearson VUE",
+      "Day before: review only anti-patterns + glossary",
+      "Sit the exam"
+    ]}
+  ];
+
+  var READY = [
+    "Practice exam attempted once per domain as I finish each",
+    "Full 50-question mock completed cold, scoring ≥ 36/50 (72%)",
+    "Full 50-question mock re-attempted, scoring ≥ 45/50 (90%)",
+    "All 12 official sample questions attempted and understood",
+    "Official Exam Guide PDF reviewed — done, fully incorporated into this kit",
+    "Certification Terms & Conditions PDF reviewed",
+    "Anthropic Certification Exam Policy PDF reviewed",
+    "Exam scheduled via Pearson VUE",
+    "Exam passed"
+  ];
+
+  var STORE_KEY = "cca-f-tracker-v2";
+  var state = {};
+  try {
+    state = JSON.parse(localStorage.getItem(STORE_KEY) || "{}");
+  } catch (e) { state = {}; }
+
+  function save() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  function makeRow(id, text) {
+    var row = document.createElement("div");
+    row.className = "row" + (state[id] ? " done" : "");
+    var cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.id = id;
+    cb.checked = !!state[id];
+    var label = document.createElement("label");
+    label.setAttribute("for", id);
+    label.textContent = text;
+    cb.addEventListener("change", function () {
+      state[id] = cb.checked;
+      row.classList.toggle("done", cb.checked);
+      save();
+      renderGauges();
+      renderOverall();
+      renderWeekCounts();
+    });
+    row.appendChild(cb);
+    row.appendChild(label);
+    return row;
+  }
+
+  // Domain gauges
+  var gaugesEl = document.getElementById("gauges");
+  DOMAINS.forEach(function (d, di) {
+    var card = document.createElement("div");
+    card.className = "gauge";
+    card.innerHTML =
+      '<div class="gauge-top"><span class="gauge-code display">' + d.code + '</span>' +
+      '<span class="gauge-pct mono" id="gauge-pct-' + di + '">0%</span></div>' +
+      '<div class="gauge-name">' + d.name + '</div>' +
+      '<div class="bar-track"><div class="bar-fill" id="gauge-bar-' + di + '" style="width:0%"></div></div>' +
+      '<div class="gauge-weight mono">' + d.weight + '% of exam</div>';
+    gaugesEl.appendChild(card);
+
+    var list = document.createElement("div");
+    list.className = "list";
+    list.style.display = "none"; // self-checks stored but not shown inline to keep dashboard scannable; still counted
+    d.items.forEach(function (text, ii) {
+      var id = "domain-" + d.code + "-" + ii;
+      list.appendChild(makeRow(id, text));
+    });
+    card.appendChild(list);
+  });
+
+  function renderGauges() {
+    DOMAINS.forEach(function (d, di) {
+      var total = d.items.length;
+      var done = 0;
+      d.items.forEach(function (_, ii) { if (state["domain-" + d.code + "-" + ii]) done++; });
+      var pct = total ? Math.round((done / total) * 100) : 0;
+      document.getElementById("gauge-pct-" + di).textContent = pct + "%";
+      document.getElementById("gauge-bar-" + di).style.width = pct + "%";
+    });
+  }
+
+  // But domain self-checks need to be visible/clickable somewhere -> expose via weeks-like accordion
+  var domainDetailWrap = document.createElement("div");
+  domainDetailWrap.style.marginTop = "12px";
+  DOMAINS.forEach(function (d) {
+    var det = document.createElement("details");
+    det.className = "week";
+    var summary = document.createElement("summary");
+    summary.innerHTML =
+      '<span class="week-title"><span class="display">' + d.code + ' · self-check</span>' +
+      '<span class="goal">' + d.name + '</span></span>' +
+      '<span class="week-right"><span class="chip mono">' + d.weight + '%</span><span class="caret">▸</span></span>';
+    det.appendChild(summary);
+    var body = document.createElement("div");
+    body.className = "week-body list";
+    d.items.forEach(function (text, ii) {
+      var id = "domain-" + d.code + "-" + ii;
+      body.appendChild(makeRow(id, text));
+    });
+    det.appendChild(body);
+    domainDetailWrap.appendChild(det);
+  });
+  gaugesEl.parentNode.insertBefore(domainDetailWrap, gaugesEl.nextSibling);
+  // remove the hidden duplicate lists inside gauge cards (kept them only for initial checkbox creation reference)
+  Array.prototype.forEach.call(gaugesEl.querySelectorAll(".gauge > .list"), function (el) { el.remove(); });
+
+  // Weeks
+  var weeksEl = document.getElementById("weeks");
+  WEEKS.forEach(function (w, wi) {
+    var det = document.createElement("details");
+    det.className = "week";
+    if (wi === 0) det.open = true;
+    var summary = document.createElement("summary");
+    summary.innerHTML =
+      '<span class="week-title"><span class="display">' + w.title + '</span>' +
+      '<span class="goal">' + w.goal + '</span></span>' +
+      '<span class="week-right"><span class="chip mono" id="week-chip-' + wi + '">0/' + w.items.length + '</span><span class="caret">▸</span></span>';
+    det.appendChild(summary);
+    var body = document.createElement("div");
+    body.className = "week-body list";
+    w.items.forEach(function (text, ii) {
+      var id = "week-" + wi + "-" + ii;
+      body.appendChild(makeRow(id, text));
+    });
+    det.appendChild(body);
+    weeksEl.appendChild(det);
+  });
+
+  function renderWeekCounts() {
+    var totalAll = 0, doneAll = 0;
+    WEEKS.forEach(function (w, wi) {
+      var done = 0;
+      w.items.forEach(function (_, ii) { if (state["week-" + wi + "-" + ii]) done++; });
+      document.getElementById("week-chip-" + wi).textContent = done + "/" + w.items.length;
+      totalAll += w.items.length;
+      doneAll += done;
+    });
+    document.getElementById("weeks-count").textContent = doneAll + " / " + totalAll;
+  }
+
+  // Readiness
+  var readyEl = document.getElementById("ready-list");
+  READY.forEach(function (text, ii) {
+    readyEl.appendChild(makeRow("ready-" + ii, text));
+  });
+
+  function renderReadyCount() {
+    var done = 0;
+    READY.forEach(function (_, ii) { if (state["ready-" + ii]) done++; });
+    document.getElementById("ready-count").textContent = done + " / " + READY.length;
+  }
+
+  function renderOverall() {
+    var total = 0, done = 0;
+    DOMAINS.forEach(function (d) {
+      d.items.forEach(function (_, ii) { total++; if (state["domain-" + d.code + "-" + ii]) done++; });
+    });
+    WEEKS.forEach(function (w, wi) {
+      w.items.forEach(function (_, ii) { total++; if (state["week-" + wi + "-" + ii]) done++; });
+    });
+    READY.forEach(function (_, ii) { total++; if (state["ready-" + ii]) done++; });
+    var pct = total ? Math.round((done / total) * 100) : 0;
+    document.getElementById("overall-pct").textContent = pct + "%";
+    document.getElementById("overall-bar").style.width = pct + "%";
+    document.getElementById("overall-count").textContent = done + " / " + total;
+    renderReadyCount();
+  }
+
+  // meta fields
+  var startInput = document.getElementById("start-date");
+  var examInput = document.getElementById("exam-date");
+  startInput.value = state["__start"] || "";
+  examInput.value = state["__exam"] || "";
+  startInput.addEventListener("input", function () { state["__start"] = startInput.value; save(); });
+  examInput.addEventListener("input", function () { state["__exam"] = examInput.value; save(); });
+
+  document.getElementById("reset-btn").addEventListener("click", function () {
+    if (confirm("Reset all tracked progress? This can't be undone.")) {
+      state = {};
+      save();
+      location.reload();
+    }
+  });
+
+  renderGauges();
+  renderWeekCounts();
+  renderOverall();
+})();
+</script>
+</body>
+</html>
