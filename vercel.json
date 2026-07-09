@@ -43,6 +43,14 @@
     {
       "source": "/claude_:slug.html",
       "destination": "/claude_certified_architect_prep/:slug"
+    },
+    {
+      "source": "/tracker",
+      "destination": "/claude_certified_architect_prep/tracker"
+    },
+    {
+      "source": "/tracker.html",
+      "destination": "/claude_certified_architect_prep/tracker"
     }
   ]
 }
